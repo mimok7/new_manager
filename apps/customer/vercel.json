@@ -1,6 +1,6 @@
 {
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "buildCommand": "cd ../.. && pnpm --filter @sht/customer build",
-  "outputDirectory": ".next",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @sht/customer build",
+  "outputDirectory": "apps/customer/.next",
   "framework": "nextjs"
 }
