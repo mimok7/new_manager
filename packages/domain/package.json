@@ -1,0 +1,33 @@
+{
+  "name": "@sht/domain",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./datetime": "./src/datetime/kst.ts",
+    "./pricing": "./src/pricing/index.ts",
+    "./quote": "./src/quote/index.ts",
+    "./reservation": "./src/reservation/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@sht/types": "workspace:*",
+    "zod": "^3.23.8"
+  },
+  "peerDependencies": {
+    "@supabase/supabase-js": "^2.46.0"
+  },
+  "devDependencies": {
+    "@sht/config": "workspace:*",
+    "@supabase/supabase-js": "^2.46.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}

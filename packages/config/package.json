@@ -1,0 +1,15 @@
+{
+  "name": "@sht/config",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./index.js",
+  "files": [
+    "eslint",
+    "tsconfig",
+    "tailwind"
+  ],
+  "scripts": {
+    "lint": "echo \"(no-op)\"",
+    "typecheck": "echo \"(no-op)\""
+  }
+}
