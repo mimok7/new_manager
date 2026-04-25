@@ -2,6 +2,12 @@
 
 스테이하롱 크루즈 예약 시스템 — 모노레포 v2.
 
+## ⚠️ 프로젝트 매핑 (필수 확인!)
+**다음 프로젝트만 함께 수정하세요:**
+- ✅ **customer 앱** (`c:\SHT-DATA\customer`) ↔ **new-customer-customer** (Vercel)
+  - 이 2개는 반드시 동일하게 수정 + 푸시
+- ❌ **new-manager-manager**: 매니저 관련 프로젝트 (현재 작업 무관)
+
 ## 구조
 
 ```
