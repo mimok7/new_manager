@@ -16,7 +16,7 @@ export default function QuotesHubPage() {
 
   return (
     <PageWrapper
-      title="견적"
+      title="🎯 스테이하롱 견적 작성"
       actions={
         <button
           type="button"
@@ -28,6 +28,12 @@ export default function QuotesHubPage() {
         </button>
       }
     >
+      <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+        <p className="text-sm text-blue-700 font-medium">
+          행복한 여행 계획 하시고 좋은 추억 되세요 ^^
+        </p>
+      </div>
+
       <SectionBox title="원하는 작업을 선택하세요">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {actions.map((action, index) => (
