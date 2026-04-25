@@ -119,6 +119,11 @@ export default function MyPage() {
     { icon: '👤', label: '내 정보', href: '/mypage/profile' },
   ], []);
 
+  const quoteActions = useMemo(() => [
+    { icon: '📝', label: '새 견적', href: '/quote/new' },
+    { icon: '📑', label: '견적 목록', href: '/mypage/quotes' },
+  ], []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -156,6 +161,23 @@ export default function MyPage() {
               </Link>
             );
           })}
+        </div>
+      </SectionBox>
+
+      <SectionBox title="견적">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {quoteActions.map((action, index) => (
+            <Link key={index} href={action.href} className="group">
+              <div className="bg-white border border-gray-200 rounded-lg p-6 text-center hover:border-blue-500 hover:shadow-md transition-all duration-200">
+                <div className="text-4xl mb-3 transform group-hover:scale-110 transition-transform duration-200">
+                  {action.icon}
+                </div>
+                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                  {action.label}
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </SectionBox>
     </PageWrapper>
