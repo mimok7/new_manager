@@ -342,12 +342,12 @@ export default function QuoteDetailPage() {
             {detailedServices.rooms.map((it: any, i: number) => (
               <ItemCard
                 key={i}
-                title={pick(it.price?.cruise, it.price?.cruise_name, it.roomInfo?.cruise_name)}
-                subtitle={pick(it.price?.room_type, it.roomInfo?.room_type)}
+                title={pick(it.price?.cruise_name, it.price?.cruise, it.roomInfo?.cruise_name)}
+                subtitle={pick(it.price?.room_type, it.price?.room_type_en, it.roomInfo?.room_type)}
                 rows={[
-                  ['일정', pick(it.price?.schedule, it.price?.schedule_type, it.roomInfo?.schedule)],
-                  ['카테고리', pick(it.price?.room_category, it.price?.category, it.roomInfo?.room_category)],
-                  ['인원', `${pick(it.roomInfo?.person_count)}명`],
+                  ['일정', pick(it.price?.schedule_type, it.price?.schedule, it.roomInfo?.schedule)],
+                  ['시즌', pick(it.price?.season_name)],
+                  ['인원', `${pick(it.roomInfo?.person_count, it.roomInfo?.adult_count)}명`],
                 ]}
                 unitPrice={it.unit_price}
                 quantity={it.displayQuantity}
@@ -363,7 +363,7 @@ export default function QuoteDetailPage() {
         {detailedServices.cars.length > 0 && (
           <ServiceSection icon="🚗" title="차량" accent="cyan" count={detailedServices.cars.length}>
             {detailedServices.cars.map((it: any, i: number) => {
-              const type = String(it.price?.car_type || '').toLowerCase();
+              const type = String(it.price?.vehicle_type || it.price?.car_type || '').toLowerCase();
               const isShuttle = type.includes('셔틀') || type.includes('shuttle');
               const shuttleOnly = isShuttle && /^(셔틀|shuttle)(\s*버스)?$/i.test(type.trim());
               const useGuests = isShuttle && !shuttleOnly;
@@ -373,11 +373,12 @@ export default function QuoteDetailPage() {
               return (
                 <ItemCard
                   key={i}
-                  title={pick(it.price?.car_type, it.carInfo?.car_type)}
+                  title={pick(it.price?.vehicle_type, it.price?.car_type, it.carInfo?.car_type)}
                   subtitle={pick(it.price?.cruise, it.carInfo?.cruise)}
                   rows={[
-                    ['일정', pick(it.price?.schedule, it.carInfo?.schedule)],
-                    ['카테고리', pick(it.price?.car_category, it.carInfo?.car_category)],
+                    ['이용방식', pick(it.price?.way_type, it.price?.rental_type, it.carInfo?.way_type)],
+                    ['카테고리', pick(it.price?.category, it.price?.car_category, it.carInfo?.car_category)],
+                    ['경로', pick(it.price?.route, it.carInfo?.route)],
                   ]}
                   unitPrice={it.unit_price}
                   quantity={qty}
@@ -415,24 +416,21 @@ export default function QuoteDetailPage() {
         {detailedServices.hotels.length > 0 && (
           <ServiceSection icon="🏨" title="호텔" accent="emerald" count={detailedServices.hotels.length}>
             {detailedServices.hotels.map((it: any, i: number) => {
-              const hotelName = pick(
-                typeof it.price?.hotel_info === 'object' ? it.price?.hotel_info?.hotel_name : it.price?.hotel_name,
-                it.hotelInfo?.hotel_name
-              );
-              const roomName = pick(
-                typeof it.price?.room_type === 'object' ? it.price?.room_type?.room_name : it.price?.room_name,
-                it.hotelInfo?.room_name
-              );
-              const roomType = pick(
-                typeof it.price?.room_type === 'object' ? it.price?.room_type?.room_category : it.price?.room_type,
-                it.price?.room_category, it.hotelInfo?.room_type
-              );
+              const hotelName = pick(it.price?.hotel_name, it.hotelInfo?.hotel_name);
+              const roomName = pick(it.price?.room_name, it.hotelInfo?.room_name);
+              const roomType = pick(it.price?.room_type, it.price?.room_category, it.hotelInfo?.room_type);
+              const checkin = it.hotelInfo?.checkin_date || it.usage_date || it.options?.checkin_date;
+              const checkout = it.hotelInfo?.checkout_date || it.options?.checkout_date;
               return (
                 <ItemCard
                   key={i}
                   title={hotelName}
                   subtitle={roomName}
-                  rows={[['객실 타입', roomType]]}
+                  rows={[
+                    ['객실 타입', roomType],
+                    ['체크인', pick(checkin)],
+                    ['체크아웃', pick(checkout)],
+                  ]}
                   unitPrice={it.unit_price}
                   quantity={it.displayQuantity}
                   total={it.total_price}
@@ -471,11 +469,12 @@ export default function QuoteDetailPage() {
             {detailedServices.tours.map((it: any, i: number) => (
               <ItemCard
                 key={i}
-                title={pick(it.price?.tour_name, it.price?.tour?.tour_name, it.tourInfo?.tour_name)}
-                subtitle={pick(it.tourInfo?.tour_date, it.options?.tour_date)}
+                title={pick(it.price?.tour?.tour_name, it.tourInfo?.tour_name, it.price?.tour_name)}
+                subtitle={pick(it.usage_date, it.options?.tour_date, it.options?.usage_date, it.tourInfo?.tour_date)}
                 rows={[
-                  ['차량', pick(it.price?.tour_vehicle, it.price?.vehicle_type)],
-                  ['최대 인원', `${pick(it.price?.tour_capacity, it.price?.max_guests)}명`],
+                  ['차량', pick(it.price?.vehicle_type, it.price?.tour_vehicle)],
+                  ['카테고리', pick(it.tourInfo?.category, it.tourInfo?.program_type)],
+                  ['최대 인원', `${pick(it.price?.max_guests, it.price?.tour_capacity)}명`],
                 ]}
                 unitPrice={it.unit_price}
                 quantity={it.displayQuantity}
@@ -498,7 +497,9 @@ export default function QuoteDetailPage() {
         {/* 안내 */}
         <section className="rounded-2xl bg-blue-50 border border-blue-200 p-4">
           <p className="text-sm text-blue-700 leading-relaxed">
-            💡 내역을 확인하시고 견적 제출을 클릭하시면 빠른 답변 드리겠습니다.
+            {['approved', 'confirmed', 'completed'].includes(quote.status)
+              ? '💡 내역을 확인하시고 예약하기 클릭하시면 빠른 답변 드리겠습니다.'
+              : '💡 내역을 확인하시고 견적 제출을 클릭하시면 빠른 답변 드리겠습니다.'}
           </p>
         </section>
       </main>
