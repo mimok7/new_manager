@@ -270,6 +270,7 @@ export default function QuoteDetailPage() {
   }
 
   const status = STATUS_META[quote.status] || { label: quote.status, cls: 'bg-gray-100 text-gray-700' };
+  const canViewPrice = ['approved', 'confirmed', 'completed'].includes(quote.status);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pb-32 sm:pb-8">
@@ -301,9 +302,13 @@ export default function QuoteDetailPage() {
         {/* 총합계 카드 */}
         <section className="rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-5 shadow-lg">
           <p className="text-xs opacity-80">총 견적 금액</p>
-          <p className="text-3xl font-bold mt-1 tracking-tight">
-            {fmt(grandTotal || quote.total_price)}<span className="text-lg ml-1">동</span>
-          </p>
+          {canViewPrice ? (
+            <p className="text-3xl font-bold mt-1 tracking-tight">
+              {fmt(grandTotal || quote.total_price)}<span className="text-lg ml-1">동</span>
+            </p>
+          ) : (
+            <p className="text-lg font-bold mt-1 tracking-tight">매니저 승인 후 금액이 표시됩니다.</p>
+          )}
           <div className="mt-3 flex items-center gap-3 text-xs opacity-90">
             <span>📋 {[
               detailedServices.rooms.length && '객실',
@@ -348,6 +353,7 @@ export default function QuoteDetailPage() {
                 quantity={it.displayQuantity}
                 total={it.total_price}
                 quantityUnit="명"
+                canViewPrice={canViewPrice}
               />
             ))}
           </ServiceSection>
@@ -377,6 +383,7 @@ export default function QuoteDetailPage() {
                   quantity={qty}
                   total={it.total_price}
                   quantityUnit={useGuests ? '인' : '대'}
+                  canViewPrice={canViewPrice}
                 />
               );
             })}
@@ -398,6 +405,7 @@ export default function QuoteDetailPage() {
                 quantity={it.displayQuantity}
                 total={it.total_price}
                 quantityUnit="대"
+                canViewPrice={canViewPrice}
               />
             ))}
           </ServiceSection>
@@ -429,6 +437,7 @@ export default function QuoteDetailPage() {
                   quantity={it.displayQuantity}
                   total={it.total_price}
                   quantityUnit="개"
+                  canViewPrice={canViewPrice}
                 />
               );
             })}
@@ -450,6 +459,7 @@ export default function QuoteDetailPage() {
                 quantity={it.displayQuantity}
                 total={it.total_price}
                 quantityUnit="대"
+                canViewPrice={canViewPrice}
               />
             ))}
           </ServiceSection>
@@ -471,6 +481,7 @@ export default function QuoteDetailPage() {
                 quantity={it.displayQuantity}
                 total={it.total_price}
                 quantityUnit="대"
+                canViewPrice={canViewPrice}
               />
             ))}
           </ServiceSection>
@@ -567,7 +578,7 @@ function ServiceSection({
 }
 
 function ItemCard({
-  title, subtitle, rows, unitPrice, quantity, total, quantityUnit,
+  title, subtitle, rows, unitPrice, quantity, total, quantityUnit, canViewPrice,
 }: {
   title: string;
   subtitle?: string;
@@ -576,6 +587,7 @@ function ItemCard({
   quantity: number | null | undefined;
   total: number | null | undefined;
   quantityUnit: string;
+  canViewPrice: boolean;
 }) {
   return (
     <div className="rounded-xl bg-slate-50/60 border border-slate-200 p-3 sm:p-4">
@@ -600,7 +612,9 @@ function ItemCard({
       <div className="grid grid-cols-3 gap-2 text-center">
         <div>
           <p className="text-[10px] text-slate-500 uppercase tracking-wide">단가</p>
-          <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5">{fmt(unitPrice)}</p>
+          <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5">
+            {canViewPrice ? fmt(unitPrice) : '승인 전 비공개'}
+          </p>
         </div>
         <div>
           <p className="text-[10px] text-slate-500 uppercase tracking-wide">수량</p>
@@ -610,7 +624,9 @@ function ItemCard({
         </div>
         <div className="rounded-lg bg-blue-50">
           <p className="text-[10px] text-blue-600 uppercase tracking-wide pt-1">합계</p>
-          <p className="text-sm sm:text-base font-bold text-blue-700">{fmt(total)}</p>
+          <p className="text-sm sm:text-base font-bold text-blue-700">
+            {canViewPrice ? fmt(total) : '승인 전 비공개'}
+          </p>
         </div>
       </div>
     </div>
