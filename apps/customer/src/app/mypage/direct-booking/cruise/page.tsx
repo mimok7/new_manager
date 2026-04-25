@@ -212,6 +212,23 @@ function DirectBookingCruiseContent() {
         [form.cruise_name]
     );
 
+    const isDayCruise = useMemo(
+        () => form.schedule === '당일',
+        [form.schedule]
+    );
+
+    const isDolphinDayCruise = useMemo(
+        () => isDayCruise && form.cruise_name === '돌핀 하롱 크루즈',
+        [isDayCruise, form.cruise_name]
+    );
+
+    const dolphinDayType = useMemo(() => {
+        if (!form.checkin) return '';
+        const day = new Date(form.checkin).getDay();
+        const isWeekend = day === 5 || day === 6 || day === 0;
+        return isWeekend ? '주말' : '평일';
+    }, [form.checkin]);
+
     const shouldAutoSoloSht = (vehicleType?: string, wayType?: string) =>
         isShtVehicleType(vehicleType) && (wayType === '편도' || wayType === '당일왕복');
 
@@ -682,6 +699,28 @@ function DirectBookingCruiseContent() {
             setRateCardInclusions({});
         }
     }, [form.schedule, form.checkin, form.cruise_name]);
+
+    useEffect(() => {
+        if (!isDolphinDayCruise || roomTypeCards.length === 0) return;
+
+        const matched = roomTypeCards.find((card) => {
+            const roomType = String(card.room_type || '');
+            const seasonName = String(card.season_name || '');
+            return roomType.includes(dolphinDayType) || seasonName.includes(dolphinDayType);
+        }) || roomTypeCards[0];
+
+        if (!matched) return;
+
+        setRoomSelections((prev) => {
+            const first = prev[0] || createRoomSelection('day-1');
+            return [{
+                ...first,
+                rate_card_id: matched.id,
+                room_type: matched.room_type,
+                room_count: 1,
+            }];
+        });
+    }, [isDolphinDayCruise, roomTypeCards, dolphinDayType]);
 
     const loadTourOptions = useCallback(async () => {
         const options = await calculator.getTourOptions(form.cruise_name, form.schedule);
@@ -1262,7 +1301,9 @@ function DirectBookingCruiseContent() {
             const finalTotalAmount = priceResult!.grand_total;
 
             const roomCompositionLines = priceResult.room_results.map((r, idx) => {
-                const roomTypeLabel = isCatherineHorizonCruise
+                const roomTypeLabel = form.schedule === '당일'
+                    ? `[옵션 ${idx + 1}] ${r.rate_card.season_name || r.rate_card.room_type}`
+                    : isCatherineHorizonCruise
                     ? `[구성 ${idx + 1}] ${r.rate_card.room_type}`
                     : `[객실 ${idx + 1}] ${r.rate_card.room_type} x${r.selection.room_count}`;
                 return `${roomTypeLabel} | 성인 ${r.selection.adult_count}, 아동 ${r.selection.child_count}, 아동엑베 ${r.selection.child_extra_bed_count}, 유아 ${r.selection.infant_count}, 성인엑베 ${r.selection.extra_bed_count}, 싱글 ${r.selection.single_count}`;
@@ -1999,24 +2040,32 @@ function DirectBookingCruiseContent() {
                             {roomTypeCards.length > 0 && (
                                 <div className="border border-blue-200 rounded-lg p-4 bg-blue-50/50 space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-lg font-semibold text-gray-800">🛏 객실 구성</h3>
-                                        <button
-                                            type="button"
-                                            onClick={addRoomSelection}
-                                            disabled={roomSelections.length >= 6}
-                                            className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
-                                        >
-                                            + 객실 추가
-                                        </button>
+                                        <h3 className="text-lg font-semibold text-gray-800">{isDayCruise ? '🎯 기본 옵션' : '🛏 객실 구성'}</h3>
+                                        {!isDayCruise && (
+                                            <button
+                                                type="button"
+                                                onClick={addRoomSelection}
+                                                disabled={roomSelections.length >= 6}
+                                                className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+                                            >
+                                                + 객실 추가
+                                            </button>
+                                        )}
                                     </div>
+
+                                    {isDolphinDayCruise && (
+                                        <p className="text-xs text-blue-700 bg-blue-100 border border-blue-200 rounded-md px-3 py-2">
+                                            체크인 날짜 기준으로 {dolphinDayType === '주말' ? '주말(금·토·일)' : '평일(월·화·수·목)'} 요금이 자동 선택됩니다.
+                                        </p>
+                                    )}
 
                                     {roomSelections.map((room, idx) => {
                                         const roomCard = roomTypeCards.find((card) => card.id === room.rate_card_id) || null;
                                         return (
                                             <div key={room.local_id} className="border border-blue-300 rounded-lg bg-white p-4 space-y-3">
                                                 <div className="flex items-center justify-between">
-                                                    <h4 className="font-semibold text-gray-800">객실 {idx + 1}</h4>
-                                                    {roomSelections.length > 1 && (
+                                                    <h4 className="font-semibold text-gray-800">{isDayCruise ? `옵션 ${idx + 1}` : `객실 ${idx + 1}`}</h4>
+                                                    {!isDayCruise && roomSelections.length > 1 && (
                                                         <button
                                                             type="button"
                                                             onClick={() => removeRoomSelection(room.local_id)}
@@ -2028,7 +2077,7 @@ function DirectBookingCruiseContent() {
                                                 </div>
 
                                                 <div>
-                                                    <label className="block text-xs font-medium text-gray-600 mb-1">객실 타입</label>
+                                                    <label className="block text-xs font-medium text-gray-600 mb-1">{isDayCruise ? '기본 옵션' : '객실 타입'}</label>
                                                     <select
                                                         value={room.rate_card_id}
                                                         onChange={(e) => {
@@ -2040,10 +2089,15 @@ function DirectBookingCruiseContent() {
                                                             });
                                                         }}
                                                         className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        disabled={isDolphinDayCruise}
                                                     >
-                                                        <option value="">객실 타입 선택</option>
+                                                        <option value="">{isDayCruise ? '옵션 선택' : '객실 타입 선택'}</option>
                                                         {roomTypeCards.map((card) => (
-                                                            <option key={card.id} value={card.id}>{card.room_type}</option>
+                                                            <option key={card.id} value={card.id}>
+                                                                {isDayCruise
+                                                                    ? `${card.season_name || card.room_type}${card.season_name && card.room_type && card.season_name !== card.room_type ? ` (${card.room_type})` : ''}`
+                                                                    : card.room_type}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </div>
@@ -2145,7 +2199,7 @@ function DirectBookingCruiseContent() {
                                                             )}
                                                         </div>
 
-                                                        {!isCatherineHorizonCruise && (
+                                                        {!isDayCruise && !isCatherineHorizonCruise && (
                                                             <div className="mt-2 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                                                                 <label className="text-sm font-medium text-gray-700">해당 타입 객실 수</label>
                                                                 <StepperNumberInput
