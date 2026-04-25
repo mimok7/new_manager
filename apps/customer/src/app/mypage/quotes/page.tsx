@@ -2,17 +2,32 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Home } from 'lucide-react';
 import PageWrapper from '@/components/PageWrapper';
 import SectionBox from '@/components/SectionBox';
 
 export default function QuotesHubPage() {
+  const router = useRouter();
   const actions = useMemo(() => [
     { icon: '📝', label: '새 견적', href: '/mypage/quotes/new' },
     { icon: '📑', label: '견적 목록', href: '/mypage/quotes/list' },
   ], []);
 
   return (
-    <PageWrapper title="견적">
+    <PageWrapper
+      title="견적"
+      actions={
+        <button
+          type="button"
+          onClick={() => router.push('/mypage')}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+        >
+          <Home className="w-4 h-4" />
+          홈
+        </button>
+      }
+    >
       <SectionBox title="원하는 작업을 선택하세요">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {actions.map((action, index) => (
