@@ -48,6 +48,38 @@ pnpm dev:manager    # http://localhost:3001
 | `pnpm lint:fix` | 린트 자동 수정 |
 | `pnpm test` | 테스트 |
 
+## 🔄 이중 프로젝트 동시 수정 규칙 (필수!)
+⚠️ **sht-platform 모노레포 구조**: `apps/customer` + `apps/manager` 2개 프로젝트 관리
+
+### 작업 기본 원칙
+- **동일 수정**: 고객/매니저 앱에서 **동일한 변경사항**이 필요하면 **반드시 두 프로젝트 모두에 적용**
+  - 예: UI 컴포넌트, 공유 라이브러리(`packages/*`), 설정 파일 등
+- **단독 수정**: 고객/매니저 앱 **고유의 페이지/로직**만 각각 수정 가능
+  - 예: `/mypage` (고객) vs `/manager` (매니저) 각자 페이지
+
+### 커밋 및 푸시 원칙
+1. **customer 프로젝트** 변경 시:
+   ```bash
+   cd c:\SHT-DATA\customer
+   git add . && git commit -m "feat: ..." && git push mimok7
+   ```
+
+2. **manager 프로젝트** 변경 시:
+   ```bash
+   cd c:\SHT-DATA\sht-platform
+   git add apps/manager && git commit -m "feat(manager): ..." && git push
+   ```
+
+### 이중 수정 체크리스트
+- [ ] 고객 앱 수정 완료 (`c:\SHT-DATA\customer`)
+- [ ] 매니저 앱 동일 수정 완료 (`c:\SHT-DATA\sht-platform\apps\manager`)
+- [ ] 두 프로젝트 모두 커밋 완료
+- [ ] 두 프로젝트 모두 푸시 완료
+
+### 공유 라이브러리 변경 시
+- `packages/ui`, `packages/types` 등 변경 → 두 앱 모두 `npm install` 필요
+- `turbo.json`, `pnpm-workspace.yaml` 등 → 반드시 두 프로젝트에서 `npm run build` 검증
+
 ## 기술 스택
 
 - **Next.js 15 App Router** + TypeScript strict
