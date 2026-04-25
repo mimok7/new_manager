@@ -1592,6 +1592,9 @@ function DirectBookingCruiseContent() {
                                 {loading ? '저장 중...' : '차량 선택 →'}
                             </button>
                         </div>
+                        <p className="mt-3 text-sm text-sky-700 bg-sky-50 border border-sky-200 rounded-lg px-4 py-3 text-center">
+                            🚗 크루즈 선착장 이동 전용차량 예약시 <strong>차량 선택</strong>을 클릭 하세요 ^^
+                        </p>
                     </form>
                 </div>
             </div>
