@@ -519,12 +519,14 @@ export default function QuoteDetailPage() {
               📄 예약확인서
             </button>
           )}
-          <button
-            onClick={handleReservation}
-            className="flex-1 px-4 py-3 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition"
-          >
-            🎫 예약하기
-          </button>
+          {quote.status === 'approved' && (
+            <button
+              onClick={handleReservation}
+              className="flex-1 px-4 py-3 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition"
+            >
+              🎫 예약하기
+            </button>
+          )}
         </div>
       </div>
     </div>
