@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -234,9 +234,6 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
                                     isActive={isActiveTab('reservations-bulk')}
                                     onClick={() => handleNavigation('/manager/reservations/bulk')}
                                 />
-                                {/* 숨김: 고객별/일정별/종류별/예약일별 예약 조회 메뉴 */}
-                                {false && (
-                                <>
                                 <NavItem
                                     icon="👤"
                                     label="고객별"
@@ -265,8 +262,6 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
                                     isActive={activeTab === 'reservation-details'}
                                     onClick={() => handleNavigation('/manager/reservation-details')}
                                 />
-                                </>
-                                )}
                                 <NavItem
                                     icon="🚐"
                                     label="스하 차량"
@@ -297,33 +292,27 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
                                     isActive={activeTab === 'reservation-edit'}
                                     onClick={() => handleNavigation('/manager/reservation-edit')}
                                 />
-                                {canSeeCafeGuide && (
-                                    <NavItem
-                                        icon="�️"
-                                        label="시트 수정"
-                                        path="/manager/schedule/sheet-edit"
-                                        isActive={activeTab === 'schedule-sheet-edit'}
-                                        onClick={() => handleNavigation('/manager/schedule/sheet-edit')}
-                                    />
-                                )}
-                                {canSeeCafeGuide && (
-                                    <NavItem
-                                        icon="🛡️"
-                                        label="수정 승인"
-                                        path="/manager/reservation-edit/approval"
-                                        isActive={isActiveTab('reservation-edit-approval')}
-                                        onClick={() => handleNavigation('/manager/reservation-edit/approval')}
-                                    />
-                                )}
-                                {canSeeCafeGuide && (
-                                    <NavItem
-                                        icon="🛂"
-                                        label="여권 관리"
-                                        path="/manager/passport-management"
-                                        isActive={activeTab === 'passport-management'}
-                                        onClick={() => handleNavigation('/manager/passport-management')}
-                                    />
-                                )}
+                                <NavItem
+                                    icon="�️"
+                                    label="시트 수정"
+                                    path="/manager/schedule/sheet-edit"
+                                    isActive={activeTab === 'schedule-sheet-edit'}
+                                    onClick={() => handleNavigation('/manager/schedule/sheet-edit')}
+                                />
+                                <NavItem
+                                    icon="🛡️"
+                                    label="수정 승인"
+                                    path="/manager/reservation-edit/approval"
+                                    isActive={isActiveTab('reservation-edit-approval')}
+                                    onClick={() => handleNavigation('/manager/reservation-edit/approval')}
+                                />
+                                <NavItem
+                                    icon="🛂"
+                                    label="여권 관리"
+                                    path="/manager/passport-management"
+                                    isActive={activeTab === 'passport-management'}
+                                    onClick={() => handleNavigation('/manager/passport-management')}
+                                />
                                 <NavItem
                                     icon="🚢"
                                     label="승선 코드"
