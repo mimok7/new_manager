@@ -40,20 +40,22 @@ export default function CustomerSendManagementPage() {
         loadData();
     }, [dateFilter, statusFilter]);
 
-    // 페이지 포커스 시 자동 새로고침
+    // 페이지 포커스 시 자동 새로고침 (백그라운드 탭에서는 호출 안 함)
     useEffect(() => {
-        const handleFocus = () => loadData();
         const handleVisibilityChange = () => {
             if (!document.hidden) loadData();
         };
 
-        window.addEventListener('focus', handleFocus);
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
-        const interval = setInterval(loadData, 30000);
+        // 30초 폴링 - 단, 탭이 활성 상태일 때만 호출 (백그라운드 부하 방지)
+        const interval = setInterval(() => {
+            if (typeof document !== 'undefined' && !document.hidden) {
+                loadData();
+            }
+        }, 30000);
 
         return () => {
-            window.removeEventListener('focus', handleFocus);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             clearInterval(interval);
         };
