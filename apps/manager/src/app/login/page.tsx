@@ -60,7 +60,7 @@ function LoginForm() {
         .single();
 
       // 매니저/관리자 권한이 없으면 차단 (매니저 앱이므로 신규 guest도 차단)
-      const ALLOWED_ROLES = ['manager', 'admin', 'dispatcher'];
+      const ALLOWED_ROLES = ['manager', 'admin'];
       let userRole: string | null = null;
 
       if (fetchError) {
