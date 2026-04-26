@@ -234,34 +234,34 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
                                     isActive={isActiveTab('reservations-bulk')}
                                     onClick={() => handleNavigation('/manager/reservations/bulk')}
                                 />
-                                <NavItem
+                                {false && <NavItem
                                     icon="👤"
                                     label="고객별"
                                     path="/manager/reservations"
                                     isActive={isActiveTab('reservations')}
                                     onClick={() => handleNavigation('/manager/reservations')}
-                                />
-                                <NavItem
+                                />}
+                                {false && <NavItem
                                     icon="📅"
                                     label="일정별"
                                     path="/manager/schedule"
                                     isActive={activeTab === 'schedule'}
                                     onClick={() => handleNavigation('/manager/schedule')}
-                                />
-                                <NavItem
+                                />}
+                                {false && <NavItem
                                     icon="📊"
                                     label="종류별"
                                     path="/manager/service-tables"
                                     isActive={activeTab === 'service-tables'}
                                     onClick={() => handleNavigation('/manager/service-tables')}
-                                />
-                                <NavItem
+                                />}
+                                {false && <NavItem
                                     icon="📆"
                                     label="예약일별"
                                     path="/manager/reservation-details"
                                     isActive={activeTab === 'reservation-details'}
                                     onClick={() => handleNavigation('/manager/reservation-details')}
-                                />
+                                />}
                                 <NavItem
                                     icon="🚐"
                                     label="스하 차량"
