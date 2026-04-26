@@ -110,18 +110,18 @@ export default function ManagerQuotesPage() {
     try {
       await syncQuotesLinkedToReservations();
       const currentFilter = filterOverride !== undefined ? filterOverride : filter;
-      
+
       // 최근 loadedDaysCount일 범위 계산
       const now = new Date();
       const startDate = new Date(now.getTime() - loadedDaysCount * 24 * 60 * 60 * 1000);
       const startDateStr = startDate.toISOString().split('T')[0];
-      
+
       let q = supabase.from('quote').select('id, title, status, user_id, created_at, approved_at, total_price').order('created_at', { ascending: false });
       if (currentFilter !== 'all') q = q.eq('status', currentFilter as any);
-      
+
       // 날짜 범위 필터
       q = q.gte('created_at', startDateStr);
-      
+
       const { data, error } = await q;
       if (error) throw error;
 
@@ -176,7 +176,7 @@ export default function ManagerQuotesPage() {
     setSearchLoading(true);
     try {
       const s = searchTerm.trim().toLowerCase();
-      
+
       // 전체 DB에서 검색 (날짜 제한 없음)
       const { data, error } = await supabase
         .from('quote')
@@ -432,7 +432,6 @@ export default function ManagerQuotesPage() {
                   )}
                 </div>
               </div>}
-              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {filteredQuotes.map(q => (
@@ -492,7 +491,6 @@ export default function ManagerQuotesPage() {
             </>
           )}
         </div>
-        </div>
 
         <div className="bg-yellow-50 border border-yellow-200 rounded p-4">
           <h4 className="text-sm font-medium text-yellow-800 mb-2">📋 견적 승인 관리 안내</h4>
@@ -503,9 +501,9 @@ export default function ManagerQuotesPage() {
           </ul>
         </div>
 
-        {modalQuoteId && <QuoteDetailModal quoteId={modalQuoteId} onClose={() => setModalQuoteId(null)} />}
-      </div>
-    </ManagerLayout>
+        { modalQuoteId && <QuoteDetailModal quoteId={modalQuoteId} onClose={() => setModalQuoteId(null)} /> }
+      </div >
+    </ManagerLayout >
   );
 }
 
