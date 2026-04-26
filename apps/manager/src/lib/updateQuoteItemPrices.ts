@@ -108,14 +108,15 @@ export async function updateQuoteItemPrices(quoteId: string): Promise<boolean> {
             continue;
           }
 
+          // ⚠️ 크루즈 차량(car)도 가격은 rentcar_price 테이블에서 조회 (car.car_code = rentcar_price.rent_code)
           const { data: priceData, error: priceError } = await supabase
-            .from('car_price')
+            .from('rentcar_price')
             .select('price')
-            .eq('car_code', carData.car_code)
+            .eq('rent_code', carData.car_code)
             .limit(1);
 
           if (priceError || !priceData || priceData.length === 0) {
-            console.warn(`⚠️ car_price 조회 실패 (car_code: ${carData.car_code})`);
+            console.warn(`⚠️ rentcar_price(차량) 조회 실패 (car_code: ${carData.car_code})`);
             continue;
           }
 
@@ -162,14 +163,15 @@ export async function updateQuoteItemPrices(quoteId: string): Promise<boolean> {
             continue;
           }
 
+          // ✅ FIX: hotel_price 매칭 컬럼은 hotel_code (이전 hotel_price_code 오류)
           const { data: priceData, error: priceError } = await supabase
             .from('hotel_price')
             .select('base_price')
-            .eq('hotel_price_code', hotelData.hotel_code)
+            .eq('hotel_code', hotelData.hotel_code)
             .limit(1);
 
           if (priceError || !priceData || priceData.length === 0) {
-            console.warn(`⚠️ hotel_price 조회 실패 (hotel_price_code: ${hotelData.hotel_code})`);
+            console.warn(`⚠️ hotel_price 조회 실패 (hotel_code: ${hotelData.hotel_code})`);
             continue;
           }
 
@@ -268,11 +270,26 @@ export async function updateQuoteItemPrices(quoteId: string): Promise<boolean> {
       }
     }
 
-    // 견적 총액 업데이트
+    // ✅ 견적 총액 = quote_item.total_price 의 SUM (스킵/실패한 아이템도 기존 값 유지하여 합산)
+    const { data: itemsAfter, error: refetchError } = await supabase
+      .from('quote_item')
+      .select('total_price')
+      .eq('quote_id', quoteId);
+
+    if (refetchError) {
+      console.error('❌ quote_item 재조회 실패:', refetchError);
+    }
+
+    const dbItemSum = (itemsAfter || []).reduce(
+      (sum, it: any) => sum + Number(it.total_price || 0),
+      0
+    );
+    const finalTotal = dbItemSum > 0 ? dbItemSum : totalQuotePrice;
+
     const { error: quoteUpdateError } = await supabase
       .from('quote')
       .update({
-        total_price: totalQuotePrice,
+        total_price: finalTotal,
         updated_at: new Date().toISOString()
       })
       .eq('id', quoteId);
@@ -282,7 +299,7 @@ export async function updateQuoteItemPrices(quoteId: string): Promise<boolean> {
       return false;
     }
 
-    console.log('✅ 가격 계산 완료. 총액:', totalQuotePrice.toLocaleString(), '동');
+    console.log('✅ 가격 계산 완료. 처리합계:', totalQuotePrice.toLocaleString(), '/ DB 아이템합계:', finalTotal.toLocaleString(), '동');
     return true;
 
   } catch (error) {
