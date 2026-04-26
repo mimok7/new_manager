@@ -255,19 +255,19 @@ export default function CruiseInfoPage() {
 
                                     <div className="mt-3 space-y-2 text-xs">
                                         <div>
-                                            <p className="text-gray-400">선착장</p>
+                                            <p className="text-blue-600">선착장</p>
                                             <p className="text-gray-700">{row.pier_location || '-'}</p>
                                         </div>
                                         <div>
-                                            <p className="text-gray-400">맵 URL</p>
+                                            <p className="text-blue-600">맵 URL</p>
                                             <p className="text-gray-700 break-all">{row.pier_map_url || '-'}</p>
                                         </div>
                                         <div>
-                                            <p className="text-gray-400">스케줄 URL</p>
+                                            <p className="text-blue-600">스케줄 URL</p>
                                             <p className="text-gray-700 break-all">{row.tour_schedule_url || '-'}</p>
                                         </div>
                                         <div>
-                                            <p className="text-gray-400">디테일</p>
+                                            <p className="text-blue-600">디테일</p>
                                             <p className="text-gray-700 whitespace-pre-wrap">{row.details || '-'}</p>
                                         </div>
                                     </div>
