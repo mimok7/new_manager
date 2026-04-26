@@ -293,9 +293,9 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
                                 <NavItem
                                     icon="📊"
                                     label="수정 대시보드"
-                                    path="/manager/reservation-edit/main"
-                                    isActive={activeTab === 'reservation-edit-main'}
-                                    onClick={() => handleNavigation('/manager/reservation-edit/main')}
+                                    path="/admin/edits"
+                                    isActive={activeTab === 'admin-edits'}
+                                    onClick={() => handleNavigation('/admin/edits')}
                                 />
                                 <NavItem
                                     icon="✏️"
