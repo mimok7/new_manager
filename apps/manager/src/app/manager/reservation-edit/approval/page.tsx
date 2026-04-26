@@ -336,8 +336,8 @@ export default function ReservationEditApprovalPage() {
     // 행별 승인용 - multi-row(airport, cruise_car) 타입에서 어떤 행만 처리할지 선택
     const [selectedRowKeys, setSelectedRowKeys] = useState<Set<string>>(new Set());
 
-    // 보기 모드: 테이블 / 카드
-    const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+    // 보기 모드: 테이블 / 카드 (기본값: 카드)
+    const [viewMode, setViewMode] = useState<'table' | 'card'>('card');
 
     const loadRequests = useCallback(async () => {
         setLoading(true);
@@ -1012,7 +1012,7 @@ export default function ReservationEditApprovalPage() {
                                                     👤 {userGroup.userName}
                                                     <span className="ml-1.5 text-blue-400 font-normal text-[11px]">{userGroup.email}</span>
                                                 </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
                                                     {userGroup.rows.map(row => {
                                                         const st = STATUS_MAP[row.status] || STATUS_MAP.cancelled;
                                                         const isSelected = selectedRequest?.id === row.id;
