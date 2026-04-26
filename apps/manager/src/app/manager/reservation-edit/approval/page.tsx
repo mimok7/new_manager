@@ -688,14 +688,23 @@ export default function ReservationEditApprovalPage() {
             Object.keys(tmpRow).forEach(key => {
                 if (!EXCLUDED_FIELDS.has(key) && !tableExcluded.has(key)) payload[key] = tmpRow[key];
             });
-            const { data: existing } = await supabase.from(mapping.baseTable)
-                .select('reservation_id').eq('reservation_id', safeReservationId).maybeSingle();
-            if (existing) {
+            // ✅ 상위 예약(reservation) 존재만 확인. 서비스 테이블에 이미 행이 있으면 UPDATE, 없으면 INSERT 허용
+            // (.maybeSingle()은 행이 2개 이상일 때 에러를 던지므로 .limit(1) 배열 체크로 변경)
+            const { data: existingArr, error: existingErr } = await supabase
+                .from(mapping.baseTable)
+                .select('reservation_id')
+                .eq('reservation_id', safeReservationId)
+                .limit(1);
+            if (existingErr) throw existingErr;
+            const hasExisting = Array.isArray(existingArr) && existingArr.length > 0;
+            if (hasExisting) {
+                // 동일 reservation_id 의 모든 행에 대해 공유 필드 UPDATE (좌석/차량별 행이 여러개일 경우 대응)
                 const { error } = await supabase.from(mapping.baseTable).update(payload).eq('reservation_id', safeReservationId);
                 if (error) throw error;
             } else {
-                // 새 행 INSERT 금지 — 원 예약이 없으면 에러
-                throw new Error('기존 예약 데이터가 없어 업데이트할 수 없습니다. (새 행 추가 차단)');
+                // 상위 예약은 있지만 서비스 행이 아직 없는 경우(예: 고객이 나중 장소만 추가) → INSERT 허용
+                const { error } = await supabase.from(mapping.baseTable).insert({ reservation_id: safeReservationId, ...payload });
+                if (error) throw error;
             }
         }
 
@@ -874,14 +883,22 @@ export default function ReservationEditApprovalPage() {
                     Object.keys(tempData || {}).forEach(key => {
                         if (!EXCLUDED_FIELDS.has(key) && !tableExcluded.has(key)) payload[key] = (tempData as any)[key];
                     });
-                    const { data: existing } = await supabase.from(mapping.baseTable)
-                        .select('reservation_id').eq('reservation_id', safeReservationId).maybeSingle();
-                    if (existing) {
+                    // ✅ .maybeSingle()은 행이 2개 이상일 때 에러가 나므로 .limit(1) 배열 체크로 대체
+                    const { data: existingArr, error: existingErr } = await supabase
+                        .from(mapping.baseTable)
+                        .select('reservation_id')
+                        .eq('reservation_id', safeReservationId)
+                        .limit(1);
+                    if (existingErr) throw existingErr;
+                    const hasExisting = Array.isArray(existingArr) && existingArr.length > 0;
+                    if (hasExisting) {
+                        // 동일 reservation_id 의 모든 행에 대해 공유 필드 UPDATE
                         const { error: updateErr } = await supabase.from(mapping.baseTable).update(payload).eq('reservation_id', safeReservationId);
                         if (updateErr) throw updateErr;
                     } else {
-                        // 새 행 INSERT 금지 — 원 예약이 없으면 에러
-                        throw new Error('기존 예약 데이터가 없어 업데이트할 수 없습니다. (새 행 추가 차단)');
+                        // 상위 예약은 있지만 서비스 행이 아직 없는 경우 → INSERT 허용
+                        const { error: insErr } = await supabase.from(mapping.baseTable).insert({ reservation_id: safeReservationId, ...payload });
+                        if (insErr) throw insErr;
                     }
                 }
             }
