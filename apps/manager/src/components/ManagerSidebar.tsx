@@ -234,6 +234,9 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
                                     isActive={isActiveTab('reservations-bulk')}
                                     onClick={() => handleNavigation('/manager/reservations/bulk')}
                                 />
+                                {/* 숨김: 고객별/일정별/종류별/예약일별 예약 조회 메뉴 */}
+                                {false && (
+                                <>
                                 <NavItem
                                     icon="👤"
                                     label="고객별"
@@ -262,6 +265,8 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
                                     isActive={activeTab === 'reservation-details'}
                                     onClick={() => handleNavigation('/manager/reservation-details')}
                                 />
+                                </>
+                                )}
                                 <NavItem
                                     icon="🚐"
                                     label="스하 차량"
