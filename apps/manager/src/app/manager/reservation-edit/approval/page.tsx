@@ -535,7 +535,7 @@ export default function ReservationEditApprovalPage() {
                 setTempData((tempRes.data as Record<string, any>) || null);
 
                 // cruise_car 도 multi-row일 수 있음 — snapshot 기반 초기 선택
-                if (row.re_type === 'cruise_car' || row.re_type === 'car') {
+                if (row.re_type === 'cruise_car' || row.re_type === 'car' || row.re_type === 'car_sht' || row.re_type === 'sht' || row.re_type === 'sht_car') {
                     const originalRowsForDiff = Array.isArray(row.snapshot_data?.original) ? row.snapshot_data.original : [];
                     const requestedRows = Array.isArray(row.snapshot_data?.requested) ? row.snapshot_data.requested : [];
                     const changedReq = filterActuallyChangedRequestedRows(requestedRows, originalRowsForDiff, mapping.baseTable);
@@ -629,7 +629,9 @@ export default function ReservationEditApprovalPage() {
         const snapshotRequestedRows = Array.isArray(req.snapshot_data?.requested)
             ? req.snapshot_data.requested : [];
 
-        const isMultiRow = mapping.baseTable === 'reservation_airport' || mapping.baseTable === 'reservation_cruise_car';
+        const isMultiRow = mapping.baseTable === 'reservation_airport'
+            || mapping.baseTable === 'reservation_cruise_car'
+            || mapping.baseTable === 'reservation_car_sht';
 
         if (isMultiRow && snapshotRequestedRows.length > 0) {
             const { data: currentRows, error: curErr } = await supabase
@@ -797,7 +799,7 @@ export default function ReservationEditApprovalPage() {
         if (!mapping) { alert(`지원하지 않는 서비스 타입: ${selectedRequest.re_type}`); return; }
         const airportSnapshotRequested = Array.isArray(selectedRequest.snapshot_data?.requested)
             ? selectedRequest.snapshot_data.requested : [];
-        const isMultiRowType = selectedRequest.re_type === 'airport' || selectedRequest.re_type === 'cruise_car' || selectedRequest.re_type === 'car';
+        const isMultiRowType = selectedRequest.re_type === 'airport' || selectedRequest.re_type === 'cruise_car' || selectedRequest.re_type === 'car' || selectedRequest.re_type === 'car_sht' || selectedRequest.re_type === 'sht' || selectedRequest.re_type === 'sht_car';
         const canApproveFromAirportRows = isMultiRowType && airportTempRows.length > 0;
         const canApproveFromAirportSnapshot = isMultiRowType && airportSnapshotRequested.length > 0;
         if (nextStatus === 'approved' && !tempData && !canApproveFromAirportSnapshot && !canApproveFromAirportRows) {
@@ -817,7 +819,7 @@ export default function ReservationEditApprovalPage() {
                     ? selectedRequest.snapshot_data.requested : [];
                 const airportRequestedRows = snapshotRequestedRows.length > 0 ? snapshotRequestedRows : airportTempRows;
 
-                if ((mapping.baseTable === 'reservation_airport' || mapping.baseTable === 'reservation_cruise_car') && airportRequestedRows.length > 0) {
+                if ((mapping.baseTable === 'reservation_airport' || mapping.baseTable === 'reservation_cruise_car' || mapping.baseTable === 'reservation_car_sht') && airportRequestedRows.length > 0) {
                     // ✅ 픽업/드롭 독립 처리: 기존 행 조회 → 매칭되는 행만 UPDATE (매칭 안 되면 스킵 — 새 행 추가 금지)
                     const { data: currentRows, error: currentRowsError } = await supabase
                         .from(mapping.baseTable).select('*').eq('reservation_id', safeReservationId);
@@ -1073,123 +1075,123 @@ export default function ReservationEditApprovalPage() {
                         )}
                     </div>
                 ) : (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                    {/* 테이블 헤더 */}
-                    <div className="grid grid-cols-[32px_130px_120px_1fr_1fr_70px_140px_60px] items-center bg-gray-50 border-b border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600">
-                        <div className="flex items-center justify-center">
-                            {pendingIds.length > 0 && (
-                                <input type="checkbox" checked={allChecked} onChange={toggleAll}
-                                    className="rounded border-gray-300 text-orange-500 focus:ring-orange-400 w-3.5 h-3.5" />
-                            )}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                        {/* 테이블 헤더 */}
+                        <div className="grid grid-cols-[32px_130px_120px_1fr_1fr_70px_140px_60px] items-center bg-gray-50 border-b border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600">
+                            <div className="flex items-center justify-center">
+                                {pendingIds.length > 0 && (
+                                    <input type="checkbox" checked={allChecked} onChange={toggleAll}
+                                        className="rounded border-gray-300 text-orange-500 focus:ring-orange-400 w-3.5 h-3.5" />
+                                )}
+                            </div>
+                            <div>서비스</div>
+                            <div>필드</div>
+                            <div>🔵 기존값</div>
+                            <div>🟠 수정요청</div>
+                            <div className="text-center">상태</div>
+                            <div>신청일시</div>
+                            <div className="text-center">상세</div>
                         </div>
-                        <div>서비스</div>
-                        <div>필드</div>
-                        <div>🔵 기존값</div>
-                        <div>🟠 수정요청</div>
-                        <div className="text-center">상태</div>
-                        <div>신청일시</div>
-                        <div className="text-center">상세</div>
-                    </div>
 
-                    {loading ? (
-                        <div className="py-10 text-center text-sm text-gray-500">불러오는 중...</div>
-                    ) : requests.length === 0 ? (
-                        <div className="py-10 text-center text-sm text-gray-500">조회된 수정 요청이 없습니다.</div>
-                    ) : (
-                        <div>
-                            {groupedRequests.map(dateGroup => {
-                                const datePendingIds = dateGroup.users.flatMap(u => u.rows.filter(r => r.status === 'pending').map(r => r.id));
-                                const dateAllChecked = datePendingIds.length > 0 && datePendingIds.every(id => checkedIds.has(id));
-                                return (
-                                    <div key={dateGroup.date}>
-                                        {/* 날짜 그룹 헤더 */}
-                                        <div className="grid grid-cols-[32px_1fr] items-center bg-orange-50 border-b border-orange-100 px-3 py-1.5">
-                                            <div className="flex items-center justify-center">
-                                                {datePendingIds.length > 0 && (
-                                                    <input type="checkbox" checked={dateAllChecked}
-                                                        onChange={() => toggleGroupDate(dateGroup)}
-                                                        className="rounded border-gray-300 text-orange-500 w-3.5 h-3.5" />
-                                                )}
-                                            </div>
-                                            <div className="text-xs font-bold text-orange-700">
-                                                📅 {dateGroup.date}
-                                                <span className="ml-2 text-orange-500 font-normal">
-                                                    ({dateGroup.users.reduce((s, u) => s + u.rows.length, 0)}건)
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {dateGroup.users.map(userGroup => {
-                                            const userPendingIds = userGroup.rows.filter(r => r.status === 'pending').map(r => r.id);
-                                            const userAllChecked = userPendingIds.length > 0 && userPendingIds.every(id => checkedIds.has(id));
-                                            return (
-                                                <div key={userGroup.userId}>
-                                                    {/* 사용자 서브헤더 */}
-                                                    <div className="grid grid-cols-[32px_1fr] items-center bg-blue-50 border-b border-blue-100 px-3 py-1">
-                                                        <div className="flex items-center justify-center">
-                                                            {userPendingIds.length > 0 && (
-                                                                <input type="checkbox" checked={userAllChecked}
-                                                                    onChange={() => toggleGroupUser(userGroup.rows)}
-                                                                    className="rounded border-gray-300 text-blue-500 w-3.5 h-3.5" />
-                                                            )}
-                                                        </div>
-                                                        <div className="text-xs font-semibold text-blue-700">
-                                                            👤 {userGroup.userName}
-                                                            <span className="ml-1.5 text-blue-400 font-normal text-[11px]">{userGroup.email}</span>
-                                                            <span className="ml-2 text-blue-500 font-normal">({userGroup.rows.length}건)</span>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* 행 목록 */}
-                                                    {userGroup.rows.map(row => {
-                                                        const st = STATUS_MAP[row.status] || STATUS_MAP.cancelled;
-                                                        const isSelected = selectedRequest?.id === row.id;
-                                                        const isPending = row.status === 'pending';
-                                                        const changedRows = getSnapshotChangedRows(row);
-                                                        const displayRows = changedRows.length > 0
-                                                            ? changedRows
-                                                            : [{ field: '', before: '-', after: '-' }];
-
-                                                        return displayRows.map((changedRow, index) => (
-                                                            <div key={`${row.id}-${changedRow.field || 'empty'}-${index}`}
-                                                                className={`grid grid-cols-[32px_130px_120px_1fr_1fr_70px_140px_60px] items-start px-3 py-2 border-b border-gray-100 text-xs hover:bg-gray-50 transition-colors ${isSelected ? 'bg-blue-50' : ''}`}>
-                                                                <div className="flex items-center justify-center">
-                                                                    {isPending ? (
-                                                                        <input type="checkbox" checked={checkedIds.has(row.id)}
-                                                                            onChange={() => toggleOne(row.id)}
-                                                                            className="rounded border-gray-300 text-orange-500 w-3.5 h-3.5" />
-                                                                    ) : <span className="w-3.5 h-3.5" />}
-                                                                </div>
-                                                                <div>
-                                                                    <span className="font-medium text-gray-800">{TYPE_NAME_MAP[row.re_type] || row.re_type}</span>
-                                                                </div>
-                                                                <div className="text-gray-700 font-medium truncate">{changedRow.field ? getFieldLabel(changedRow.field) : '-'}</div>
-                                                                <div className="text-gray-500 truncate">{formatDisplayValue(changedRow.before)}</div>
-                                                                <div className="text-orange-700 font-medium truncate">{formatDisplayValue(changedRow.after)}</div>
-                                                                <div className="text-center">
-                                                                    <span className={`px-1.5 py-0.5 rounded-full text-[11px] ${st.cls}`}>{st.label}</span>
-                                                                </div>
-                                                                <div className="text-gray-500">
-                                                                    {new Date(row.submitted_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                                                                </div>
-                                                                <div className="text-center">
-                                                                    <button onClick={() => loadComparison(row)}
-                                                                        className={`px-2 py-1 text-[11px] rounded border transition-colors ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100'}`}>
-                                                                        {isSelected ? '닫기' : '상세'}
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        ));
-                                                    })}
+                        {loading ? (
+                            <div className="py-10 text-center text-sm text-gray-500">불러오는 중...</div>
+                        ) : requests.length === 0 ? (
+                            <div className="py-10 text-center text-sm text-gray-500">조회된 수정 요청이 없습니다.</div>
+                        ) : (
+                            <div>
+                                {groupedRequests.map(dateGroup => {
+                                    const datePendingIds = dateGroup.users.flatMap(u => u.rows.filter(r => r.status === 'pending').map(r => r.id));
+                                    const dateAllChecked = datePendingIds.length > 0 && datePendingIds.every(id => checkedIds.has(id));
+                                    return (
+                                        <div key={dateGroup.date}>
+                                            {/* 날짜 그룹 헤더 */}
+                                            <div className="grid grid-cols-[32px_1fr] items-center bg-orange-50 border-b border-orange-100 px-3 py-1.5">
+                                                <div className="flex items-center justify-center">
+                                                    {datePendingIds.length > 0 && (
+                                                        <input type="checkbox" checked={dateAllChecked}
+                                                            onChange={() => toggleGroupDate(dateGroup)}
+                                                            className="rounded border-gray-300 text-orange-500 w-3.5 h-3.5" />
+                                                    )}
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
+                                                <div className="text-xs font-bold text-orange-700">
+                                                    📅 {dateGroup.date}
+                                                    <span className="ml-2 text-orange-500 font-normal">
+                                                        ({dateGroup.users.reduce((s, u) => s + u.rows.length, 0)}건)
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {dateGroup.users.map(userGroup => {
+                                                const userPendingIds = userGroup.rows.filter(r => r.status === 'pending').map(r => r.id);
+                                                const userAllChecked = userPendingIds.length > 0 && userPendingIds.every(id => checkedIds.has(id));
+                                                return (
+                                                    <div key={userGroup.userId}>
+                                                        {/* 사용자 서브헤더 */}
+                                                        <div className="grid grid-cols-[32px_1fr] items-center bg-blue-50 border-b border-blue-100 px-3 py-1">
+                                                            <div className="flex items-center justify-center">
+                                                                {userPendingIds.length > 0 && (
+                                                                    <input type="checkbox" checked={userAllChecked}
+                                                                        onChange={() => toggleGroupUser(userGroup.rows)}
+                                                                        className="rounded border-gray-300 text-blue-500 w-3.5 h-3.5" />
+                                                                )}
+                                                            </div>
+                                                            <div className="text-xs font-semibold text-blue-700">
+                                                                👤 {userGroup.userName}
+                                                                <span className="ml-1.5 text-blue-400 font-normal text-[11px]">{userGroup.email}</span>
+                                                                <span className="ml-2 text-blue-500 font-normal">({userGroup.rows.length}건)</span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* 행 목록 */}
+                                                        {userGroup.rows.map(row => {
+                                                            const st = STATUS_MAP[row.status] || STATUS_MAP.cancelled;
+                                                            const isSelected = selectedRequest?.id === row.id;
+                                                            const isPending = row.status === 'pending';
+                                                            const changedRows = getSnapshotChangedRows(row);
+                                                            const displayRows = changedRows.length > 0
+                                                                ? changedRows
+                                                                : [{ field: '', before: '-', after: '-' }];
+
+                                                            return displayRows.map((changedRow, index) => (
+                                                                <div key={`${row.id}-${changedRow.field || 'empty'}-${index}`}
+                                                                    className={`grid grid-cols-[32px_130px_120px_1fr_1fr_70px_140px_60px] items-start px-3 py-2 border-b border-gray-100 text-xs hover:bg-gray-50 transition-colors ${isSelected ? 'bg-blue-50' : ''}`}>
+                                                                    <div className="flex items-center justify-center">
+                                                                        {isPending ? (
+                                                                            <input type="checkbox" checked={checkedIds.has(row.id)}
+                                                                                onChange={() => toggleOne(row.id)}
+                                                                                className="rounded border-gray-300 text-orange-500 w-3.5 h-3.5" />
+                                                                        ) : <span className="w-3.5 h-3.5" />}
+                                                                    </div>
+                                                                    <div>
+                                                                        <span className="font-medium text-gray-800">{TYPE_NAME_MAP[row.re_type] || row.re_type}</span>
+                                                                    </div>
+                                                                    <div className="text-gray-700 font-medium truncate">{changedRow.field ? getFieldLabel(changedRow.field) : '-'}</div>
+                                                                    <div className="text-gray-500 truncate">{formatDisplayValue(changedRow.before)}</div>
+                                                                    <div className="text-orange-700 font-medium truncate">{formatDisplayValue(changedRow.after)}</div>
+                                                                    <div className="text-center">
+                                                                        <span className={`px-1.5 py-0.5 rounded-full text-[11px] ${st.cls}`}>{st.label}</span>
+                                                                    </div>
+                                                                    <div className="text-gray-500">
+                                                                        {new Date(row.submitted_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <button onClick={() => loadComparison(row)}
+                                                                            className={`px-2 py-1 text-[11px] rounded border transition-colors ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100'}`}>
+                                                                            {isSelected ? '닫기' : '상세'}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ));
+                                                        })}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {/* ── 상세 비교 패널 ── */}
@@ -1252,7 +1254,7 @@ export default function ReservationEditApprovalPage() {
                         ) : (
                             <>
                                 {/* 🆕 multi-row 타입(공항/크루즈 차량): 행별 개별 승인 체크박스 */}
-                                {(selectedRequest.re_type === 'airport' || selectedRequest.re_type === 'cruise_car' || selectedRequest.re_type === 'car') && (() => {
+                                {(selectedRequest.re_type === 'airport' || selectedRequest.re_type === 'cruise_car' || selectedRequest.re_type === 'car' || selectedRequest.re_type === 'car_sht' || selectedRequest.re_type === 'sht' || selectedRequest.re_type === 'sht_car') && (() => {
                                     const requestedRows = Array.isArray(selectedRequest.snapshot_data?.requested)
                                         ? selectedRequest.snapshot_data.requested : [];
                                     const originalRows = Array.isArray(selectedRequest.snapshot_data?.original)
@@ -1275,12 +1277,20 @@ export default function ReservationEditApprovalPage() {
                                                     const checked = selectedRowKeys.has(key);
                                                     const wayLabel = r?.way_type === 'pickup' ? '🛬 픽업'
                                                         : r?.way_type === 'sending' ? '🛫 샌딩(드롭)'
-                                                            : r?.way_type || (selectedRequest.re_type === 'cruise_car' ? `🚙 차량 ${idx + 1}` : `행 ${idx + 1}`);
+                                                            : r?.sht_category === 'Pickup' ? '🛬 픽업'
+                                                                : r?.sht_category === 'Drop-off' ? '🛫 드롭'
+                                                                    : r?.way_type || r?.sht_category
+                                                                    || (selectedRequest.re_type === 'cruise_car' ? `🚙 차량 ${idx + 1}` : `행 ${idx + 1}`);
                                                     const summary = [
                                                         r?.ra_datetime || r?.pickup_datetime || r?.usage_date,
                                                         r?.ra_flight_number,
-                                                        r?.ra_passenger_count != null ? `${r.ra_passenger_count}명` : null,
-                                                        r?.car_count != null ? `차량 ${r.car_count}대` : null,
+                                                        r?.vehicle_number,
+                                                        r?.seat_number ? `좌석 ${r.seat_number}` : null,
+                                                        r?.ra_passenger_count != null ? `${r.ra_passenger_count}명`
+                                                            : (r?.passenger_count != null ? `${r.passenger_count}명` : null),
+                                                        r?.car_count ? `차량 ${r.car_count}대` : null,
+                                                        r?.pickup_location ? `승차: ${r.pickup_location}` : null,
+                                                        r?.dropoff_location ? `하차: ${r.dropoff_location}` : null,
                                                     ].filter(Boolean).join(' · ');
                                                     return (
                                                         <label key={key} className={`flex items-center gap-2 px-2 py-1.5 rounded border cursor-pointer text-xs ${checked ? 'bg-white border-orange-400' : 'bg-white/60 border-gray-200'}`}>
