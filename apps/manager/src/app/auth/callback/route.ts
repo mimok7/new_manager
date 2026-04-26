@@ -33,37 +33,30 @@ export async function GET(request: NextRequest) {
 
             console.log('✅ OAuth 로그인 성공:', user.id, user.email);
 
-            // users 테이블에 사용자 프로필 확인/생성
+            // users 테이블에 사용자 프로필 확인 (매니저 앱이므로 신규 자동 생성 금지)
             const { data: existingUser, error: fetchError } = await supabase
                 .from('users')
                 .select('id, role, status')
                 .eq('id', user.id)
                 .single();
 
+            const ALLOWED_ROLES = ['manager', 'admin', 'dispatcher'];
+
             if (fetchError && fetchError.code === 'PGRST116') {
-                // 프로필이 없으면 생성
-                console.log('ℹ️ 신규 사용자, 프로필 생성');
-
-                const { error: insertError } = await supabase
-                    .from('users')
-                    .insert({
-                        id: user.id,
-                        email: user.email,
-                        name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || '사용자',
-                        role: 'guest',
-                        status: 'active',
-                        created_at: new Date().toISOString(),
-                    });
-
-                if (insertError) {
-                    console.error('프로필 생성 실패:', insertError);
-                    // 에러가 있어도 로그인은 성공했으므로 홈으로 리다이렉트
-                } else {
-                    console.log('✅ 프로필 생성 완료');
-                }
-            } else if (existingUser) {
-                console.log('✅ 기존 프로필 확인:', existingUser.role);
+                // 신규 사용자 → 매니저 앱에서는 차단
+                console.warn('⛔ OAuth 매니저 권한 없음 (신규):', user.email);
+                await supabase.auth.signOut();
+                return NextResponse.redirect(new URL('/login?error=' + encodeURIComponent('매니저 권한이 없는 계정입니다.'), requestUrl.origin));
             }
+
+            const userRole = existingUser?.role || null;
+            if (!userRole || !ALLOWED_ROLES.includes(userRole)) {
+                console.warn('⛔ OAuth 매니저 권한 없음:', user.email, 'role=', userRole);
+                await supabase.auth.signOut();
+                return NextResponse.redirect(new URL('/login?error=' + encodeURIComponent(`매니저 권한이 없는 계정입니다. (현재 권한: ${userRole || '없음'})`), requestUrl.origin));
+            }
+
+            console.log('✅ 기존 프로필 확인:', userRole);
 
             // 로그인 성공, 홈으로 리다이렉트
             return response;

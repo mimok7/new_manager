@@ -1,16 +1,25 @@
 "use client";
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import supabase from '@/lib/supabase';
-import { upsertUserProfile } from '@/lib/userUtils';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const err = searchParams?.get('error');
+    if (err) {
+      alert('❌ ' + err);
+      // URL에서 error 제거
+      router.replace('/login');
+    }
+  }, [searchParams, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,38 +53,38 @@ export default function LoginPage() {
         .eq('id', user.id)
         .single();
 
-      // 프로필이 존재하지 않을 경우에만 'guest'로 생성
+      // 매니저/관리자 권한이 없으면 차단 (매니저 앱이므로 신규 guest도 차단)
+      const ALLOWED_ROLES = ['manager', 'admin', 'dispatcher'];
+      let userRole: string | null = null;
+
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
-          // 프로필이 없음 - 새로 생성
-          console.log('ℹ️  프로필 없음, 신규 생성 시도');
-
-          const profileResult = await upsertUserProfile(user.id, user.email || '', {
-            name: user.user_metadata?.display_name || user.email?.split('@')[0] || '사용자',
-            role: 'guest',
-          });
-
-          if (!profileResult.success) {
-            console.error('❌ 프로필 생성 오류:', profileResult.error);
-            alert('프로필 생성 중 오류가 발생했습니다.\n' + (profileResult.error?.message || '알 수 없는 오류'));
-            setLoading(false);
-            return;
-          }
-
-          console.log('✅ 프로필 생성 성공');
+          // 신규 사용자 → 매니저 앱에서는 가입 불가
+          console.warn('⛔ 매니저 권한 없음 (신규 사용자):', user.email);
+          await supabase.auth.signOut();
+          alert('❌ 매니저 권한이 없는 계정입니다.\n관리자에게 권한 부여를 요청하세요.');
+          setLoading(false);
+          return;
         } else {
-          // 다른 오류
           console.error('❌ 프로필 조회 오류:', fetchError);
+          await supabase.auth.signOut();
           alert('사용자 정보를 확인하는 중 오류가 발생했습니다.\n' + fetchError.message);
           setLoading(false);
           return;
         }
       } else {
-        console.log('✅ 기존 프로필 확인:', existingUser.role, existingUser.status);
-        // 기존 사용자의 경우 역할을 변경하지 않음
+        userRole = existingUser?.role || null;
+        console.log('✅ 기존 프로필 확인:', userRole, existingUser?.status);
       }
 
-      alert('✅ 로그인 성공!');
+      if (!userRole || !ALLOWED_ROLES.includes(userRole)) {
+        console.warn('⛔ 매니저 권한 없음:', user.email, 'role=', userRole);
+        await supabase.auth.signOut();
+        alert(`❌ 매니저 권한이 없는 계정입니다. (현재 권한: ${userRole || '없음'})\n관리자에게 권한 부여를 요청하세요.`);
+        setLoading(false);
+        return;
+      }
+
       router.push('/'); // 홈 메뉴 페이지로 이동
       router.refresh(); // 세션 반영
 
