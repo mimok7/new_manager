@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import supabase from '@/lib/supabase';
+import { upgradeGuestToMember } from '@/lib/userRoleUtils';
 
 interface QuoteDetail {
   id: string;
@@ -226,9 +227,19 @@ export default function QuoteDetailPage() {
     );
   }, [detailedServices]);
 
-  const handleReservation = () => {
-    // 단순화: 다이렉트 예약 페이지로 바로 이동
-    router.push('/mypage/direct-booking');
+  const handleReservation = async () => {
+    if (!user || !quote?.id) return;
+    try {
+      const upgradeResult = await upgradeGuestToMember(user.id, user.email);
+      if (!upgradeResult.success && upgradeResult.error) {
+        alert('예약 권한 설정 중 오류가 발생했습니다.');
+        return;
+      }
+      router.push(`/mypage/direct-booking?quoteId=${quote.id}`);
+    } catch (e) {
+      console.error('예약 처리 오류:', e);
+      alert('예약 처리 중 오류가 발생했습니다.');
+    }
   };
 
   const handleSubmitQuote = async () => {
@@ -530,9 +541,8 @@ export default function QuoteDetailPage() {
             <button
               onClick={handleReservation}
               className="flex-1 px-4 py-3 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition"
-              title={quote.title || quote.cruise_name || '예약'}
             >
-              🎫 {quote.title || quote.cruise_name || '예약'} 예약하기
+              🎫 예약하기
             </button>
           )}
         </div>

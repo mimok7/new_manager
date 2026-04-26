@@ -12,6 +12,7 @@ function DirectBookingContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const completedService = searchParams.get('completed');
+    const requestedQuoteId = searchParams.get('quoteId');
 
     const handleGoHome = () => {
         router.push('/mypage');
@@ -189,6 +190,27 @@ function DirectBookingContent() {
             const user = session.user;
 
             logger.debug('📋 기존 견적 조회 시작...');
+            // URL의 quoteId가 있으면 해당 견적을 우선 선택 (견적 view → 예약하기 진입 시)
+            if (requestedQuoteId) {
+                const { data: requestedQuote, error: requestedErr } = await supabase
+                    .from('quote')
+                    .select('id, title, status, created_at')
+                    .eq('id', requestedQuoteId)
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                if (!requestedErr && requestedQuote) {
+                    logger.info('🎯 URL 지정 견적 사용:', requestedQuote.title);
+                    setCanCreateNewBooking(true);
+                    setQuotesList([requestedQuote]);
+                    setActiveQuoteId(requestedQuote.id);
+                    setActiveQuoteData(requestedQuote);
+                    setIsFirstBooking(false);
+                    setShowQuoteSelector(false);
+                    return;
+                }
+                logger.warn('⚠️ URL의 quoteId 견적을 찾을 수 없음 - 기본 흐름으로 진행');
+            }
+
             // 사용자의 draft와 approved 견적 조회
             const { data: quotes, error: quotesError } = await supabase
                 .from('quote')
