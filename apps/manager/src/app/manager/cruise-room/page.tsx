@@ -113,6 +113,7 @@ export default function CruiseRoomManagePage() {
     const [allRows, setAllRows] = useState<CruiseRoomRow[]>([]);
     const [rates, setRates] = useState<RateRow[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deletingCruise, setDeletingCruise] = useState(false);
     const [savingId, setSavingId] = useState<string>('');
 
     const [selectedCruise, setSelectedCruise] = useState<string>('');
@@ -260,6 +261,38 @@ export default function CruiseRoomManagePage() {
         } catch (e: any) { alert(`오류: ${e?.message}`); }
     };
 
+    // ── 크루즈 삭제 (하위 객실 전체 삭제) ──
+    const handleDeleteCruise = async () => {
+        const cruiseName = selectedCruise.trim();
+        if (!cruiseName) {
+            alert('삭제할 크루즈를 먼저 선택하세요.');
+            return;
+        }
+        if (!confirm(`"${cruiseName}" 크루즈와 하위 객실을 모두 삭제하시겠습니까?`)) return;
+
+        setDeletingCruise(true);
+        try {
+            const res = await fetch('/api/manager/cruise-room/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cruise_name: cruiseName }),
+            });
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                alert(`크루즈 삭제 실패: ${json.error || res.statusText}`);
+                return;
+            }
+
+            alert(`크루즈 삭제 완료: ${json.deleted_count || 0}개 객실 행 삭제`);
+            setSelectedCruise('');
+            await loadData();
+        } catch (e: any) {
+            alert(`크루즈 삭제 오류: ${e?.message || e}`);
+        } finally {
+            setDeletingCruise(false);
+        }
+    };
+
     const updateRoom = (id: string, patch: Partial<RoomForm>) =>
         setRoomForms((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
 
@@ -287,6 +320,14 @@ export default function CruiseRoomManagePage() {
                     <button type="button" onClick={handleAddRoom} disabled={!selectedCruise}
                         className="px-3 py-2 text-xs bg-emerald-50 text-emerald-600 rounded border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50">
                         ➕ 새 객실 추가
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleDeleteCruise}
+                        disabled={!selectedCruise || deletingCruise}
+                        className="px-3 py-2 text-xs bg-red-50 text-red-600 rounded border border-red-200 hover:bg-red-100 disabled:opacity-50"
+                    >
+                        {deletingCruise ? '삭제 중...' : '🗑️ 크루즈 삭제'}
                     </button>
                     <button type="button" onClick={loadData}
                         className="px-3 py-2 text-xs bg-gray-50 text-gray-600 rounded border border-gray-200 hover:bg-gray-100">

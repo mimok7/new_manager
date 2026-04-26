@@ -12,8 +12,24 @@ export async function POST(request: Request) {
 
         const body = await request.json();
         const id = String(body?.id || '').trim();
-        if (!id) {
-            return NextResponse.json({ success: false, error: 'id가 필요합니다.' }, { status: 400 });
+        const cruiseName = String(body?.cruise_name || '').trim();
+
+        if (!id && !cruiseName) {
+            return NextResponse.json({ success: false, error: 'id 또는 cruise_name이 필요합니다.' }, { status: 400 });
+        }
+
+        if (cruiseName) {
+            const { data, error } = await serviceSupabase
+                .from('cruise_info')
+                .delete()
+                .eq('cruise_name', cruiseName)
+                .select('id');
+
+            if (error) {
+                return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+            }
+
+            return NextResponse.json({ success: true, cruise_name: cruiseName, deleted_count: data?.length || 0 });
         }
 
         const { error } = await serviceSupabase.from('cruise_info').delete().eq('id', id);
