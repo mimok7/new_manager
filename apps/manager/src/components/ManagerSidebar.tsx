@@ -291,13 +291,6 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
                                 headerClass="bg-orange-50 border-orange-100 text-orange-700"
                             >
                                 <NavItem
-                                    icon="📊"
-                                    label="수정 대시보드"
-                                    path="/admin/edits"
-                                    isActive={activeTab === 'admin-edits'}
-                                    onClick={() => handleNavigation('/admin/edits')}
-                                />
-                                <NavItem
                                     icon="✏️"
                                     label="예약 수정"
                                     path="/manager/reservation-edit"

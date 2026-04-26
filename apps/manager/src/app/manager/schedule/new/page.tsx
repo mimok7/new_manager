@@ -1941,25 +1941,26 @@ export default function ManagerSchedulePage() {
 
       // legacy room_price 테이블은 더 이상 사용하지 않음 (cruise_rate_card로 통합)
 
-      // cruise_info에서 room_name 조회
+      // cruise_info에서 room_name 조회 (cruise_info에는 room_type 컬럼이 없음 → cruise_name 키로만 매핑)
       const cruiseNames = Array.from(new Set(Array.from(rpMergedMap.values()).map(rp => rp.cruise_name).filter(Boolean)));
       let cruiseInfoDataMap = new Map<string, any>();
       if (cruiseNames.length > 0) {
         const { data: cruiseInfoData } = await supabase
           .from('cruise_info')
-          .select('cruise_name, room_type, room_name')
+          .select('cruise_name, room_name')
           .in('cruise_name', cruiseNames);
         for (const ci of cruiseInfoData || []) {
-          const key = `${ci.cruise_name}|${ci.room_type}`;
-          cruiseInfoDataMap.set(key, ci);
+          // 같은 cruise_name이 여러 room_name으로 존재할 수 있으므로 첫 행 유지
+          if (!cruiseInfoDataMap.has(ci.cruise_name)) {
+            cruiseInfoDataMap.set(ci.cruise_name, ci);
+          }
         }
       }
 
       for (const rp of rpMergedMap.values()) {
         const idCode = String(rp.id || '').trim();
         const typeCode = String(rp.room_type || '').trim();
-        const key = `${rp.cruise_name}|${rp.room_type}`;
-        const ciData = cruiseInfoDataMap.get(key);
+        const ciData = cruiseInfoDataMap.get(rp.cruise_name);
         const cruiseInfo = {
           cruise: rp.cruise_name || undefined,
           room_type: rp.room_type || undefined,
