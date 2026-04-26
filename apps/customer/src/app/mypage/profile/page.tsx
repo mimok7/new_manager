@@ -655,8 +655,7 @@ export default function ProfilePage() {
                 <SectionBox title="🎫 승선코드">
                     <div className="space-y-3">
                         <p className="text-sm text-gray-600">
-                            매니저가 발급/등록한 승선코드입니다. 크루즈 탑승 시 제시해 주세요.
-                            <br />승선코드는 매니저가 발급하므로 직접 업로드할 수 없습니다.
+                            매니저가 발급/등록한 승선코드입니다.<br />승선코드는 매니저가 발급하므로 직접 업로드할 수 없습니다.
                         </p>
                         {boardingCodeDocs.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
