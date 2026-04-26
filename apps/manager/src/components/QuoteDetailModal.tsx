@@ -354,17 +354,42 @@ function QuoteDetailModal({ quoteId, onClose }: { quoteId: string; onClose: () =
                               </div>
                             </div>
                             <div>
-                              <h3 className="font-medium text-gray-900 mb-2">단가 / 가격표</h3>
-                              {p ? (
-                                <div className="bg-gray-50 p-2 rounded text-xs space-y-0.5">
-                                  <div>성인: <b>{fmt(p.price_adult)}</b></div>
-                                  <div>아동: <b>{fmt(p.price_child)}</b></div>
-                                  <div>아동(엑베): <b>{fmt(p.price_child_extra_bed)}</b></div>
-                                  <div>유아: <b>{fmt(p.price_infant)}</b></div>
-                                  <div>엑스트라베드: <b>{fmt(p.price_extra_bed)}</b></div>
-                                  <div>싱글: <b>{fmt(p.price_single)}</b></div>
-                                </div>
-                              ) : (
+                              <h3 className="font-medium text-gray-900 mb-2">단가 × 인원 = 소계</h3>
+                              {p ? (() => {
+                                const rows: Array<{ label: string; price: number; count: number }> = [
+                                  { label: '성인', price: Number(p.price_adult || 0), count: Number(room.roomInfo?.adult_count || 0) },
+                                  { label: '아동', price: Number(p.price_child || 0), count: Number(room.roomInfo?.child_count || 0) },
+                                  { label: '아동(엑베)', price: Number(p.price_child_extra_bed || 0), count: Number(room.roomInfo?.child_extra_bed_count || 0) },
+                                  { label: '유아', price: Number(p.price_infant || 0), count: Number(room.roomInfo?.infant_count || 0) },
+                                  { label: '엑스트라베드', price: Number(p.price_extra_bed || 0), count: Number(room.roomInfo?.extra_bed_count || 0) },
+                                  { label: '싱글', price: Number(p.price_single || 0), count: Number(room.roomInfo?.single_count || 0) },
+                                ];
+                                const subtotalSum = rows.reduce((s, r) => s + r.price * r.count, 0);
+                                return (
+                                  <div className="bg-gray-50 p-2 rounded text-xs">
+                                    <div className="grid grid-cols-12 gap-1 font-medium text-gray-500 border-b border-gray-200 pb-1 mb-1">
+                                      <span className="col-span-3">구분</span>
+                                      <span className="col-span-4 text-right">단가</span>
+                                      <span className="col-span-1 text-center">×</span>
+                                      <span className="col-span-1 text-center">인원</span>
+                                      <span className="col-span-3 text-right">소계</span>
+                                    </div>
+                                    {rows.map((r) => (
+                                      <div key={r.label} className={`grid grid-cols-12 gap-1 py-0.5 ${r.count === 0 ? 'text-gray-400' : 'text-gray-800'}`}>
+                                        <span className="col-span-3">{r.label}</span>
+                                        <span className="col-span-4 text-right">{fmt(r.price)}</span>
+                                        <span className="col-span-1 text-center">×</span>
+                                        <span className="col-span-1 text-center">{r.count}</span>
+                                        <span className="col-span-3 text-right font-medium">{fmt(r.price * r.count)}</span>
+                                      </div>
+                                    ))}
+                                    <div className="grid grid-cols-12 gap-1 mt-1 pt-1 border-t border-dashed border-gray-300">
+                                      <span className="col-span-9 text-right text-gray-700">인원별 합계</span>
+                                      <span className="col-span-3 text-right font-bold text-blue-600">{fmt(subtotalSum)}</span>
+                                    </div>
+                                  </div>
+                                );
+                              })() : (
                                 <p className="text-sm text-red-600">가격 정보 없음</p>
                               )}
                               <PriceLine unit={room.unit_price} qty={room.quantity} total={room.total_price} />
