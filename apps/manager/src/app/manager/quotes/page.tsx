@@ -446,8 +446,8 @@ export default function ManagerQuotesPage() {
                           onClick={(e) => e.stopPropagation()}
                         />
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-base font-medium truncate">{q.title || '제목 없음'}</h3>
-                          <div className="text-xs text-gray-600 mt-1">👤 <strong className="font-medium">{q.user_nickname || (q.user_id ? String(q.user_id).slice(0, 8) + '...' : '알 수 없음')}</strong></div>
+                          <h3 className="text-base font-medium truncate">👤 {q.user_nickname || (q.user_id ? String(q.user_id).slice(0, 8) + '...' : '알 수 없음')}</h3>
+                          <div className="text-xs text-gray-600 mt-1">{q.title || '제목 없음'}</div>
                         </div>
                         <span className={`ml-auto px-2 py-1 rounded text-xs ${getStatusStyle(q.status)}`}>{getStatusText(q.status)}</span>
                       </div>
