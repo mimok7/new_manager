@@ -1,25 +1,31 @@
 "use client";
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import supabase from '@/lib/supabase';
 
-export default function LoginPage() {
+// useSearchParams는 Suspense 경계 안에서만 사용 가능
+function ErrorFromParams() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const err = searchParams?.get('error');
     if (err) {
       alert('❌ ' + err);
-      // URL에서 error 제거
       router.replace('/login');
     }
   }, [searchParams, router]);
+
+  return null;
+}
+
+function LoginForm() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,5 +137,16 @@ export default function LoginPage() {
         </button>
       </form>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <>
+      <Suspense fallback={null}>
+        <ErrorFromParams />
+      </Suspense>
+      <LoginForm />
+    </>
   );
 }
