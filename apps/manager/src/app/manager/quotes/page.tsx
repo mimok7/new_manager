@@ -40,6 +40,7 @@ export default function ManagerQuotesPage() {
   const [canLoadMore, setCanLoadMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [onlyReservedInApproved, setOnlyReservedInApproved] = useState(false);
 
   // 초기 로딩 (권한 체크 제거)
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function ManagerQuotesPage() {
     setLoadedDaysCount(3); // 필터 변경 시 초기화
     setSearch('');
     setSearchResults([]);
+    if (newFilter !== 'approved') setOnlyReservedInApproved(false);
     // 필터 변경 시 즉시 조회 시작 (새 필터 값 전달)
     await loadQuotes(newFilter);
     await loadStats();
@@ -291,10 +293,37 @@ export default function ManagerQuotesPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedQuotes.size === filteredQuotes.length) {
+    // 예약 연결된 견적은 삭제 대상에서 제외
+    const selectableQuotes = filteredQuotes.filter(q => !q.has_reservation);
+    if (selectedQuotes.size === selectableQuotes.length && selectableQuotes.length > 0) {
       setSelectedQuotes(new Set());
     } else {
-      setSelectedQuotes(new Set(filteredQuotes.map(q => q.id)));
+      setSelectedQuotes(new Set(selectableQuotes.map(q => q.id)));
+    }
+  };
+
+  // 단건 삭제 (예약 연결 안 된 견적용)
+  const handleSingleDelete = async (quoteId: string, quoteTitle?: string) => {
+    if (!confirm(`"${quoteTitle || quoteId}" 견적을 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없습니다.`)) return;
+    setActionLoading(quoteId);
+    try {
+      // 안전장치: 예약 연결 재확인
+      const { data: linked } = await supabase.from('reservation').select('re_id').eq('re_quote_id', quoteId).limit(1);
+      if (linked && linked.length > 0) {
+        alert('예약과 연결된 견적은 삭제할 수 없습니다.');
+        return;
+      }
+      const { error: itemError } = await supabase.from('quote_item').delete().eq('quote_id', quoteId);
+      if (itemError) throw itemError;
+      const { error: quoteError } = await supabase.from('quote').delete().eq('id', quoteId);
+      if (quoteError) throw quoteError;
+      await Promise.all([loadQuotes(), loadStats()]);
+      alert('견적이 삭제되었습니다.');
+    } catch (e: any) {
+      console.error(e);
+      alert('삭제 실패: ' + (e?.message || '알 수 없는 오류'));
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -310,7 +339,22 @@ export default function ManagerQuotesPage() {
 
     setIsDeleting(true);
     try {
-      const idsToDelete = Array.from(selectedQuotes);
+      const requestedIds = Array.from(selectedQuotes);
+
+      // 안전장치: 예약 연결된 견적 제외 (DB 재확인)
+      const { data: linked } = await supabase
+        .from('reservation')
+        .select('re_quote_id')
+        .in('re_quote_id', requestedIds)
+        .not('re_quote_id', 'is', null);
+      const lockedSet = new Set((linked || []).map((r: any) => String(r.re_quote_id || '').trim()).filter(Boolean));
+      const idsToDelete = requestedIds.filter(id => !lockedSet.has(String(id).trim()));
+      const skipped = requestedIds.length - idsToDelete.length;
+
+      if (idsToDelete.length === 0) {
+        alert('선택된 견적이 모두 예약과 연결되어 있어 삭제할 수 없습니다.');
+        return;
+      }
 
       // 견적 항목 먼저 삭제
       const { error: itemError } = await supabase
@@ -328,7 +372,10 @@ export default function ManagerQuotesPage() {
 
       if (quoteError) throw quoteError;
 
-      alert(`${selectedQuotes.size}개의 견적이 삭제되었습니다.`);
+      const message = skipped > 0
+        ? `${idsToDelete.length}개의 견적이 삭제되었습니다.\n⚠️ 예약과 연결된 ${skipped}건은 삭제되지 않았습니다.`
+        : `${idsToDelete.length}개의 견적이 삭제되었습니다.`;
+      alert(message);
       setSelectedQuotes(new Set());
       await Promise.all([loadQuotes(), loadStats()]);
     } catch (e) {
@@ -359,7 +406,14 @@ export default function ManagerQuotesPage() {
     }
   };
 
-  const filteredQuotes = search.trim() ? searchResults : quotes;
+  const filteredQuotes = (() => {
+    const base = search.trim() ? searchResults : quotes;
+    // 승인 필터 + "예약연결 견적만" 토글 ON
+    if (!search.trim() && filter === 'approved' && onlyReservedInApproved) {
+      return base.filter(q => q.has_reservation);
+    }
+    return base;
+  })();
 
   return (
     <ManagerLayout title="견적 관리" activeTab="quotes">
@@ -410,7 +464,15 @@ export default function ManagerQuotesPage() {
               {search && !searchLoading && <p className="text-sm text-gray-500 mt-1">"{search}" 검색 결과: {filteredQuotes.length}건</p>}
             </div>
           </div>
-          <div className="mt-3 flex justify-end">
+          <div className="mt-3 flex justify-between items-center flex-wrap gap-2">
+            {filter === 'approved' ? (
+              <button
+                onClick={() => setOnlyReservedInApproved(v => !v)}
+                className={`px-3 py-2 rounded-lg border text-sm ${onlyReservedInApproved ? 'bg-pink-500 text-white border-pink-500' : 'bg-white text-pink-600 border-pink-300 hover:bg-pink-50'}`}
+              >
+                {onlyReservedInApproved ? '🎫 예약연결 견적만 보는 중 (해제)' : '🎫 예약연결 견적만 보기'}
+              </button>
+            ) : <span />}
             <button
               onClick={handleSyncApprovalNow}
               disabled={syncingApproval}
@@ -440,12 +502,12 @@ export default function ManagerQuotesPage() {
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={selectedQuotes.size === filteredQuotes.length && filteredQuotes.length > 0}
+                      checked={(() => { const sel = filteredQuotes.filter(q => !q.has_reservation); return sel.length > 0 && selectedQuotes.size === sel.length; })()}
                       onChange={toggleSelectAll}
                       className="w-4 h-4 rounded border-gray-300"
                     />
                     <span className="text-sm font-medium text-gray-700">
-                      전체 선택 {selectedQuotes.size > 0 && `(${selectedQuotes.size}/${filteredQuotes.length})`}
+                      전체 선택 {selectedQuotes.size > 0 && `(${selectedQuotes.size}/${filteredQuotes.filter(q => !q.has_reservation).length})`}
                     </span>
                   </label>
                 </div>
@@ -475,8 +537,10 @@ export default function ManagerQuotesPage() {
                         <input
                           type="checkbox"
                           checked={selectedQuotes.has(q.id)}
+                          disabled={!!q.has_reservation}
+                          title={q.has_reservation ? '예약과 연결된 견적은 선택할 수 없습니다' : ''}
                           onChange={() => toggleSelectQuote(q.id)}
-                          className="mt-1 w-4 h-4 rounded border-gray-300 cursor-pointer"
+                          className="mt-1 w-4 h-4 rounded border-gray-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                           onClick={(e) => e.stopPropagation()}
                         />
                         <div className="min-w-0 flex-1">
@@ -493,11 +557,13 @@ export default function ManagerQuotesPage() {
                       </div>
                     </div>
 
-                    <div className="mt-3 flex items-center gap-2">
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
                       <button onClick={() => setModalQuoteId(q.id)} className="bg-gray-50 text-gray-600 px-3 py-1 rounded border text-xs">👁️ 상세보기</button>
-                      {q.status === 'approved' && <button onClick={() => handleCancelApproval(q.id, q.title || undefined)} disabled={actionLoading === q.id} className="bg-red-50 text-red-600 px-3 py-1 rounded border text-xs">{actionLoading === q.id ? '처리 중...' : '❌ 승인 취소'}</button>}
+                      {q.status === 'approved' && !q.has_reservation && <button onClick={() => handleCancelApproval(q.id, q.title || undefined)} disabled={actionLoading === q.id} className="bg-red-50 text-red-600 px-3 py-1 rounded border text-xs">{actionLoading === q.id ? '처리 중...' : '❌ 승인 취소'}</button>}
+                      {q.status === 'approved' && !q.has_reservation && <button onClick={() => handleSingleDelete(q.id, q.title || undefined)} disabled={actionLoading === q.id} className="bg-red-100 text-red-700 px-3 py-1 rounded border border-red-300 text-xs">{actionLoading === q.id ? '처리 중...' : '🗑️ 삭제'}</button>}
                       {(['draft', 'submitted'].includes(q.status || '')) && <button onClick={() => handleReapprove(q.id, q.title || undefined)} disabled={actionLoading === q.id} className="bg-green-50 text-green-600 px-3 py-1 rounded border text-xs">{actionLoading === q.id ? '처리 중...' : '✅ 승인'}</button>}
                       {q.status === 'draft' && <button onClick={() => router.push(`/manager/quotes/${q.id}/edit`)} className="bg-blue-50 text-blue-600 px-3 py-1 rounded border text-xs">✏️ 수정</button>}
+                      {q.has_reservation && <span className="text-[10px] text-pink-600 bg-pink-50 px-2 py-1 rounded border border-pink-200">🔒 예약 연결됨 (수정/삭제 불가)</span>}
                     </div>
                   </div>
                 ))}

@@ -409,12 +409,23 @@ function ReservationEditContent() {
 
     const handleDeleteReservation = async (reId: string, reType: string) => {
         const confirmed = window.confirm(
-            `정말 이 ${getTypeLabel(reType)} 예약을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
+            `정말 이 ${getTypeLabel(reType)} 예약을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.\n연결된 견적도 함께 삭제됩니다 (다른 예약이 같은 견적을 공유하지 않는 경우).`
         );
         if (!confirmed) return;
 
         setDeleting(reId);
         try {
+            // 삭제 전 re_quote_id 조회 (견적 cascade 삭제용)
+            let linkedQuoteId: string | null = null;
+            try {
+                const { data: targetRow } = await supabase
+                    .from('reservation')
+                    .select('re_quote_id')
+                    .eq('re_id', reId)
+                    .maybeSingle();
+                linkedQuoteId = targetRow?.re_quote_id ? String(targetRow.re_quote_id) : null;
+            } catch (_e) { /* ignore */ }
+
             // 서비스별 상세 테이블 삭제
             const serviceTableMap: Record<string, string> = {
                 cruise: 'reservation_cruise',
@@ -437,7 +448,25 @@ function ReservationEditContent() {
             const { error } = await supabase.from('reservation').delete().eq('re_id', reId);
             if (error) throw error;
 
-            alert('예약이 삭제되었습니다.');
+            // 연결된 견적 cascade 삭제 (다른 예약이 같은 견적을 사용하지 않을 때만)
+            let quoteDeleted = false;
+            if (linkedQuoteId) {
+                try {
+                    const { data: remaining } = await supabase
+                        .from('reservation')
+                        .select('re_id')
+                        .eq('re_quote_id', linkedQuoteId)
+                        .limit(1);
+                    if (!remaining || remaining.length === 0) {
+                        await supabase.from('quote_item').delete().eq('quote_id', linkedQuoteId);
+                        const { error: quoteErr } = await supabase.from('quote').delete().eq('id', linkedQuoteId);
+                        if (!quoteErr) quoteDeleted = true;
+                        else console.warn('연결된 견적 삭제 실패:', quoteErr);
+                    }
+                } catch (e) { console.warn('견적 cascade 삭제 중 오류:', e); }
+            }
+
+            alert(quoteDeleted ? '예약과 연결된 견적이 함께 삭제되었습니다.' : '예약이 삭제되었습니다.');
             loadReservations();
         } catch (error: any) {
             console.error('예약 삭제 실패:', error);
