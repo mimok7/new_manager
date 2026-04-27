@@ -1882,13 +1882,30 @@ export default function ManagerSchedulePage() {
       };
       const normalizeCruiseCode = (value: any) => String(value || '').trim().toLowerCase();
 
+      // 검색 모드에서 IN 리스트가 매우 커지면 URL 길이 초과로 응답이 비어 객실명/크루즈명이 누락됨
+      // → 200건 단위로 청크 분할 조회
+      const fetchInChunked = async (table: string, selectCols: string, column: string, values: any[], chunkSize = 200) => {
+        const acc: any[] = [];
+        const uniq = Array.from(new Set((values || []).filter(v => v !== null && v !== undefined && v !== '')));
+        for (let i = 0; i < uniq.length; i += chunkSize) {
+          const chunk = uniq.slice(i, i + chunkSize);
+          const { data, error } = await supabase.from(table).select(selectCols).in(column, chunk);
+          if (error) {
+            console.error(`${table}.${column} 청크 조회 실패:`, error);
+            continue;
+          }
+          acc.push(...(data || []));
+        }
+        return { data: acc };
+      };
+
       const [rpByIdRes, rpByTypeRes, tpDataRes, airportPriceRes, hotelPriceRes, rentPriceRes] = await Promise.all([
         cruiseCodes.length > 0
-          ? supabase.from('cruise_rate_card').select('id, cruise_name, room_type').in('id', cruiseCodes)
-          : Promise.resolve({ data: [] }),
+          ? fetchInChunked('cruise_rate_card', 'id, cruise_name, room_type', 'id', cruiseCodes)
+          : Promise.resolve({ data: [] as any[] }),
         cruiseCodes.length > 0
-          ? supabase.from('cruise_rate_card').select('id, cruise_name, room_type').in('room_type', cruiseCodes)
-          : Promise.resolve({ data: [] }),
+          ? fetchInChunked('cruise_rate_card', 'id, cruise_name, room_type', 'room_type', cruiseCodes)
+          : Promise.resolve({ data: [] as any[] }),
         tourCodes.length > 0
           ? supabase.from('tour_pricing').select('pricing_id, tour_id, vehicle_type').in('pricing_id', tourCodes)
           : Promise.resolve({ data: [] as any[] }),
@@ -1945,10 +1962,12 @@ export default function ManagerSchedulePage() {
       const cruiseNames = Array.from(new Set(Array.from(rpMergedMap.values()).map(rp => rp.cruise_name).filter(Boolean)));
       let cruiseInfoDataMap = new Map<string, any>();
       if (cruiseNames.length > 0) {
-        const { data: cruiseInfoData } = await supabase
-          .from('cruise_info')
-          .select('cruise_name, room_name')
-          .in('cruise_name', cruiseNames);
+        const { data: cruiseInfoData } = await fetchInChunked(
+          'cruise_info',
+          'cruise_name, room_name',
+          'cruise_name',
+          cruiseNames
+        );
         for (const ci of cruiseInfoData || []) {
           // 같은 cruise_name이 여러 room_name으로 존재할 수 있으므로 첫 행 유지
           if (!cruiseInfoDataMap.has(ci.cruise_name)) {
