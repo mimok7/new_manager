@@ -23,6 +23,23 @@
 
 > 참고: 고객(`apps/customer`) 수정은 `sht-customer` + `sht-platform/apps/customer` 2개 프로젝트 동시 수정 규칙을 따른다 (아래 "이중 프로젝트 동시 수정 규칙" 섹션).
 
+## 🚫 sht-manager1 사이드바 수정 금지 (2026.04.27 추가 - 필수)
+
+### sht-manager1의 ManagerSidebar.tsx는 절대 임의 수정 금지
+- **`sht-manager1/components/ManagerSidebar.tsx`는 항상 고정 구조 유지**
+- sht-manager1의 사이드바는 **"⭐ 즐겨찾기"** + **"📂 관리 기타"** 2개 섹션만 존재
+- sht-manager의 사이드바(6개 그룹: 견적관리, 예약조회, 수정/배정, 결제관련, 리포트, 관리도구)와 **구조가 완전히 다름**
+- 사이드바 메뉴 변경을 명시적으로 요청받지 않은 한, ManagerSidebar.tsx를 건드리지 말 것
+- 새로운 페이지를 sht-manager1에 추가하더라도 사이드바에 자동으로 추가하지 말 것
+
+### 위반 사례 (금지)
+- ❌ sht-manager의 sidebar 구조를 sht-manager1에 그대로 복사/미러링
+- ❌ "크루즈정보", "크루즈룸" 등 신규 메뉴를 사이드바에 임의 추가
+- ❌ 2개 섹션 구조를 6개 그룹 구조로 변환
+
+### 허용 사례
+- ✅ 사이드바 수정을 **명시적으로 요청**받은 경우에만 수정
+
 ## 프로젝트 개요
 **스테이하롱 크루즈 예약 시스템** - Next.js 15.3.5 App Router + Supabase PostgreSQL 기반 견적/예약 관리 웹앱.
 
