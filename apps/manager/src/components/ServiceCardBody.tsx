@@ -56,7 +56,14 @@ const getFilteredNoteText = (note: any): string => {
         .replace(/\[CHILD_OLDER_COUNTS:[^\]]*\]\s*/gi, '')
         .trim();
 
-    return sanitizedNote;
+    const hiddenLinePattern = /^(?:비고\s*:\s*)?(?:\[(?:객실|구성)\s*\d+\]|(?:객실|구성)\s*\d+\b|\[옵션\s*\d+\]\s*기본요금\b)/i;
+    const lines = sanitizedNote
+        .split('\n')
+        .map((line) => line.replace(/\u00A0/g, ' ').trim())
+        .filter(Boolean)
+        .filter((line) => !hiddenLinePattern.test(line));
+
+    return lines.join('\n').trim();
 };
 
 const safeDateTime = (dateStr: any): string => {
