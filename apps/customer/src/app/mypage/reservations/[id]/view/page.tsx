@@ -640,15 +640,17 @@ function ReservationViewInner() {
           }
 
           let pierLocation: string | null = null;
+          let pierMapUrl: string | null = null;
           let tourScheduleUrl: string | null = null;
           if (cruiseName) {
             const { data: cruiseLocation } = await supabase
               .from('cruise_location')
-              .select('pier_location, tour_schedule_url')
+              .select('pier_location, pier_map_url, tour_schedule_url')
               .or(`en_name.eq.${cruiseName},kr_name.eq.${cruiseName}`)
               .limit(1)
               .maybeSingle();
             pierLocation = cruiseLocation?.pier_location || null;
+            pierMapUrl = cruiseLocation?.pier_map_url || null;
             tourScheduleUrl = cruiseLocation?.tour_schedule_url || null;
           }
 
@@ -657,6 +659,7 @@ function ReservationViewInner() {
             schedule: scheduleInfo,
             checkin: checkinDate,
             pier_location: pierLocation,
+            pier_map_url: pierMapUrl,
             tour_schedule_url: tourScheduleUrl,
             total_guest_count: totalGuests
           });
@@ -889,6 +892,21 @@ function ReservationViewInner() {
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-blue-600 shrink-0">🛳️ 선착장:</span>
                         <span className="text-sm text-gray-900">{cruiseInfo.pier_location || '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-blue-600 shrink-0">🗺️ 선착장 지도:</span>
+                        {cruiseInfo.pier_map_url ? (
+                          <a
+                            href={cruiseInfo.pier_map_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm text-blue-600 underline underline-offset-2 break-all"
+                          >
+                            {cruiseInfo.pier_map_url}
+                          </a>
+                        ) : (
+                          <span className="text-sm text-gray-900">-</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-blue-600 shrink-0">📍 상세 안내:</span>
