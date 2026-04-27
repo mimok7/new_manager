@@ -80,7 +80,6 @@ export const reapproveQuote = async (quoteId: string, managerId: string) => {
             .update({
                 status: 'approved',
                 approved_at: new Date().toISOString(),
-                approved_by: managerId,
                 updated_at: new Date().toISOString()
             })
             .eq('id', quoteId);
