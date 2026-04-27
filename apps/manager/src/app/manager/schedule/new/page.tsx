@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -23,8 +23,8 @@ import {
 
 interface SHCReservation {
   orderId: string;
-  customerName: string; // SH_M에서 조회한 한글이름
-  customerEnglishName?: string; // SH_M에서 조회한 영문이름
+  customerName: string; // SH_M?먯꽌 議고쉶???쒓??대쫫
+  customerEnglishName?: string; // SH_M?먯꽌 議고쉶???곷Ц?대쫫
   carType: string;
   carCode: string;
   carCount: number;
@@ -39,8 +39,8 @@ interface SHCReservation {
 
 interface SHRReservation {
   orderId: string;
-  customerName: string; // SH_M에서 조회한 한글이름
-  customerEnglishName?: string; // SH_M에서 조회한 영문이름
+  customerName: string; // SH_M?먯꽌 議고쉶???쒓??대쫫
+  customerEnglishName?: string; // SH_M?먯꽌 議고쉶???곷Ц?대쫫
   cruise: string;
   category: string;
   roomType: string;
@@ -58,37 +58,37 @@ interface SHRReservation {
   boardingHelp: string;
   discountCode: string;
   note: string;
-  requestNote?: string; // 요청사항/특이사항/메모
+  requestNote?: string; // ?붿껌?ы빆/?뱀씠?ы빆/硫붾え
 }
 
-// 스하차량 (SH_CC)
+// ?ㅽ븯李⑤웾 (SH_CC)
 interface SHCCReservation {
   orderId: string;
   customerName: string;
   customerEnglishName?: string;
-  cruiseInfo?: string; // SH_R에서 조회한 크루즈명 (C열)
-  boardingDate: string; // C열: 승차일
-  serviceType: string; // D열: 구분
-  category: string; // E열: 분류
-  vehicleNumber: string; // F열: 차량번호
-  seatNumber: string; // G열: 좌석번호
-  name: string; // H열: 이름
-  pickupLocation?: string; // L열: 승차위치
-  dropoffLocation?: string; // M열: 하차위치
+  cruiseInfo?: string; // SH_R?먯꽌 議고쉶???щ（利덈챸 (C??
+  boardingDate: string; // C?? ?뱀감??
+  serviceType: string; // D?? 援щ텇
+  category: string; // E?? 遺꾨쪟
+  vehicleNumber: string; // F?? 李⑤웾踰덊샇
+  seatNumber: string; // G?? 醫뚯꽍踰덊샇
+  name: string; // H?? ?대쫫
+  pickupLocation?: string; // L?? ?뱀감?꾩튂
+  dropoffLocation?: string; // M?? ?섏감?꾩튂
   email: string;
 }
 
-// 공항 (SH_P)
+// 怨듯빆 (SH_P)
 interface SHPReservation {
   orderId: string;
   customerName: string;
   customerEnglishName?: string;
-  tripType: string; // C열: 구분
-  category: string; // D열: 분류
-  route: string; // E열: 경로
+  tripType: string; // C?? 援щ텇
+  category: string; // D?? 遺꾨쪟
+  route: string; // E?? 寃쎈줈
   carCode: string;
   carType: string;
-  date: string; // H열: 일자
+  date: string; // H?? ?쇱옄
   time: string;
   airportName: string;
   flightNumber: string;
@@ -102,7 +102,7 @@ interface SHPReservation {
   email: string;
 }
 
-// 호텔 (SH_H)
+// ?명뀛 (SH_H)
 interface SHHReservation {
   orderId: string;
   customerName: string;
@@ -113,7 +113,7 @@ interface SHHReservation {
   roomType: string;
   roomCount: number;
   days: number;
-  checkinDate: string; // I열: 체크인날짜
+  checkinDate: string; // I?? 泥댄겕?몃궇吏?
   checkoutDate: string;
   breakfastService: string;
   adult: number;
@@ -127,7 +127,7 @@ interface SHHReservation {
   email: string;
 }
 
-// 투어 (SH_T)
+// ?ъ뼱 (SH_T)
 interface SHTReservation {
   orderId: string;
   customerName: string;
@@ -137,7 +137,7 @@ interface SHTReservation {
   tourType: string;
   detailCategory: string;
   quantity: number;
-  startDate: string; // H열: 시작일자
+  startDate: string; // H?? ?쒖옉?쇱옄
   endDate: string;
   participants: number;
   dispatch: string;
@@ -150,7 +150,7 @@ interface SHTReservation {
   tourNote: string;
 }
 
-// 렌트카 (SH_RC)
+// ?뚰듃移?(SH_RC)
 interface SHRCReservation {
   orderId: string;
   customerName: string;
@@ -161,7 +161,7 @@ interface SHRCReservation {
   route: string;
   carType: string;
   carCount: number;
-  pickupDate: string; // I열: 승차일자
+  pickupDate: string; // I?? ?뱀감?쇱옄
   pickupTime: string;
   pickupLocation: string;
   carrierCount: number;
@@ -178,44 +178,44 @@ interface SHRCReservation {
 export default function ManagerSchedulePage() {
   const [schedules, setSchedules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  // 오늘 날짜로 초기화
+  // ?ㅻ뒛 ?좎쭨濡?珥덇린??
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
   const datePickerRef = useRef<HTMLInputElement | null>(null);
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
-  // 주/월간 보기에서 일별 그룹화 추가 (기본: 일별)
+  // 二??붽컙 蹂닿린?먯꽌 ?쇰퀎 洹몃９??異붽? (湲곕낯: ?쇰퀎)
   const [groupMode, setGroupMode] = useState<'type' | 'day'>('day');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState(''); // 입력 중인 검색어
-  const [activeSearchQuery, setActiveSearchQuery] = useState(''); // 실제 검색에 사용되는 검색어
+  const [searchQuery, setSearchQuery] = useState(''); // ?낅젰 以묒씤 寃?됱뼱
+  const [activeSearchQuery, setActiveSearchQuery] = useState(''); // ?ㅼ젣 寃?됱뿉 ?ъ슜?섎뒗 寃?됱뼱
   const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Google Sheets 모달 상태
+  // Google Sheets 紐⑤떖 ?곹깭
   const [selectedGoogleSheetsReservation, setSelectedGoogleSheetsReservation] = useState<any>(null);
   const [isGoogleSheetsModalOpen, setIsGoogleSheetsModalOpen] = useState(false);
   const [allOrderServices, setAllOrderServices] = useState<any[]>([]);
   const [loadingOrderServices, setLoadingOrderServices] = useState(false);
-  const [orderUserInfo, setOrderUserInfo] = useState<any>(null); // SH_M 사용자 정보
+  const [orderUserInfo, setOrderUserInfo] = useState<any>(null); // SH_M ?ъ슜???뺣낫
   const [relatedEmail, setRelatedEmail] = useState('');
   const [relatedDbServices, setRelatedDbServices] = useState<any[]>([]);
   const [relatedDbLoading, setRelatedDbLoading] = useState(false);
 
-  // DB 예약 상세 모달 상태 (schedule/page.tsx와 동일)
+  // DB ?덉빟 ?곸꽭 紐⑤떖 ?곹깭 (schedule/page.tsx? ?숈씪)
   const [isDBModalOpen, setIsDBModalOpen] = useState(false);
   const [dbUserInfo, setDbUserInfo] = useState<any>(null);
   const [dbUserServices, setDbUserServices] = useState<any[]>([]);
   const [dbModalLoading, setDbModalLoading] = useState(false);
 
-  // Google Sheets 데이터
+  // Google Sheets ?곗씠??
   const [googleSheetsData, setGoogleSheetsData] = useState<any[]>([]);
   const [googleSheetsLoading, setGoogleSheetsLoading] = useState(true);
   const [googleSheetsError, setGoogleSheetsError] = useState<string | null>(null);
 
-  // 현재 사용자 정보 (삭제 권한 확인용)
+  // ?꾩옱 ?ъ슜???뺣낫 (??젣 沅뚰븳 ?뺤씤??
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  // 현재 사용자 정보 로드
+  // ?꾩옱 ?ъ슜???뺣낫 濡쒕뱶
   useEffect(() => {
     const loadCurrentUser = async () => {
       try {
@@ -224,7 +224,7 @@ export default function ManagerSchedulePage() {
           setUserEmail(user.email);
         }
       } catch (error) {
-        console.error('사용자 정보 로드 실패:', error);
+        console.error('?ъ슜???뺣낫 濡쒕뱶 ?ㅽ뙣:', error);
       }
     };
     loadCurrentUser();
@@ -238,25 +238,25 @@ export default function ManagerSchedulePage() {
     loadGoogleSheetsData();
   }, [typeFilter]);
 
-  // 검색 실행
+  // 寃???ㅽ뻾
   const handleSearch = () => {
     setActiveSearchQuery(searchQuery);
   };
 
-  // 검색 초기화
+  // 寃??珥덇린??
   const handleClearSearch = () => {
     setSearchQuery('');
     setActiveSearchQuery('');
   };
 
-  // Enter 키 처리
+  // Enter ??泥섎━
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
   };
 
-  // 주문 ID로 모든 서비스 조회 (Google Sheets - SH_M)
+  // 二쇰Ц ID濡?紐⑤뱺 ?쒕퉬??議고쉶 (Google Sheets - SH_M)
   const loadAllOrderServices = async (orderId: string) => {
     if (!orderId) {
       setAllOrderServices([]);
@@ -266,7 +266,7 @@ export default function ManagerSchedulePage() {
 
     setLoadingOrderServices(true);
     try {
-      // sh_m 사용자 정보 조회
+      // sh_m ?ъ슜???뺣낫 議고쉶
       const { data: userData } = await supabase
         .from('sh_m')
         .select('*')
@@ -284,28 +284,28 @@ export default function ManagerSchedulePage() {
           reservationDate: userData.reservation_date,
           paymentMethod: userData.payment_method,
           plan: userData.plan,
-          memberLevel: userData.member_grade,  // ✅ member_grade가 정확한 컬럼명
+          memberLevel: userData.member_grade,  // ??member_grade媛 ?뺥솗??而щ읆紐?
           kakaoId: userData.kakao_id,
           discountCode: userData.discount_code,
           requestNote: userData.request_note,
           specialNote: userData.special_note,
           memo: userData.memo
         });
-        console.log('👤 sh_m 사용자 정보:', userData);
+        console.log('?뫀 sh_m ?ъ슜???뺣낫:', userData);
       }
 
-      // 모든 서비스 타입 조회 (병렬)
+      // 紐⑤뱺 ?쒕퉬?????議고쉶 (蹂묐젹)
       const [shRData, shCData, shCCData, shPData, shHData, shTData, shRCData] = await Promise.all([
-        supabase.from('sh_r').select('*').eq('order_id', orderId),  // 크루즈
-        supabase.from('sh_c').select('*').eq('order_id', orderId),  // 차량
-        supabase.from('sh_cc').select('*').eq('order_id', orderId), // 스하차량
-        supabase.from('sh_p').select('*').eq('order_id', orderId),  // 공항
-        supabase.from('sh_h').select('*').eq('order_id', orderId),  // 호텔
-        supabase.from('sh_t').select('*').eq('order_id', orderId),  // 투어
-        supabase.from('sh_rc').select('*').eq('order_id', orderId)  // 렌트카
+        supabase.from('sh_r').select('*').eq('order_id', orderId),  // ?щ（利?
+        supabase.from('sh_c').select('*').eq('order_id', orderId),  // 李⑤웾
+        supabase.from('sh_cc').select('*').eq('order_id', orderId), // ?ㅽ븯李⑤웾
+        supabase.from('sh_p').select('*').eq('order_id', orderId),  // 怨듯빆
+        supabase.from('sh_h').select('*').eq('order_id', orderId),  // ?명뀛
+        supabase.from('sh_t').select('*').eq('order_id', orderId),  // ?ъ뼱
+        supabase.from('sh_rc').select('*').eq('order_id', orderId)  // ?뚰듃移?
       ]);
 
-      // 데이터 매핑 및 합치기 (모든 필드 포함)
+      // ?곗씠??留ㅽ븨 諛??⑹튂湲?(紐⑤뱺 ?꾨뱶 ?ы븿)
       const allData = [
         ...(shRData.data || []).map((r: any) => ({
           ...r,
@@ -331,10 +331,10 @@ export default function ManagerSchedulePage() {
           customerEnglishName: userData?.english_name || '',
           carType: c.vehicle_type,
           pickupDatetime: c.boarding_datetime,
-          pickupLocation: c.boarding_location,  // ✅ boarding_location
+          pickupLocation: c.boarding_location,  // ??boarding_location
           dropoffLocation: c.dropoff_location,
           passengerCount: c.passenger_count || 0,
-          carCount: c.vehicle_count || 0  // ✅ vehicle_count
+          carCount: c.vehicle_count || 0  // ??vehicle_count
         })),
         ...(shCCData.data || []).map((cc: any) => ({
           ...cc,
@@ -362,9 +362,9 @@ export default function ManagerSchedulePage() {
           airportName: p.airport_name,
           flightNumber: p.flight_number,
           passengerCount: p.passenger_count || 0,
-          carCount: p.vehicle_count || 0,  // ✅ vehicle_count
+          carCount: p.vehicle_count || 0,  // ??vehicle_count
           carrierCount: p.carrier_count || 0,
-          placeName: p.accommodation_info || p.location_name || ''  // ✅ accommodation_info 우선, 없으면 location_name
+          placeName: p.accommodation_info || p.location_name || ''  // ??accommodation_info ?곗꽑, ?놁쑝硫?location_name
         })),
         ...(shHData.data || []).map((h: any) => ({
           ...h,
@@ -377,7 +377,7 @@ export default function ManagerSchedulePage() {
           roomType: h.room_type,
           checkinDate: h.checkin_date,
           checkoutDate: h.checkout_date,
-          days: h.schedule,  // ✅ schedule 필드
+          days: h.schedule,  // ??schedule ?꾨뱶
           adult: h.adult || 0,
           child: h.child || 0,
           toddler: h.toddler || 0,
@@ -394,7 +394,7 @@ export default function ManagerSchedulePage() {
           tourType: t.tour_type,
           startDate: t.start_date,
           endDate: t.end_date,
-          participants: t.tour_count || 0,  // ✅ tour_count
+          participants: t.tour_count || 0,  // ??tour_count
           pickupLocation: t.pickup_location,
           dropoffLocation: t.dropoff_location,
           quantity: t.quantity || 0
@@ -408,23 +408,23 @@ export default function ManagerSchedulePage() {
           carType: rc.vehicle_type,
           route: rc.route,
           tripType: rc.division,
-          pickupDate: rc.boarding_date,  // ✅ boarding_date
-          pickupTime: rc.boarding_time,  // ✅ boarding_time
-          pickupLocation: rc.boarding_location,  // ✅ boarding_location
+          pickupDate: rc.boarding_date,  // ??boarding_date
+          pickupTime: rc.boarding_time,  // ??boarding_time
+          pickupLocation: rc.boarding_location,  // ??boarding_location
           destination: rc.destination,
           usagePeriod: rc.usage_period,
           passengerCount: rc.passenger_count || 0,
-          carCount: rc.vehicle_count || 0  // ✅ vehicle_count
+          carCount: rc.vehicle_count || 0  // ??vehicle_count
         }))
       ];
 
-      console.log('📋 로드된 주문 서비스:', allData.length, '개', allData);
+      console.log('?뱥 濡쒕뱶??二쇰Ц ?쒕퉬??', allData.length, '媛?, allData);
       setAllOrderServices(allData);
       return {
         email: userData?.email || ''
       };
     } catch (error) {
-      console.error('주문 서비스 조회 실패:', error);
+      console.error('二쇰Ц ?쒕퉬??議고쉶 ?ㅽ뙣:', error);
       setAllOrderServices([]);
       setOrderUserInfo(null);
       return null;
@@ -433,30 +433,30 @@ export default function ManagerSchedulePage() {
     }
   };
 
-  // Google Sheets 데이터 삭제 (권한 확인 포함)
+  // Google Sheets ?곗씠????젣 (沅뚰븳 ?뺤씤 ?ы븿)
   const handleDeleteGoogleSheetsReservation = async (reservation: any) => {
     const emailLower = (userEmail || '').toLowerCase();
     const canDelete = emailLower === 'kys@hyojacho.es.kr' || emailLower === 'kjh@hyojacho.es.kr';
 
     if (!canDelete) {
-      alert('삭제 권한이 없습니다.');
+      alert('??젣 沅뚰븳???놁뒿?덈떎.');
       return;
     }
 
-    if (!confirm(`${reservation.customerName || '예약'} 데이터를 삭제하시겠습니까?`)) {
+    if (!confirm(`${reservation.customerName || '?덉빟'} ?곗씠?곕? ??젣?섏떆寃좎뒿?덇퉴?`)) {
       return;
     }
 
     try {
       const orderId = reservation.orderId;
       if (!orderId) {
-        alert('주문 ID를 찾을 수 없습니다.');
+        alert('二쇰Ц ID瑜?李얠쓣 ???놁뒿?덈떎.');
         return;
       }
 
-      // 서비스 타입에 따라 해당 테이블에서 삭제
+      // ?쒕퉬????낆뿉 ?곕씪 ?대떦 ?뚯씠釉붿뿉????젣
       const serviceType = getServiceType(reservation);
-      let tableName = 'sh_r'; // 기본값
+      let tableName = 'sh_r'; // 湲곕낯媛?
 
       if (serviceType === 'cruise') tableName = 'sh_r';
       else if (serviceType === 'car') tableName = 'sh_c';
@@ -466,32 +466,32 @@ export default function ManagerSchedulePage() {
       else if (serviceType === 'tour') tableName = 'sh_t';
       else if (serviceType === 'rentcar') tableName = 'sh_rc';
 
-      // 데이터 삭제
+      // ?곗씠????젣
       const { error } = await supabase
         .from(tableName)
         .delete()
         .eq('order_id', orderId);
 
       if (error) {
-        console.error('삭제 실패:', error);
-        alert('삭제 중 오류가 발생했습니다: ' + error.message);
+        console.error('??젣 ?ㅽ뙣:', error);
+        alert('??젣 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎: ' + error.message);
         return;
       }
 
-      // 성공 메시지
-      alert('삭제되었습니다.');
+      // ?깃났 硫붿떆吏
+      alert('??젣?섏뿀?듬땲??');
 
-      // 데이터 새로고침
+      // ?곗씠???덈줈怨좎묠
       setGoogleSheetsData(prev =>
         prev.filter(item => item.orderId !== orderId)
       );
     } catch (error: any) {
-      console.error('삭제 처리 중 오류:', error);
-      alert('삭제 중 오류가 발생했습니다.');
+      console.error('??젣 泥섎━ 以??ㅻ쪟:', error);
+      alert('??젣 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
     }
   };
 
-  // 이메일 기준 DB 예약(추가 예약 포함) 조회
+  // ?대찓??湲곗? DB ?덉빟(異붽? ?덉빟 ?ы븿) 議고쉶
   const loadRelatedDbReservationsByEmail = async (email: string) => {
     const normalizedEmail = email?.trim();
     setRelatedEmail(normalizedEmail || '');
@@ -568,8 +568,8 @@ export default function ManagerSchedulePage() {
 
       const normalizeAirportWay = (value: string) => {
         const way = (value || '').toLowerCase();
-        if (way === 'pickup' || way === '픽업') return '픽업';
-        if (way === 'sending' || way === 'dropoff' || way === '샌딩') return '샌딩';
+        if (way === 'pickup' || way === '?쎌뾽') return '?쎌뾽';
+        if (way === 'sending' || way === 'dropoff' || way === '?뚮뵫') return '?뚮뵫';
         return '';
       };
 
@@ -643,14 +643,14 @@ export default function ManagerSchedulePage() {
 
       setRelatedDbServices(mergedServices);
     } catch (error) {
-      console.error('이메일 기준 DB 예약 조회 실패:', error);
+      console.error('?대찓??湲곗? DB ?덉빟 議고쉶 ?ㅽ뙣:', error);
       setRelatedDbServices([]);
     } finally {
       setRelatedDbLoading(false);
     }
   };
 
-  // 사용자 ID로 모든 DB 예약 조회 (schedule/page.tsx와 동일)
+  // ?ъ슜??ID濡?紐⑤뱺 DB ?덉빟 議고쉶 (schedule/page.tsx? ?숈씪)
   const loadAllUserReservations = async (userId: string) => {
     if (!userId) return;
 
@@ -658,7 +658,7 @@ export default function ManagerSchedulePage() {
       setDbModalLoading(true);
       setIsDBModalOpen(true);
 
-      // 1. 사용자 정보 조회
+      // 1. ?ъ슜???뺣낫 議고쉶
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -668,7 +668,7 @@ export default function ManagerSchedulePage() {
       if (userError) throw userError;
       setDbUserInfo(userData);
 
-      // 2. 사용자의 모든 예약 ID 조회
+      // 2. ?ъ슜?먯쓽 紐⑤뱺 ?덉빟 ID 議고쉶
       const { data: reservations, error: resError } = await supabase
         .from('reservation')
         .select('re_id, re_type, re_status, re_created_at')
@@ -685,7 +685,7 @@ export default function ManagerSchedulePage() {
         return;
       }
 
-      // 3. 각 서비스 테이블에서 상세 정보 조회
+      // 3. 媛??쒕퉬???뚯씠釉붿뿉???곸꽭 ?뺣낫 議고쉶
       const [cruiseRes, airportRes, hotelRes, rentcarRes, tourRes, cruiseCarRes, carShtRes] = await Promise.all([
         supabase.from('reservation_cruise').select('*').in('reservation_id', reservationIds),
         supabase.from('reservation_airport').select('*').in('reservation_id', reservationIds),
@@ -696,7 +696,7 @@ export default function ManagerSchedulePage() {
         supabase.from('reservation_car_sht').select('*').in('reservation_id', reservationIds)
       ]);
 
-      // 4. 추가 정보 조회 (bulk 페이지와 동일한 수준)
+      // 4. 異붽? ?뺣낫 議고쉶 (bulk ?섏씠吏? ?숈씪???섏?)
       const cruiseCodes = (cruiseRes.data || []).map(r => r.room_price_code).filter(Boolean);
       const tourCodes = (tourRes.data || []).map(r => r.tour_price_code).filter(Boolean);
       const hotelCodes = (hotelRes.data || []).map(r => r.hotel_price_code).filter(Boolean);
@@ -712,11 +712,11 @@ export default function ManagerSchedulePage() {
         )
       );
 
-      // cruise_rate_card: id + room_type + legacy room_price (bulk 페이지와 동일)
+      // cruise_rate_card: id + room_type + legacy room_price (bulk ?섏씠吏? ?숈씪)
       const [roomPricesById, roomPricesByType, roomPricesLegacy, tourPrices, hotelPrices, rentPrices, airportPrices, carPrices] = await Promise.all([
         cruiseCodes.length > 0 ? supabase.from('cruise_rate_card').select('id, cruise_name, room_type, price_adult, price_child, price_infant, price_extra_bed, price_single, price_child_extra_bed').in('id', cruiseCodes) : Promise.resolve({ data: [] }),
         cruiseCodes.length > 0 ? supabase.from('cruise_rate_card').select('id, cruise_name, room_type, price_adult, price_child, price_infant, price_extra_bed, price_single, price_child_extra_bed').in('room_type', cruiseCodes) : Promise.resolve({ data: [] }),
-        // legacy room_price 테이블은 더 이상 사용하지 않음 (404 방지)
+        // legacy room_price ?뚯씠釉붿? ???댁긽 ?ъ슜?섏? ?딆쓬 (404 諛⑹?)
         Promise.resolve({ data: [] }),
         tourCodes.length > 0 ? supabase.from('tour_pricing').select('pricing_id, price_per_person, tour_id').in('pricing_id', tourCodes) : Promise.resolve({ data: [] }),
         hotelCodes.length > 0 ? supabase.from('hotel_price').select('hotel_price_code, base_price, hotel_name, room_name').in('hotel_price_code', hotelCodes) : Promise.resolve({ data: [] }),
@@ -725,18 +725,18 @@ export default function ManagerSchedulePage() {
         cruiseCarCodes.length > 0 ? supabase.from('rentcar_price').select('rent_code, vehicle_type, way_type, route, price, category').in('rent_code', cruiseCarCodes) : Promise.resolve({ data: [] })
       ]);
 
-      // roomPriceMap: id + room_type + legacy 병합 (bulk 페이지와 동일)
+      // roomPriceMap: id + room_type + legacy 蹂묓빀 (bulk ?섏씠吏? ?숈씪)
       const roomPriceMap = new Map((roomPricesById.data || []).map((r: any) => [r.id, r]));
       (roomPricesByType.data || []).forEach((r: any) => {
         if (r?.room_type && !roomPriceMap.has(r.room_type)) roomPriceMap.set(r.room_type, r);
       });
       const getLegacyCategoryKey = (category?: string) => {
         const c = String(category || '').trim();
-        if (c.includes('아동') && c.includes('엑스트라')) return 'price_child_extra_bed';
-        if (c.includes('유아')) return 'price_infant';
-        if (c.includes('아동')) return 'price_child';
-        if (c.includes('엑스트라')) return 'price_extra_bed';
-        if (c.includes('싱글')) return 'price_single';
+        if (c.includes('?꾨룞') && c.includes('?묒뒪?몃씪')) return 'price_child_extra_bed';
+        if (c.includes('?좎븘')) return 'price_infant';
+        if (c.includes('?꾨룞')) return 'price_child';
+        if (c.includes('?묒뒪?몃씪')) return 'price_extra_bed';
+        if (c.includes('?깃?')) return 'price_single';
         return 'price_adult';
       };
       const legacyRoomByCode = new Map<string, any>();
@@ -798,7 +798,7 @@ export default function ManagerSchedulePage() {
           .forEach(k => { if (!rentPriceMap.has(k)) rentPriceMap.set(k, row); });
       }
 
-      // 5. 데이터 매핑 (bulk 페이지 flattenedServices와 동일한 필드 구조)
+      // 5. ?곗씠??留ㅽ븨 (bulk ?섏씠吏 flattenedServices? ?숈씪???꾨뱶 援ъ“)
       const reservationMap = new Map(reservations.map(r => [r.re_id, r]));
 
       const allServices = [
@@ -814,8 +814,8 @@ export default function ManagerSchedulePage() {
             ...r,
             serviceType: 'cruise',
             status: reservationMap.get(r.reservation_id)?.re_status,
-            cruise: info?.cruise_name || '크루즈',
-            cruiseName: info?.cruise_name || '크루즈',
+            cruise: info?.cruise_name || '?щ（利?,
+            cruiseName: info?.cruise_name || '?щ（利?,
             roomType: info?.room_type || r.room_price_code,
             checkin: r.checkin,
             adult: adultCount,
@@ -833,7 +833,7 @@ export default function ManagerSchedulePage() {
             note: r.request_note,
             unitPrice: r.unit_price,
             totalPrice: r.room_total_price,
-            paymentMethod: '정보 없음',
+            paymentMethod: '?뺣낫 ?놁쓬',
           };
         }),
         ...(cruiseCarRes.data || []).flatMap((r: any) => {
@@ -854,36 +854,36 @@ export default function ManagerSchedulePage() {
 
           const rows: any[] = [];
 
-          // 픽업 카드: 픽업일자 + 승차 위치만 표시
+          // ?쎌뾽 移대뱶: ?쎌뾽?쇱옄 + ?뱀감 ?꾩튂留??쒖떆
           if (r.pickup_datetime) {
             rows.push({
               ...base,
               segmentType: 'pickup',
-              segmentRibbon: '픽업',
+              segmentRibbon: '?쎌뾽',
               pickupDatetime: r.pickup_datetime,
               pickupLocation: r.pickup_location,
               dropoffLocation: null,
             });
           }
 
-          // 리턴 카드: 리턴일자 + 하차 위치만 표시
+          // 由ы꽩 移대뱶: 由ы꽩?쇱옄 + ?섏감 ?꾩튂留??쒖떆
           if (r.return_datetime) {
             rows.push({
               ...base,
               segmentType: 'return',
-              segmentRibbon: '리턴',
+              segmentRibbon: '由ы꽩',
               pickupDatetime: r.return_datetime,
               pickupLocation: null,
               dropoffLocation: r.dropoff_location,
             });
           }
 
-          // 리턴일자가 없으면 기존처럼 픽업 1건만 유지
+          // 由ы꽩?쇱옄媛 ?놁쑝硫?湲곗〈泥섎읆 ?쎌뾽 1嫄대쭔 ?좎?
           if (rows.length === 0) {
             rows.push({
               ...base,
               segmentType: 'pickup',
-              segmentRibbon: '픽업',
+              segmentRibbon: '?쎌뾽',
               pickupDatetime: r.pickup_datetime,
               pickupLocation: r.pickup_location,
               dropoffLocation: null,
@@ -895,7 +895,7 @@ export default function ManagerSchedulePage() {
         ...(airportRes.data || []).map(r => {
           const info = airportPriceMap.get(r.airport_price_code);
           const rawWayType = String(r.way_type || r.ra_way_type || info?.service_type || '').toLowerCase();
-          const isPickup = rawWayType.includes('pickup') || rawWayType.includes('픽업');
+          const isPickup = rawWayType.includes('pickup') || rawWayType.includes('?쎌뾽');
           const airportLocation = r.ra_airport_location || '';
           const accommodationInfo = r.accommodation_info || r.ra_stopover_location || '';
           return {
@@ -1009,16 +1009,16 @@ export default function ManagerSchedulePage() {
       setDbUserServices(allServices);
 
     } catch (error) {
-      console.error('사용자 예약 정보 조회 실패:', error);
+      console.error('?ъ슜???덉빟 ?뺣낫 議고쉶 ?ㅽ뙣:', error);
       setDbUserServices([]);
     } finally {
       setDbModalLoading(false);
     }
   };
 
-  // Google Sheets 상세보기 모달 열기
+  // Google Sheets ?곸꽭蹂닿린 紐⑤떖 ?닿린
   const handleOpenGoogleSheetsDetail = async (reservation: any) => {
-    // 서비스 타입 감지
+    // ?쒕퉬?????媛먯?
     let serviceType = 'unknown';
     if (isCruiseData(reservation)) serviceType = 'cruise';
     else if (isVehicleData(reservation)) serviceType = 'vehicle';
@@ -1028,13 +1028,13 @@ export default function ManagerSchedulePage() {
     else if (isRentcarData(reservation)) serviceType = 'rentcar';
     else if (isCarData(reservation)) serviceType = 'car';
 
-    // 선택된 예약에 serviceType 추가
+    // ?좏깮???덉빟??serviceType 異붽?
     setSelectedGoogleSheetsReservation({ ...reservation, serviceType });
     setIsGoogleSheetsModalOpen(true);
     setRelatedDbServices([]);
     setRelatedEmail('');
 
-    // 해당 주문 ID의 모든 서비스 조회
+    // ?대떦 二쇰Ц ID??紐⑤뱺 ?쒕퉬??議고쉶
     let resolvedEmail = (reservation.email || '').trim();
 
     if (reservation.orderId) {
@@ -1056,40 +1056,40 @@ export default function ManagerSchedulePage() {
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
     } else if (mode === 'week') {
-      // 주간: 월요일 시작 기준
+      // 二쇨컙: ?붿슂???쒖옉 湲곗?
       const day = start.getDay();
-      const diffToMonday = (day === 0 ? -6 : 1) - day; // 일요일(0) -> -6, 월(1)->0 ...
+      const diffToMonday = (day === 0 ? -6 : 1) - day; // ?쇱슂??0) -> -6, ??1)->0 ...
       start.setDate(start.getDate() + diffToMonday);
       start.setHours(0, 0, 0, 0);
       end.setTime(start.getTime());
       end.setDate(end.getDate() + 6);
       end.setHours(23, 59, 59, 999);
     } else {
-      // 월간: 해당 월 1일 ~ 말일
+      // ?붽컙: ?대떦 ??1??~ 留먯씪
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
-      end.setMonth(start.getMonth() + 1, 0); // 다음 달 0일 = 말일
+      end.setMonth(start.getMonth() + 1, 0); // ?ㅼ쓬 ??0??= 留먯씪
       end.setHours(23, 59, 59, 999);
     }
     return { start, end };
   };
 
   const loadGoogleSheetsData = async () => {
-    console.log('🚀 loadGoogleSheetsData 호출됨!');
+    console.log('?? loadGoogleSheetsData ?몄텧??');
     console.log('   typeFilter:', typeFilter);
-    console.log('   현재 시각:', new Date().toLocaleTimeString());
+    console.log('   ?꾩옱 ?쒓컖:', new Date().toLocaleTimeString());
 
     try {
       setGoogleSheetsLoading(true);
       setGoogleSheetsError(null);
 
-      console.log('🔄 loadGoogleSheetsData 시작, typeFilter:', typeFilter);
+      console.log('?봽 loadGoogleSheetsData ?쒖옉, typeFilter:', typeFilter);
 
-      // DB에서 데이터 조회 (sh_* 테이블)
+      // DB?먯꽌 ?곗씠??議고쉶 (sh_* ?뚯씠釉?
       if (typeFilter === 'all') {
-        console.log('📥 모든 서비스 데이터 조회 시작...');
+        console.log('?뱿 紐⑤뱺 ?쒕퉬???곗씠??議고쉶 ?쒖옉...');
 
-        // 모든 서비스를 병렬로 조회 (모든 데이터 가져오기)
+        // 紐⑤뱺 ?쒕퉬?ㅻ? 蹂묐젹濡?議고쉶 (紐⑤뱺 ?곗씠??媛?몄삤湲?
         const fetchAllRows = async (tableName: string) => {
           let allData: any[] = [];
           let from = 0;
@@ -1113,39 +1113,39 @@ export default function ManagerSchedulePage() {
         };
 
         const [shRData, shCData, shCCData, shPData, shHData, shTData, shRCData] = await Promise.all([
-          fetchAllRows('sh_r'),   // 크루즈
-          fetchAllRows('sh_c'),   // 차량
-          fetchAllRows('sh_cc'),  // 스하차량
-          fetchAllRows('sh_p'),   // 공항
-          fetchAllRows('sh_h'),   // 호텔
-          fetchAllRows('sh_t'),   // 투어
-          fetchAllRows('sh_rc')   // 렌트카
+          fetchAllRows('sh_r'),   // ?щ（利?
+          fetchAllRows('sh_c'),   // 李⑤웾
+          fetchAllRows('sh_cc'),  // ?ㅽ븯李⑤웾
+          fetchAllRows('sh_p'),   // 怨듯빆
+          fetchAllRows('sh_h'),   // ?명뀛
+          fetchAllRows('sh_t'),   // ?ъ뼱
+          fetchAllRows('sh_rc')   // ?뚰듃移?
         ]);
 
-        console.log('✅ DB 조회 결과:');
-        console.log('  sh_r (크루즈):', shRData.data?.length || 0, '건', shRData.error ? `❌ ${shRData.error.message}` : '');
-        console.log('  sh_c (차량):', shCData.data?.length || 0, '건', shCData.error ? `❌ ${shCData.error.message}` : '');
-        console.log('  sh_cc (스하차량):', shCCData.data?.length || 0, '건', shCCData.error ? `❌ ${shCCData.error.message}` : '');
-        console.log('  sh_p (공항):', shPData.data?.length || 0, '건', shPData.error ? `❌ ${shPData.error.message}` : '');
-        console.log('  sh_h (호텔):', shHData.data?.length || 0, '건', shHData.error ? `❌ ${shHData.error.message}` : '');
-        console.log('  sh_t (투어):', shTData.data?.length || 0, '건', shTData.error ? `❌ ${shTData.error.message}` : '');
-        console.log('  sh_rc (렌트카):', shRCData.data?.length || 0, '건', shRCData.error ? `❌ ${shRCData.error.message}` : '');
+        console.log('??DB 議고쉶 寃곌낵:');
+        console.log('  sh_r (?щ（利?:', shRData.data?.length || 0, '嫄?, shRData.error ? `??${shRData.error.message}` : '');
+        console.log('  sh_c (李⑤웾):', shCData.data?.length || 0, '嫄?, shCData.error ? `??${shCData.error.message}` : '');
+        console.log('  sh_cc (?ㅽ븯李⑤웾):', shCCData.data?.length || 0, '嫄?, shCCData.error ? `??${shCCData.error.message}` : '');
+        console.log('  sh_p (怨듯빆):', shPData.data?.length || 0, '嫄?, shPData.error ? `??${shPData.error.message}` : '');
+        console.log('  sh_h (?명뀛):', shHData.data?.length || 0, '嫄?, shHData.error ? `??${shHData.error.message}` : '');
+        console.log('  sh_t (?ъ뼱):', shTData.data?.length || 0, '嫄?, shTData.error ? `??${shTData.error.message}` : '');
+        console.log('  sh_rc (?뚰듃移?:', shRCData.data?.length || 0, '嫄?, shRCData.error ? `??${shRCData.error.message}` : '');
 
-        // 크루즈 데이터 샘플 로깅 (날짜 형식 확인용)
+        // ?щ（利??곗씠???섑뵆 濡쒓퉭 (?좎쭨 ?뺤떇 ?뺤씤??
         if (shRData.data && shRData.data.length > 0) {
-          console.log('📅 크루즈 날짜 샘플 (최근 5건):');
+          console.log('?뱟 ?щ（利??좎쭨 ?섑뵆 (理쒓렐 5嫄?:');
           shRData.data.slice(0, 5).forEach((r: any, i: number) => {
             console.log(`  ${i + 1}. ${r.checkin_date} | ${r.cruise_name} | ${r.order_id}`);
           });
         }
 
-        // sh_m 사용자 정보 조회 (모든 데이터)
+        // sh_m ?ъ슜???뺣낫 議고쉶 (紐⑤뱺 ?곗씠??
         const usersDataResult = await fetchAllRows('sh_m');
         const usersData = usersDataResult.data;
-        console.log('👥 sh_m 사용자 정보:', usersData?.length || 0, '건');
+        console.log('?뫁 sh_m ?ъ슜???뺣낫:', usersData?.length || 0, '嫄?);
         const userMap = new Map((usersData || []).map((u: any) => [u.order_id, { korean_name: u.korean_name, english_name: u.english_name, email: u.email }]));
 
-        // 데이터 매핑 및 합치기
+        // ?곗씠??留ㅽ븨 諛??⑹튂湲?
         const allData = [
           ...(shRData.data || []).map((r: any) => {
             const user = userMap.get(r.order_id);
@@ -1313,16 +1313,16 @@ export default function ManagerSchedulePage() {
           })
         ];
 
-        console.log('📊 전체 로드된 데이터:', allData.length, '건');
-        console.log('  - 크루즈:', shRData.data?.length || 0, '건');
-        console.log('  - 차량:', shCData.data?.length || 0, '건');
-        console.log('  - 스하차량:', shCCData.data?.length || 0, '건');
-        console.log('  - 공항:', shPData.data?.length || 0, '건');
-        console.log('  - 호텔:', shHData.data?.length || 0, '건');
-        console.log('  - 투어:', shTData.data?.length || 0, '건');
-        console.log('  - 렌트카:', shRCData.data?.length || 0, '건');
+        console.log('?뱤 ?꾩껜 濡쒕뱶???곗씠??', allData.length, '嫄?);
+        console.log('  - ?щ（利?', shRData.data?.length || 0, '嫄?);
+        console.log('  - 李⑤웾:', shCData.data?.length || 0, '嫄?);
+        console.log('  - ?ㅽ븯李⑤웾:', shCCData.data?.length || 0, '嫄?);
+        console.log('  - 怨듯빆:', shPData.data?.length || 0, '嫄?);
+        console.log('  - ?명뀛:', shHData.data?.length || 0, '嫄?);
+        console.log('  - ?ъ뼱:', shTData.data?.length || 0, '嫄?);
+        console.log('  - ?뚰듃移?', shRCData.data?.length || 0, '嫄?);
 
-        // 데이터 샘플 확인 (날짜 필드 중점 확인)
+        // ?곗씠???섑뵆 ?뺤씤 (?좎쭨 ?꾨뱶 以묒젏 ?뺤씤)
         const cruiseSample = allData.filter(d => d.cruise)[0];
         const carSample = allData.filter(d => d.carType && d.pickupDatetime)[0];
         const vhcSample = allData.filter(d => d.vehicleNumber)[0];
@@ -1331,15 +1331,15 @@ export default function ManagerSchedulePage() {
         const tourSample = allData.filter(d => d.tourName)[0];
         const rentcarSample = allData.filter(d => d.carCode && d.pickupDate)[0];
 
-        console.log('📝 크루즈 샘플:', cruiseSample, '→ checkin:', cruiseSample?.checkin);
-        console.log('📝 차량 샘플:', carSample, '→ pickupDatetime:', carSample?.pickupDatetime);
-        console.log('📝 스하차량 샘플:', vhcSample, '→ boardingDate:', vhcSample?.boardingDate);
-        console.log('📝 공항 샘플:', airportSample, '→ date:', airportSample?.date);
-        console.log('📝 호텔 샘플:', hotelSample, '→ checkinDate:', hotelSample?.checkinDate);
-        console.log('📝 투어 샘플:', tourSample, '→ startDate:', tourSample?.startDate);
-        console.log('📝 렌트카 샘플:', rentcarSample, '→ pickupDate:', rentcarSample?.pickupDate);
+        console.log('?뱷 ?щ（利??섑뵆:', cruiseSample, '??checkin:', cruiseSample?.checkin);
+        console.log('?뱷 李⑤웾 ?섑뵆:', carSample, '??pickupDatetime:', carSample?.pickupDatetime);
+        console.log('?뱷 ?ㅽ븯李⑤웾 ?섑뵆:', vhcSample, '??boardingDate:', vhcSample?.boardingDate);
+        console.log('?뱷 怨듯빆 ?섑뵆:', airportSample, '??date:', airportSample?.date);
+        console.log('?뱷 ?명뀛 ?섑뵆:', hotelSample, '??checkinDate:', hotelSample?.checkinDate);
+        console.log('?뱷 ?ъ뼱 ?섑뵆:', tourSample, '??startDate:', tourSample?.startDate);
+        console.log('?뱷 ?뚰듃移??섑뵆:', rentcarSample, '??pickupDate:', rentcarSample?.pickupDate);
 
-        // 오늘 날짜(2025-11-14) 데이터 개수 확인 (다양한 날짜 형식 지원)
+        // ?ㅻ뒛 ?좎쭨(2025-11-14) ?곗씠??媛쒖닔 ?뺤씤 (?ㅼ뼇???좎쭨 ?뺤떇 吏??
         const todayFormats = ['2025-11-14', '2025. 11. 14', '2025/11/14', '11/14/2025', '14/11/2025', '11-14-2025'];
         const matchesToday = (dateStr: string) => {
           if (!dateStr) return false;
@@ -1347,17 +1347,17 @@ export default function ManagerSchedulePage() {
         };
 
         const todayData = {
-          크루즈: allData.filter(d => d.cruise && matchesToday(d.checkin)).length,
-          차량: allData.filter(d => d.carType && d.pickupDatetime && matchesToday(d.pickupDatetime)).length,
-          스하차량: allData.filter(d => d.vehicleNumber && matchesToday(d.boardingDate)).length,
-          공항: allData.filter(d => d.airportName && matchesToday(d.date)).length,
-          호텔: allData.filter(d => d.hotelName && matchesToday(d.checkinDate)).length,
-          투어: allData.filter(d => d.tourName && matchesToday(d.startDate)).length,
-          렌트카: allData.filter(d => d.carCode && d.pickupDate && matchesToday(d.pickupDate)).length
+          ?щ（利? allData.filter(d => d.cruise && matchesToday(d.checkin)).length,
+          李⑤웾: allData.filter(d => d.carType && d.pickupDatetime && matchesToday(d.pickupDatetime)).length,
+          ?ㅽ븯李⑤웾: allData.filter(d => d.vehicleNumber && matchesToday(d.boardingDate)).length,
+          怨듯빆: allData.filter(d => d.airportName && matchesToday(d.date)).length,
+          ?명뀛: allData.filter(d => d.hotelName && matchesToday(d.checkinDate)).length,
+          ?ъ뼱: allData.filter(d => d.tourName && matchesToday(d.startDate)).length,
+          ?뚰듃移? allData.filter(d => d.carCode && d.pickupDate && matchesToday(d.pickupDate)).length
         };
-        console.log('📅 오늘(2025-11-14) 날짜 문자열 검색:', todayData);
+        console.log('?뱟 ?ㅻ뒛(2025-11-14) ?좎쭨 臾몄옄??寃??', todayData);
 
-        // 2025년 11월 데이터 모두 찾기 (날짜 형식 진단)
+        // 2025??11???곗씠??紐⑤몢 李얘린 (?좎쭨 ?뺤떇 吏꾨떒)
         const nov2025Cruise = allData.filter(d => d.cruise && d.checkin && (
           d.checkin.includes('2025-11') ||
           d.checkin.includes('2025. 11') ||
@@ -1366,37 +1366,37 @@ export default function ManagerSchedulePage() {
           d.checkin.includes('11-2025')
         ));
 
-        console.log('� 2025년 11월 크루즈 데이터:', nov2025Cruise.length, '건');
+        console.log('占?2025??11???щ（利??곗씠??', nov2025Cruise.length, '嫄?);
         if (nov2025Cruise.length > 0) {
-          console.log('   날짜 형식 샘플:');
+          console.log('   ?좎쭨 ?뺤떇 ?섑뵆:');
           nov2025Cruise.slice(0, 10).forEach((d, idx) => {
             console.log(`   [${idx + 1}] orderId: ${d.orderId}, checkin: "${d.checkin}"`);
           });
         }
 
-        // 실제 오늘 데이터 샘플 출력 (크루즈 확인)
+        // ?ㅼ젣 ?ㅻ뒛 ?곗씠???섑뵆 異쒕젰 (?щ（利??뺤씤)
         const todayCruise = allData.filter(d => d.cruise && matchesToday(d.checkin));
         if (todayCruise.length > 0) {
-          console.log('🚢 오늘 크루즈 데이터:', todayCruise.length, '건');
+          console.log('?슓 ?ㅻ뒛 ?щ（利??곗씠??', todayCruise.length, '嫄?);
           todayCruise.forEach((d, idx) => {
             console.log(`   [${idx + 1}] ${d.orderId} - checkin: "${d.checkin}"`);
           });
         } else {
-          console.log('❌ 오늘 크루즈 데이터 문자열 검색 실패');
+          console.log('???ㅻ뒛 ?щ（利??곗씠??臾몄옄??寃???ㅽ뙣');
         }
 
-        console.log('📦 매핑된 전체 데이터:', allData.length, '건');
-        console.log('   - 크루즈:', allData.filter(d => d.cruise).length, '건');
-        console.log('   - 차량:', allData.filter(d => d.carType && d.pickupDatetime).length, '건');
-        console.log('   - 스하차량:', allData.filter(d => d.vehicleNumber).length, '건');
-        console.log('   - 공항:', allData.filter(d => d.airportName).length, '건');
-        console.log('   - 호텔:', allData.filter(d => d.hotelName).length, '건');
-        console.log('   - 투어:', allData.filter(d => d.tourName).length, '건');
-        console.log('   - 렌트카:', allData.filter(d => d.carCode && d.pickupDate).length, '건');
+        console.log('?벀 留ㅽ븨???꾩껜 ?곗씠??', allData.length, '嫄?);
+        console.log('   - ?щ（利?', allData.filter(d => d.cruise).length, '嫄?);
+        console.log('   - 李⑤웾:', allData.filter(d => d.carType && d.pickupDatetime).length, '嫄?);
+        console.log('   - ?ㅽ븯李⑤웾:', allData.filter(d => d.vehicleNumber).length, '嫄?);
+        console.log('   - 怨듯빆:', allData.filter(d => d.airportName).length, '嫄?);
+        console.log('   - ?명뀛:', allData.filter(d => d.hotelName).length, '嫄?);
+        console.log('   - ?ъ뼱:', allData.filter(d => d.tourName).length, '嫄?);
+        console.log('   - ?뚰듃移?', allData.filter(d => d.carCode && d.pickupDate).length, '嫄?);
 
         setGoogleSheetsData(allData);
       } else {
-        // 개별 서비스 타입 조회
+        // 媛쒕퀎 ?쒕퉬?????議고쉶
         const typeMapping: Record<string, string> = {
           'cruise': 'sh_r',
           'car': 'sh_c',
@@ -1412,13 +1412,13 @@ export default function ManagerSchedulePage() {
         const data = result.data;
 
         if (result.error) {
-          throw new Error(`데이터 조회 실패: ${result.error.message}`);
+          throw new Error(`?곗씠??議고쉶 ?ㅽ뙣: ${result.error.message}`);
         }
 
-        // 타입별 데이터 매핑
+        // ??낅퀎 ?곗씠??留ㅽ븨
         let mappedData: any[] = [];
 
-        // sh_m에서 한글/영문 이름 조회 (모든 데이터)
+        // sh_m?먯꽌 ?쒓?/?곷Ц ?대쫫 議고쉶 (紐⑤뱺 ?곗씠??
         const usersDataResult = await fetchAllRows('sh_m');
         const usersData = usersDataResult.data;
         const userMap = new Map((usersData || []).map((u: any) => [u.order_id, u]));
@@ -1599,7 +1599,7 @@ export default function ManagerSchedulePage() {
         setGoogleSheetsData(mappedData);
       }
     } catch (err: any) {
-      setGoogleSheetsError(err.message || '데이터를 불러오는 중 오류가 발생했습니다.');
+      setGoogleSheetsError(err.message || '?곗씠?곕? 遺덈윭?ㅻ뒗 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
     } finally {
       setGoogleSheetsLoading(false);
     }
@@ -1609,53 +1609,53 @@ export default function ManagerSchedulePage() {
     if (!dateStr) return null;
 
     try {
-      // "YYYY. MM. DD" 형식 처리
+      // "YYYY. MM. DD" ?뺤떇 泥섎━
       if (dateStr.includes('. ')) {
         const parts = dateStr.split('. ').map(p => p.trim());
         if (parts.length >= 3) {
           const [year, month, day] = parts;
-          const dayNum = day.split(' ')[0]; // 시간 부분 제거
-          // 로컬 시간대로 Date 객체 생성 (정오 12시로 설정하여 시간대 문제 방지)
+          const dayNum = day.split(' ')[0]; // ?쒓컙 遺遺??쒓굅
+          // 濡쒖뺄 ?쒓컙?濡?Date 媛앹껜 ?앹꽦 (?뺤삤 12?쒕줈 ?ㅼ젙?섏뿬 ?쒓컙? 臾몄젣 諛⑹?)
           const date = new Date(
             parseInt(year),
-            parseInt(month) - 1, // 월은 0부터 시작
+            parseInt(month) - 1, // ?붿? 0遺???쒖옉
             parseInt(dayNum),
-            12, 0, 0, 0 // 정오로 설정
+            12, 0, 0, 0 // ?뺤삤濡??ㅼ젙
           );
           return date;
         }
       }
 
-      // "YYYY-MM-DD" 형식
+      // "YYYY-MM-DD" ?뺤떇
       if (dateStr.includes('-')) {
         const datePart = dateStr.split(' ')[0];
         const [year, month, day] = datePart.split('-');
-        // 로컬 시간대로 Date 객체 생성 (정오 12시로 설정)
+        // 濡쒖뺄 ?쒓컙?濡?Date 媛앹껜 ?앹꽦 (?뺤삤 12?쒕줈 ?ㅼ젙)
         const date = new Date(
           parseInt(year),
           parseInt(month) - 1,
           parseInt(day),
-          12, 0, 0, 0 // 정오로 설정
+          12, 0, 0, 0 // ?뺤삤濡??ㅼ젙
         );
         return date;
       }
 
-      // 기타 형식
+      // 湲고? ?뺤떇
       const date = new Date(dateStr);
       if (!isNaN(date.getTime())) {
-        // 시간을 정오로 설정
+        // ?쒓컙???뺤삤濡??ㅼ젙
         date.setHours(12, 0, 0, 0);
         return date;
       }
     } catch (error) {
-      // 에러 무시
+      // ?먮윭 臾댁떆
     }
 
     return null;
   };
 
   const formatPrice = (price: number): string => {
-    return price.toLocaleString('ko-KR') + '동';
+    return price.toLocaleString('ko-KR') + '??;
   };
 
   const isPastDate = (dateStr: string): boolean => {
@@ -1720,7 +1720,7 @@ export default function ManagerSchedulePage() {
         return rows;
       };
 
-      // 서비스별 날짜 컬럼 기준으로 기간 내 데이터 조회 (배치)
+      // ?쒕퉬?ㅻ퀎 ?좎쭨 而щ읆 湲곗??쇰줈 湲곌컙 ???곗씠??議고쉶 (諛곗튂)
       let cruiseRows: any[] = [];
       let airportRows: any[] = [];
       let hotelRows: any[] = [];
@@ -1730,7 +1730,7 @@ export default function ManagerSchedulePage() {
       let carShtRows: any[] = [];
 
       if (hasSearch) {
-        // 검색 모드: 기간과 무관하게 reservation 전체를 페이지 조회
+        // 寃??紐⑤뱶: 湲곌컙怨?臾닿??섍쾶 reservation ?꾩껜瑜??섏씠吏 議고쉶
         const allReservations = await fetchReservationsPaged(
           () => supabase
             .from('reservation')
@@ -1791,7 +1791,7 @@ export default function ManagerSchedulePage() {
             .or(
               `and(pickup_datetime.gte.${start.toISOString()},pickup_datetime.lte.${end.toISOString()}),and(return_datetime.gte.${start.toISOString()},return_datetime.lte.${end.toISOString()})`
             ),
-          // tour: usage_date (date) - 없을 수 있음, maybeSingle 대신 범위 조회
+          // tour: usage_date (date) - ?놁쓣 ???덉쓬, maybeSingle ???踰붿쐞 議고쉶
           supabase
             .from('reservation_tour')
             .select('*, reservation_id')
@@ -1831,12 +1831,12 @@ export default function ManagerSchedulePage() {
         { table: 'reservation_car_sht', rows: carShtRows }
       ];
 
-      // 크루즈 room_price_code → cruise_rate_card(cruise_name, room_type) 매핑 조회
+      // ?щ（利?room_price_code ??cruise_rate_card(cruise_name, room_type) 留ㅽ븨 議고쉶
       const cruiseCodes = Array.from(
         new Set((cruiseRows || []).map((r: any) => r.room_price_code).filter(Boolean))
       );
-      // cruise_rate_card.id 는 uuid 컬럼이므로, 레거시 비-UUID 코드를 섞어서 .in('id', ...) 호출하면
-      // 청크 전체가 'invalid input syntax for type uuid' 에러로 실패해 매핑이 통째로 비게 됨
+      // cruise_rate_card.id ??uuid 而щ읆?대?濡? ?덇굅??鍮?UUID 肄붾뱶瑜??욎뼱??.in('id', ...) ?몄텧?섎㈃
+      // 泥?겕 ?꾩껜媛 'invalid input syntax for type uuid' ?먮윭濡??ㅽ뙣??留ㅽ븨???듭㎏濡?鍮꾧쾶 ??
       const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const cruiseCodesUuid = cruiseCodes.filter((c: any) => UUID_RE.test(String(c || '')));
       const tourCodes = Array.from(
@@ -1880,14 +1880,14 @@ export default function ManagerSchedulePage() {
 
       const normalizeAirportWay = (value: string) => {
         const way = (value || '').toLowerCase();
-        if (way === 'pickup' || way === '픽업') return '픽업';
-        if (way === 'sending' || way === 'dropoff' || way === '샌딩') return '샌딩';
+        if (way === 'pickup' || way === '?쎌뾽') return '?쎌뾽';
+        if (way === 'sending' || way === 'dropoff' || way === '?뚮뵫') return '?뚮뵫';
         return '';
       };
       const normalizeCruiseCode = (value: any) => String(value || '').trim().toLowerCase();
 
-      // 검색 모드에서 IN 리스트가 매우 커지면 URL 길이 초과로 응답이 비어 객실명/크루즈명이 누락됨
-      // → 200건 단위로 청크 분할 조회
+      // 寃??紐⑤뱶?먯꽌 IN 由ъ뒪?멸? 留ㅼ슦 而ㅼ?硫?URL 湲몄씠 珥덇낵濡??묐떟??鍮꾩뼱 媛앹떎紐??щ（利덈챸???꾨씫??
+      // ??200嫄??⑥쐞濡?泥?겕 遺꾪븷 議고쉶
       const fetchInChunked = async (table: string, selectCols: string, column: string, values: any[], chunkSize = 200) => {
         const acc: any[] = [];
         const uniq = Array.from(new Set((values || []).filter(v => v !== null && v !== undefined && v !== '')));
@@ -1895,7 +1895,7 @@ export default function ManagerSchedulePage() {
           const chunk = uniq.slice(i, i + chunkSize);
           const { data, error } = await supabase.from(table).select(selectCols).in(column, chunk);
           if (error) {
-            console.error(`${table}.${column} 청크 조회 실패:`, error);
+            console.error(`${table}.${column} 泥?겕 議고쉶 ?ㅽ뙣:`, error);
             continue;
           }
           acc.push(...(data || []));
@@ -1951,7 +1951,7 @@ export default function ManagerSchedulePage() {
         }
       }
 
-      // cruise_rate_card: id 조회 + room_type 조회 결과 병합
+      // cruise_rate_card: id 議고쉶 + room_type 議고쉶 寃곌낵 蹂묓빀
       const rpMergedMap = new Map<string, any>();
       for (const rp of [...(rpByIdRes.data || []), ...(rpByTypeRes.data || [])]) {
         const idKey = String(rp.id || '').trim();
@@ -1960,9 +1960,9 @@ export default function ManagerSchedulePage() {
         if (typeKey && !rpMergedMap.has(typeKey)) rpMergedMap.set(typeKey, rp);
       }
 
-      // legacy room_price 테이블은 더 이상 사용하지 않음 (cruise_rate_card로 통합)
+      // legacy room_price ?뚯씠釉붿? ???댁긽 ?ъ슜?섏? ?딆쓬 (cruise_rate_card濡??듯빀)
 
-      // cruise_info에서 room_name 조회 (cruise_info에는 room_type 컬럼이 없음 → cruise_name 키로만 매핑)
+      // cruise_info?먯꽌 room_name 議고쉶 (cruise_info?먮뒗 room_type 而щ읆???놁쓬 ??cruise_name ?ㅻ줈留?留ㅽ븨)
       const cruiseNames = Array.from(new Set(Array.from(rpMergedMap.values()).map(rp => rp.cruise_name).filter(Boolean)));
       let cruiseInfoDataMap = new Map<string, any>();
       if (cruiseNames.length > 0) {
@@ -1973,7 +1973,7 @@ export default function ManagerSchedulePage() {
           cruiseNames
         );
         for (const ci of cruiseInfoData || []) {
-          // 같은 cruise_name이 여러 room_name으로 존재할 수 있으므로 첫 행 유지
+          // 媛숈? cruise_name???щ윭 room_name?쇰줈 議댁옱?????덉쑝誘濡?泥????좎?
           if (!cruiseInfoDataMap.has(ci.cruise_name)) {
             cruiseInfoDataMap.set(ci.cruise_name, ci);
           }
@@ -2056,20 +2056,20 @@ export default function ManagerSchedulePage() {
         }
       }
 
-      // 📌 STEP 1: pricing_id → tour_id 매핑
+      // ?뱦 STEP 1: pricing_id ??tour_id 留ㅽ븨
       const tpData: any[] = tpDataRes?.data || [];
       if (tpData.length > 0) {
-        // 📌 STEP 2: tour_id 목록 추출
+        // ?뱦 STEP 2: tour_id 紐⑸줉 異붿텧
         const tourIds = Array.from(new Set((tpData).map((tp: any) => tp.tour_id).filter(Boolean)));
 
         if (tourIds.length > 0) {
-          // 📌 STEP 3: tour_id → tour_name 조회
+          // ?뱦 STEP 3: tour_id ??tour_name 議고쉶
           const { data: toursById } = await supabase
             .from('tour')
             .select('tour_id, tour_name, tour_code, category')
             .in('tour_id', tourIds);
 
-          // 📌 STEP 4: tour_name 맵핑 (pricing_id → tour_name)
+          // ?뱦 STEP 4: tour_name 留듯븨 (pricing_id ??tour_name)
           const tourById = new Map((toursById || []).map((t: any) => [t.tour_id, t]));
           for (const tp of tpData) {
             const tourInfo = tourById.get(tp.tour_id);
@@ -2083,7 +2083,7 @@ export default function ManagerSchedulePage() {
         }
       }
 
-      // 해당되는 예약 ID들 조회
+      // ?대떦?섎뒗 ?덉빟 ID??議고쉶
       const reservationIds = Array.from(
         new Set(
           serviceRows.flatMap(s => (s.rows || []).map((r: any) => r.reservation_id)).filter(Boolean)
@@ -2095,7 +2095,7 @@ export default function ManagerSchedulePage() {
         return;
       }
 
-      // 예약 기본 정보와 사용자 정보를 청크 조회 (대량 IN 조건 대응)
+      // ?덉빟 湲곕낯 ?뺣낫? ?ъ슜???뺣낫瑜?泥?겕 議고쉶 (???IN 議곌굔 ???
       const CHUNK_SIZE = 200;
       const reservationsData: any[] = [];
       for (let i = 0; i < reservationIds.length; i += CHUNK_SIZE) {
@@ -2106,7 +2106,7 @@ export default function ManagerSchedulePage() {
           .in('re_id', chunk)
           .neq('re_type', 'car_sht');
         if (error) {
-          console.error('reservation 청크 조회 실패:', error);
+          console.error('reservation 泥?겕 議고쉶 ?ㅽ뙣:', error);
           setSchedules([]);
           return;
         }
@@ -2126,7 +2126,7 @@ export default function ManagerSchedulePage() {
             .select('id, name, email')
             .in('id', chunk);
           if (error) {
-            console.error('users 청크 조회 실패:', error);
+            console.error('users 泥?겕 議고쉶 ?ㅽ뙣:', error);
             continue;
           }
           usersData.push(...(data || []));
@@ -2134,7 +2134,7 @@ export default function ManagerSchedulePage() {
         usersById = new Map((usersData || []).map(u => [u.id, u]));
       }
 
-      // 스케줄 객체로 변환
+      // ?ㅼ?以?媛앹껜濡?蹂??
       const result: any[] = [];
       const hasTimezone = (value: string) => /[zZ]$|[+-]\d{2}:?\d{2}$/.test(value);
       const parseKstDateTime = (value: any): Date | null => {
@@ -2177,14 +2177,14 @@ export default function ManagerSchedulePage() {
           let type = reservationAny.re_type;
 
           if (table === 'reservation_cruise') {
-            // checkin은 date만 있을 가능성
+            // checkin? date留??덉쓣 媛?μ꽦
             if (row.checkin) {
               scheduleDate = new Date(row.checkin + 'T09:00:00');
-              // 크루즈는 시간 표기 숨김
+              // ?щ（利덈뒗 ?쒓컙 ?쒓린 ?④?
               scheduleTime = '';
             }
-            location = '하롱베이';
-            // room_price_code로 크루즈/룸타입 부가 정보
+            location = '?섎”踰좎씠';
+            // room_price_code濡??щ（利?猷명???遺媛 ?뺣낫
             if (row.room_price_code) {
               const rawCode = String(row.room_price_code || '').trim();
               const info = cruiseInfoByCode.get(rawCode) || cruiseInfoByCode.get(normalizeCruiseCode(row.room_price_code));
@@ -2224,9 +2224,9 @@ export default function ManagerSchedulePage() {
               scheduleDate = new Date(row.checkin_date + 'T15:00:00');
               scheduleTime = '15:00';
             }
-            // 예약 시 hotel_category에 호텔명 저장하는 패턴
+            // ?덉빟 ??hotel_category???명뀛紐???ν븯???⑦꽩
             location = row.hotel_category || null;
-            if (row.nights) duration = `${row.nights}박`;
+            if (row.nights) duration = `${row.nights}諛?;
           } else if (table === 'reservation_rentcar') {
             if (row.rentcar_price_code) {
               const rentCode = String(row.rentcar_price_code || '').trim();
@@ -2254,14 +2254,14 @@ export default function ManagerSchedulePage() {
               }
             }
             if (row.pickup_location && row.destination) {
-              location = `${row.pickup_location} → ${row.destination}`;
+              location = `${row.pickup_location} ??${row.destination}`;
             } else {
               location = row.pickup_location || row.destination || null;
             }
 
             if (!scheduleDate) continue;
 
-            // 렌트카는 픽업/리턴을 각각 개별 일정으로 표시
+            // ?뚰듃移대뒗 ?쎌뾽/由ы꽩??媛곴컖 媛쒕퀎 ?쇱젙?쇰줈 ?쒖떆
             result.push({
               re_id: reservationAny.re_id,
               re_type: type,
@@ -2272,17 +2272,17 @@ export default function ManagerSchedulePage() {
               location,
               duration,
               rentcar_phase: 'pickup',
-              segment_ribbon: '픽업',
+              segment_ribbon: '?쎌뾽',
               service_table: table,
               service_row: row,
               cruise_info: (row as any)._cruise_info || null
             });
 
-            // 리턴 카드: return_datetime이 있으면 항상 생성 (같은 날이어도)
+            // 由ы꽩 移대뱶: return_datetime???덉쑝硫???긽 ?앹꽦 (媛숈? ?좎씠?대룄)
             const rentcarReturnDate = row.return_datetime ? parseKstDateTime(row.return_datetime) : null;
             if (rentcarReturnDate) {
               const returnLocation = (row.return_pickup_location && row.return_destination)
-                ? `${row.return_pickup_location} → ${row.return_destination}`
+                ? `${row.return_pickup_location} ??${row.return_destination}`
                 : row.return_pickup_location || row.return_destination || row.dropoff_location || location;
 
               result.push({
@@ -2295,7 +2295,7 @@ export default function ManagerSchedulePage() {
                 location: returnLocation,
                 duration,
                 rentcar_phase: 'return',
-                segment_ribbon: '리턴',
+                segment_ribbon: '由ы꽩',
                 service_table: table,
                 service_row: row,
                 cruise_info: (row as any)._cruise_info || null
@@ -2306,15 +2306,15 @@ export default function ManagerSchedulePage() {
           } else if (table === 'reservation_tour') {
             if (row.usage_date) {
               scheduleDate = new Date(row.usage_date + 'T09:00:00');
-              // 투어 카드는 시간 숨김 정책
+              // ?ъ뼱 移대뱶???쒓컙 ?④? ?뺤콉
               scheduleTime = '';
             }
             if (row.pickup_location && row.dropoff_location) {
-              location = `${row.pickup_location} → ${row.dropoff_location}`;
+              location = `${row.pickup_location} ??${row.dropoff_location}`;
             } else {
               location = row.pickup_location || row.dropoff_location || null;
             }
-            // 투어명 enrichment: tour_price_code (=pricing_id) → tour_name
+            // ?ъ뼱紐?enrichment: tour_price_code (=pricing_id) ??tour_name
             if (row.tour_price_code && tourInfoByCode.has(row.tour_price_code)) {
               (row as any)._tour_info = tourInfoByCode.get(row.tour_price_code);
             }
@@ -2336,7 +2336,7 @@ export default function ManagerSchedulePage() {
               }
             }
 
-            // 픽업 카드 생성
+            // ?쎌뾽 移대뱶 ?앹꽦
             if (row.pickup_datetime) {
               const pickupDate = new Date(row.pickup_datetime + 'T09:00:00');
               result.push({
@@ -2349,16 +2349,16 @@ export default function ManagerSchedulePage() {
                 location: row.pickup_location || null,
                 duration,
                 segment_type: 'pickup',
-                segment_ribbon: '픽업',
+                segment_ribbon: '?쎌뾽',
                 service_table: table,
                 service_row: row,
                 cruise_info: (row as any)._cruise_info || null
               });
             }
 
-            // 드롭 카드 생성: 왕복이면 같은날이어도 반드시 생성
+            // ?쒕∼ 移대뱶 ?앹꽦: ?뺣났?대㈃ 媛숈??좎씠?대룄 諛섎뱶???앹꽦
             const wayType = String(row.way_type || '').trim();
-            const isRoundTrip = wayType.includes('왕복');
+            const isRoundTrip = wayType.includes('?뺣났');
             const returnDateSource = row.return_datetime || (isRoundTrip ? row.pickup_datetime : null);
             if (returnDateSource) {
               const returnDate = new Date(returnDateSource + 'T09:00:00');
@@ -2373,7 +2373,7 @@ export default function ManagerSchedulePage() {
                   location: row.dropoff_location || null,
                   duration,
                   segment_type: 'return',
-                  segment_ribbon: '드롭',
+                  segment_ribbon: '?쒕∼',
                   service_table: table,
                   service_row: row,
                   cruise_info: (row as any)._cruise_info || null
@@ -2414,7 +2414,7 @@ export default function ManagerSchedulePage() {
             }
           }
 
-          if (!scheduleDate) continue; // 날짜가 없으면 제외
+          if (!scheduleDate) continue; // ?좎쭨媛 ?놁쑝硫??쒖쇅
 
           result.push({
             re_id: reservationAny.re_id,
@@ -2432,12 +2432,12 @@ export default function ManagerSchedulePage() {
         }
       }
 
-      // 타입 필터는 렌더에서 적용하되, 여기서는 날짜 범위 내 결과만 세팅
-      // 최신순 정렬 (시간 기준)
+      // ????꾪꽣???뚮뜑?먯꽌 ?곸슜?섎릺, ?ш린?쒕뒗 ?좎쭨 踰붿쐞 ??寃곌낵留??명똿
+      // 理쒖떊???뺣젹 (?쒓컙 湲곗?)
       result.sort((a, b) => a.schedule_date.getTime() - b.schedule_date.getTime());
       setSchedules(result);
     } catch (error) {
-      // 에러 무시
+      // ?먮윭 臾댁떆
     } finally {
       setLoading(false);
     }
@@ -2458,19 +2458,19 @@ export default function ManagerSchedulePage() {
 
   const getTypeName = (type: string) => {
     switch (type) {
-      case 'cruise': return '크루즈';
-      case 'airport': return '공항';
-      case 'hotel': return '호텔';
-      case 'tour': return '투어';
-      case 'rentcar': return '렌트카';
-      case 'car': return '크차';
-      case 'vehicle': return '크차';
-      case 'sht': return '스하차량';
+      case 'cruise': return '?щ（利?;
+      case 'airport': return '怨듯빆';
+      case 'hotel': return '?명뀛';
+      case 'tour': return '?ъ뼱';
+      case 'rentcar': return '?뚰듃移?;
+      case 'car': return '?ъ감';
+      case 'vehicle': return '?ъ감';
+      case 'sht': return '?ㅽ븯李⑤웾';
       default: return type;
     }
   };
 
-  // 표시용 타입명/아이콘 (service_table을 반영)
+  // ?쒖떆????낅챸/?꾩씠肄?(service_table??諛섏쁺)
   const getDisplayTypeName = (schedule: any) => {
     if (schedule?.service_table === 'reservation_car_sht') return getTypeName('sht');
     if (schedule?.service_table === 'reservation_cruise_car') return getTypeName('vehicle');
@@ -2524,7 +2524,7 @@ export default function ManagerSchedulePage() {
     return getTypeIcon(schedule?.re_type);
   };
 
-  // 크루즈명 + 객실타입 표시용 유틸 (가용 필드에서 최대한 추출)
+  // ?щ（利덈챸 + 媛앹떎????쒖떆???좏떥 (媛???꾨뱶?먯꽌 理쒕???異붿텧)
   const getCruiseNameAndRoom = (row: any) => {
     const cruise =
       row?.cruise_name ||
@@ -2538,12 +2538,12 @@ export default function ManagerSchedulePage() {
       row?.room ||
       '';
     const code = row?.room_price_code || '';
-    const left = cruise || (code ? `코드:${code}` : '크루즈');
+    const left = cruise || (code ? `肄붾뱶:${code}` : '?щ（利?);
     const right = roomType;
     return [left, right].filter(Boolean).join(' ');
   };
 
-  // 크루즈 레이블을 '크루즈 / 객실타입' 형식으로 반환 (슬래시 앞뒤 공백 포함)
+  // ?щ（利??덉씠釉붿쓣 '?щ（利?/ 媛앹떎??? ?뺤떇?쇰줈 諛섑솚 (?щ옒???욌뮘 怨듬갚 ?ы븿)
   const formatCruiseLabel = (schedule: any) => {
     const row = schedule?.service_row || {};
     const info = schedule?.cruise_info || {};
@@ -2557,14 +2557,14 @@ export default function ManagerSchedulePage() {
     return getCruiseNameAndRoom(row).replace(/\s+/, ' / ');
   };
 
-  // 시간 무시, 날짜(YYYY-MM-DD) 기준으로만 분류
-  // 현지 날짜 기준으로 비교 (UTC 변환 오류 방지)
+  // ?쒓컙 臾댁떆, ?좎쭨(YYYY-MM-DD) 湲곗??쇰줈留?遺꾨쪟
+  // ?꾩? ?좎쭨 湲곗??쇰줈 鍮꾧탳 (UTC 蹂???ㅻ쪟 諛⑹?)
   const isSameLocalDate = (d1: Date, d2: Date) =>
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate();
 
-  // 주/월간 포함 범위 비교 (양끝 포함)
+  // 二??붽컙 ?ы븿 踰붿쐞 鍮꾧탳 (?묐걹 ?ы븿)
   const isDateInRange = (date: Date, start: Date, end: Date) => {
     const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
@@ -2579,7 +2579,7 @@ export default function ManagerSchedulePage() {
       } else if (typeFilter === 'vehicle') {
         if (schedule.service_table !== 'reservation_cruise_car') return false;
       } else if (typeFilter === 'cruise') {
-        // 크루즈 필터: 차량 테이블은 제외하고 cruise 예약만 포함
+        // ?щ（利??꾪꽣: 李⑤웾 ?뚯씠釉붿? ?쒖쇅?섍퀬 cruise ?덉빟留??ы븿
         if (schedule.service_table === 'reservation_cruise_car' || schedule.service_table === 'reservation_car_sht') return false;
         if (schedule.re_type !== 'cruise') return false;
       } else if (schedule.re_type !== typeFilter) {
@@ -2589,7 +2589,7 @@ export default function ManagerSchedulePage() {
     return true;
   });
 
-  // DB 검색: 검색어가 있으면 날짜 필터를 무시하고 전체(DB)에서 검색
+  // DB 寃?? 寃?됱뼱媛 ?덉쑝硫??좎쭨 ?꾪꽣瑜?臾댁떆?섍퀬 ?꾩껜(DB)?먯꽌 寃??
   let filteredSchedules = typeFilteredSchedules;
   if (activeSearchQuery.trim()) {
     const query = activeSearchQuery.toLowerCase().trim();
@@ -2621,7 +2621,7 @@ export default function ManagerSchedulePage() {
       return searchFields.some(field => field && String(field).toLowerCase().includes(query));
     });
   } else {
-    // 검색어가 없을 때만 날짜 범위 필터 적용
+    // 寃?됱뼱媛 ?놁쓣 ?뚮쭔 ?좎쭨 踰붿쐞 ?꾪꽣 ?곸슜
     filteredSchedules = typeFilteredSchedules.filter(schedule => {
       if (!schedule.schedule_date) return false;
       if (viewMode === 'day') return isSameLocalDate(schedule.schedule_date, selectedDate);
@@ -2630,7 +2630,7 @@ export default function ManagerSchedulePage() {
     });
   }
 
-  // 중복 제거: 동일 상세행(id)만 제거하고, 같은 예약의 다건 상세는 유지
+  // 以묐났 ?쒓굅: ?숈씪 ?곸꽭??id)留??쒓굅?섍퀬, 媛숈? ?덉빟???ㅺ굔 ?곸꽭???좎?
   const uniqueSchedules = filteredSchedules.filter((schedule, index, self) =>
     index === self.findIndex((s) => {
       const sRowId = s?.service_row?.id || '';
@@ -2651,7 +2651,7 @@ export default function ManagerSchedulePage() {
     })
   );
 
-  // 서비스 타입별 그룹
+  // ?쒕퉬????낅퀎 洹몃９
   const groupedByType: Record<string, any[]> = uniqueSchedules.reduce(
     (acc: Record<string, any[]>, cur) => {
       const k = cur.re_type || 'other';
@@ -2661,14 +2661,14 @@ export default function ManagerSchedulePage() {
     {}
   );
 
-  // 날짜(YYYY-MM-DD) 기준 그룹 (주/월간 일별 그룹화용)
+  // ?좎쭨(YYYY-MM-DD) 湲곗? 洹몃９ (二??붽컙 ?쇰퀎 洹몃９?붿슜)
   const toKey = (d: Date) => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   };
-  const weekdayShort = ['일', '월', '화', '수', '목', '금', '토'];
+  const weekdayShort = ['??, '??, '??, '??, '紐?, '湲?, '??];
   const formatDateLabel = (d: Date) => {
     const dateStr = d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
     return `${dateStr} (${weekdayShort[d.getDay()]})`;
@@ -2682,76 +2682,76 @@ export default function ManagerSchedulePage() {
     {}
   );
 
-  // 날짜 범위 계산 (디버그용)
+  // ?좎쭨 踰붿쐞 怨꾩궛 (?붾쾭洹몄슜)
   const { start: rangeStart, end: rangeEnd } = viewMode === 'day'
     ? { start: selectedDate, end: selectedDate }
     : getRange(selectedDate, viewMode);
 
-  console.log('📅 필터 날짜 범위:', {
-    시작: toLocalDateString(rangeStart),
-    종료: toLocalDateString(rangeEnd),
+  console.log('?뱟 ?꾪꽣 ?좎쭨 踰붿쐞:', {
+    ?쒖옉: toLocalDateString(rangeStart),
+    醫낅즺: toLocalDateString(rangeEnd),
     viewMode
   });
 
-  // Google Sheets 데이터 필터링
+  // Google Sheets ?곗씠???꾪꽣留?
   let filteredGoogleSheets = googleSheetsData.filter(reservation => {
     let targetDate: Date | null = null;
     let dateType = '';
     let dateFieldValue = '';
 
-    // 각 서비스 타입별 날짜 필드 확인
+    // 媛??쒕퉬????낅퀎 ?좎쭨 ?꾨뱶 ?뺤씤
     if (reservation.checkin) {
-      // 크루즈 데이터
+      // ?щ（利??곗씠??
       dateFieldValue = reservation.checkin;
       targetDate = parseDate(reservation.checkin);
-      dateType = '크루즈 체크인';
+      dateType = '?щ（利?泥댄겕??;
     } else if (reservation.pickupDatetime) {
-      // 차량 데이터
+      // 李⑤웾 ?곗씠??
       dateFieldValue = reservation.pickupDatetime;
       targetDate = parseDate(reservation.pickupDatetime);
-      dateType = '차량 승차일시';
+      dateType = '李⑤웾 ?뱀감?쇱떆';
     } else if (reservation.boardingDate) {
-      // 스하차량 데이터
+      // ?ㅽ븯李⑤웾 ?곗씠??
       dateFieldValue = reservation.boardingDate;
       targetDate = parseDate(reservation.boardingDate);
-      dateType = '스하차량 승차일';
+      dateType = '?ㅽ븯李⑤웾 ?뱀감??;
     } else if (reservation.date) {
-      // 공항 데이터
+      // 怨듯빆 ?곗씠??
       dateFieldValue = reservation.date;
       targetDate = parseDate(reservation.date);
-      dateType = '공항 일자';
+      dateType = '怨듯빆 ?쇱옄';
     } else if (reservation.checkinDate) {
-      // 호텔 데이터
+      // ?명뀛 ?곗씠??
       dateFieldValue = reservation.checkinDate;
       targetDate = parseDate(reservation.checkinDate);
-      dateType = '호텔 체크인';
+      dateType = '?명뀛 泥댄겕??;
     } else if (reservation.startDate) {
-      // 투어 데이터
+      // ?ъ뼱 ?곗씠??
       dateFieldValue = reservation.startDate;
       targetDate = parseDate(reservation.startDate);
-      dateType = '투어 시작일';
+      dateType = '?ъ뼱 ?쒖옉??;
     } else if (reservation.pickupDate) {
-      // 렌트카 데이터
+      // ?뚰듃移??곗씠??
       dateFieldValue = reservation.pickupDate;
       targetDate = parseDate(reservation.pickupDate);
-      dateType = '렌트카 승차일';
+      dateType = '?뚰듃移??뱀감??;
     }
 
-    // 날짜가 없는 데이터는 필터링에서 제외
+    // ?좎쭨媛 ?녿뒗 ?곗씠?곕뒗 ?꾪꽣留곸뿉???쒖쇅
     if (!targetDate) {
-      const serviceType = reservation.cruise ? '크루즈' :
-        reservation.carType && reservation.pickupDatetime ? '차량' :
-          reservation.vehicleNumber ? '스하차량' :
-            reservation.airportName ? '공항' :
-              reservation.hotelName ? '호텔' :
-                reservation.tourName ? '투어' :
-                  reservation.carCode && reservation.pickupDate ? '렌트카' : '미확인';
-      // 매우 드물게만 로깅 (0.1% 확률)
+      const serviceType = reservation.cruise ? '?щ（利? :
+        reservation.carType && reservation.pickupDatetime ? '李⑤웾' :
+          reservation.vehicleNumber ? '?ㅽ븯李⑤웾' :
+            reservation.airportName ? '怨듯빆' :
+              reservation.hotelName ? '?명뀛' :
+                reservation.tourName ? '?ъ뼱' :
+                  reservation.carCode && reservation.pickupDate ? '?뚰듃移? : '誘명솗??;
+      // 留ㅼ슦 ?쒕Ъ寃뚮쭔 濡쒓퉭 (0.1% ?뺣쪧)
       if (Math.random() < 0.001) {
-        console.log(`⚠️ 날짜 없는 ${serviceType} 제외:`, reservation.orderId);
+        console.log(`?좑툘 ?좎쭨 ?녿뒗 ${serviceType} ?쒖쇅:`, reservation.orderId);
       }
-      return false; // ✅ 날짜 없으면 표시 안함
-    }    // 날짜 범위 필터링
+      return false; // ???좎쭨 ?놁쑝硫??쒖떆 ?덊븿
+    }    // ?좎쭨 踰붿쐞 ?꾪꽣留?
     if (viewMode === 'day') {
       const result = isSameLocalDate(targetDate, selectedDate);
       return result;
@@ -2759,7 +2759,7 @@ export default function ManagerSchedulePage() {
     const { start, end } = getRange(selectedDate, viewMode);
     const result = isDateInRange(targetDate, start, end);
 
-    // 디버깅: 랜덤 샘플링으로 로그 확인
+    // ?붾쾭源? ?쒕뜡 ?섑뵆留곸쑝濡?濡쒓렇 ?뺤씤
     if (Math.random() < 0.005) {
       const formatLocalDate = (d: Date) => {
         const year = d.getFullYear();
@@ -2767,24 +2767,24 @@ export default function ManagerSchedulePage() {
         const day = String(d.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
       };
-      console.log('🔎 날짜 비교:', {
+      console.log('?뵊 ?좎쭨 鍮꾧탳:', {
         orderId: reservation.orderId,
-        원본날짜: dateFieldValue,
-        파싱결과: formatLocalDate(targetDate),
-        범위시작: formatLocalDate(start),
-        범위종료: formatLocalDate(end),
-        매칭: result ? '✅' : '❌'
+        ?먮낯?좎쭨: dateFieldValue,
+        ?뚯떛寃곌낵: formatLocalDate(targetDate),
+        踰붿쐞?쒖옉: formatLocalDate(start),
+        踰붿쐞醫낅즺: formatLocalDate(end),
+        留ㅼ묶: result ? '?? : '??
       });
     }
 
     return result;
   });
 
-  // 검색어 필터링 (모든 데이터에서 검색, 날짜 필터 무시)
+  // 寃?됱뼱 ?꾪꽣留?(紐⑤뱺 ?곗씠?곗뿉??寃?? ?좎쭨 ?꾪꽣 臾댁떆)
   if (activeSearchQuery.trim()) {
     const query = activeSearchQuery.toLowerCase().trim();
     filteredGoogleSheets = googleSheetsData.filter(item => {
-      // 모든 필드에서 검색
+      // 紐⑤뱺 ?꾨뱶?먯꽌 寃??
       const searchFields = [
         item.orderId,
         item.customerName,
@@ -2814,14 +2814,14 @@ export default function ManagerSchedulePage() {
     });
   }
 
-  // 필터링 결과 로깅
-  console.log('🔍 필터링 결과:');
-  console.log('  전체데이터:', googleSheetsData.length, '건');
-  console.log('  필터링후:', filteredGoogleSheets.length, '건');
-  console.log('  현재 선택 날짜:', toLocalDateString(selectedDate));
-  console.log('  뷰모드:', viewMode);
+  // ?꾪꽣留?寃곌낵 濡쒓퉭
+  console.log('?뵇 ?꾪꽣留?寃곌낵:');
+  console.log('  ?꾩껜?곗씠??', googleSheetsData.length, '嫄?);
+  console.log('  ?꾪꽣留곹썑:', filteredGoogleSheets.length, '嫄?);
+  console.log('  ?꾩옱 ?좏깮 ?좎쭨:', toLocalDateString(selectedDate));
+  console.log('  酉곕え??', viewMode);
 
-  // 서비스별 필터링 결과
+  // ?쒕퉬?ㅻ퀎 ?꾪꽣留?寃곌낵
   const filteredServiceCounts = {
     cruise: filteredGoogleSheets.filter(d => d.cruise).length,
     car: filteredGoogleSheets.filter(d => d.carType && d.pickupDatetime).length,
@@ -2831,9 +2831,9 @@ export default function ManagerSchedulePage() {
     tour: filteredGoogleSheets.filter(d => d.tourName).length,
     rentcar: filteredGoogleSheets.filter(d => d.carCode && d.pickupDate).length
   };
-  console.log('  서비스별 필터링 결과:');
+  console.log('  ?쒕퉬?ㅻ퀎 ?꾪꽣留?寃곌낵:');
   Object.entries(filteredServiceCounts).forEach(([type, count]) => {
-    if (count > 0) console.log(`    ${type}: ${count}건`);
+    if (count > 0) console.log(`    ${type}: ${count}嫄?);
   });
 
   const navigateDate = (direction: 'prev' | 'next') => {
@@ -2873,7 +2873,7 @@ export default function ManagerSchedulePage() {
     input.click();
   };
 
-  // Google Sheets 데이터 타입 확인 함수들
+  // Google Sheets ?곗씠??????뺤씤 ?⑥닔??
   const isCruiseData = (item: any): item is SHRReservation => {
     return 'checkin' in item && 'cruise' in item;
   };
@@ -2902,7 +2902,7 @@ export default function ManagerSchedulePage() {
     return 'pickupDatetime' in item && !('boardingDate' in item) && !('pickupDate' in item);
   };
 
-  // 서비스 타입 판별 함수
+  // ?쒕퉬??????먮퀎 ?⑥닔
   const getServiceType = (reservation: any): string => {
     if (isCruiseData(reservation)) return 'cruise';
     if (isVehicleData(reservation)) return 'vehicle';
@@ -2914,51 +2914,51 @@ export default function ManagerSchedulePage() {
     return 'unknown';
   };
 
-  // 서비스 타입별 아이콘 및 이름
+  // ?쒕퉬????낅퀎 ?꾩씠肄?諛??대쫫
   const getServiceInfo = (type: string) => {
     const serviceMap: Record<string, { icon: React.ReactNode; name: string; color: string }> = {
-      cruise: { icon: <Ship className="w-5 h-5" />, name: '크루즈', color: 'blue' },
-      car: { icon: <Car className="w-5 h-5" />, name: '차량', color: 'blue' },
-      vehicle: { icon: <Car className="w-5 h-5" />, name: '스하차량', color: 'purple' },
-      airport: { icon: <Plane className="w-5 h-5" />, name: '공항', color: 'green' },
-      hotel: { icon: <Building className="w-5 h-5" />, name: '호텔', color: 'orange' },
-      tour: { icon: <MapPin className="w-5 h-5" />, name: '투어', color: 'red' },
-      rentcar: { icon: <Car className="w-5 h-5" />, name: '렌트카', color: 'indigo' }
+      cruise: { icon: <Ship className="w-5 h-5" />, name: '?щ（利?, color: 'blue' },
+      car: { icon: <Car className="w-5 h-5" />, name: '李⑤웾', color: 'blue' },
+      vehicle: { icon: <Car className="w-5 h-5" />, name: '?ㅽ븯李⑤웾', color: 'purple' },
+      airport: { icon: <Plane className="w-5 h-5" />, name: '怨듯빆', color: 'green' },
+      hotel: { icon: <Building className="w-5 h-5" />, name: '?명뀛', color: 'orange' },
+      tour: { icon: <MapPin className="w-5 h-5" />, name: '?ъ뼱', color: 'red' },
+      rentcar: { icon: <Car className="w-5 h-5" />, name: '?뚰듃移?, color: 'indigo' }
     };
-    return serviceMap[type] || { icon: <Calendar className="w-5 h-5" />, name: '기타', color: 'gray' };
+    return serviceMap[type] || { icon: <Calendar className="w-5 h-5" />, name: '湲고?', color: 'gray' };
   };
 
-  // 서비스별 그룹화
+  // ?쒕퉬?ㅻ퀎 洹몃９??
   const groupedByService = filteredGoogleSheets.reduce((acc: Record<string, any[]>, reservation) => {
     const serviceType = getServiceType(reservation);
     (acc[serviceType] ||= []).push(reservation);
     return acc;
   }, {});
 
-  // 필터링 결과 로그
-  console.log('🔍 필터링 결과:');
-  console.log('  전체데이터:', googleSheetsData.length, '건');
-  console.log('  필터링후:', filteredGoogleSheets.length, '건');
-  console.log('  현재 선택 날짜:', selectedDate.toISOString().split('T')[0]);
-  console.log('  뷰모드:', viewMode);
-  console.log('  서비스별 필터링 결과:');
+  // ?꾪꽣留?寃곌낵 濡쒓렇
+  console.log('?뵇 ?꾪꽣留?寃곌낵:');
+  console.log('  ?꾩껜?곗씠??', googleSheetsData.length, '嫄?);
+  console.log('  ?꾪꽣留곹썑:', filteredGoogleSheets.length, '嫄?);
+  console.log('  ?꾩옱 ?좏깮 ?좎쭨:', selectedDate.toISOString().split('T')[0]);
+  console.log('  酉곕え??', viewMode);
+  console.log('  ?쒕퉬?ㅻ퀎 ?꾪꽣留?寃곌낵:');
   Object.entries(groupedByService).forEach(([type, items]) => {
-    console.log(`    ${type}: ${items.length}건`);
+    console.log(`    ${type}: ${items.length}嫄?);
   });
 
-  // 필터링된 데이터 샘플 확인 (처음 3개)
+  // ?꾪꽣留곷맂 ?곗씠???섑뵆 ?뺤씤 (泥섏쓬 3媛?
   if (filteredGoogleSheets.length > 0) {
-    console.log('  📋 필터링된 데이터 샘플:');
+    console.log('  ?뱥 ?꾪꽣留곷맂 ?곗씠???섑뵆:');
     filteredGoogleSheets.slice(0, 3).forEach((item, idx) => {
       const dateField = item.checkin || item.pickupDatetime || item.boardingDate ||
         item.date || item.checkinDate || item.startDate || item.pickupDate;
-      console.log(`    [${idx + 1}] ${item.orderId} - 날짜: ${dateField}`);
+      console.log(`    [${idx + 1}] ${item.orderId} - ?좎쭨: ${dateField}`);
     });
   }
 
-  // Google Sheets 예약 카드 렌더링
+  // Google Sheets ?덉빟 移대뱶 ?뚮뜑留?
   const renderGoogleSheetsCard = (reservation: any, index: number) => {
-    // 1. 크루즈 데이터
+    // 1. ?щ（利??곗씠??
     if (isCruiseData(reservation)) {
       const checkinDate = parseDate(reservation.checkin);
       const isPast = isPastDate(reservation.checkin);
@@ -2973,7 +2973,7 @@ export default function ManagerSchedulePage() {
               <Ship className="w-5 h-5 text-blue-600" />
             </div>
             <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
-              크루즈
+              ?щ（利?
             </h5>
             <div className="flex items-center gap-2">
               <span
@@ -2982,21 +2982,21 @@ export default function ManagerSchedulePage() {
                   : 'bg-blue-100 text-blue-800'
                   }`}
               >
-                {isPast ? '완료' : '예정'}
+                {isPast ? '?꾨즺' : '?덉젙'}
               </span>
               <button
                 onClick={() => handleOpenGoogleSheetsDetail(reservation)}
                 className="bg-blue-500 text-white py-0.5 px-2 rounded text-xs hover:bg-blue-600 transition-colors"
               >
-                상세
+                ?곸꽭
               </button>
               {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
                 <button
                   onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
+                  title="??젣"
                 >
-                  🗑️
+                  ?뿊截?
                 </button>
               )}
             </div>
@@ -3015,11 +3015,11 @@ export default function ManagerSchedulePage() {
               </div>
             )}
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-gray-500 text-xs mt-0.5">크루즈</span>
+              <span className="font-semibold text-green-800 text-xs mt-0.5">?щ（利?/span>
               <span className="text-sm font-bold text-blue-700 break-words">{reservation.cruise}</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-gray-500 text-xs mt-0.5">객실</span>
+              <span className="font-semibold text-green-800 text-xs mt-0.5">媛앹떎</span>
               <span className="text-sm break-words">{reservation.roomType} {reservation.category && `(${reservation.category})`}</span>
             </div>
             <div className="flex items-center gap-2 mt-1">
@@ -3029,34 +3029,34 @@ export default function ManagerSchedulePage() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-500 text-xs">인원</span>
+              <span className="font-semibold text-green-800 text-xs">?몄썝</span>
               <span className="text-sm">
-                {reservation.adult > 0 && `👨 ${reservation.adult}명`}
-                {reservation.child > 0 && ` 👶 ${reservation.child}명`}
-                {reservation.toddler > 0 && ` 🍼 ${reservation.toddler}명`}
+                {reservation.adult > 0 && `?뫅 ${reservation.adult}紐?}
+                {reservation.child > 0 && ` ?뫔 ${reservation.child}紐?}
+                {reservation.toddler > 0 && ` ?띁 ${reservation.toddler}紐?}
                 {reservation.adult === 0 && reservation.child === 0 && reservation.toddler === 0 && (
                   <span className="text-gray-400">-</span>
                 )}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-500 text-xs">객실수</span>
-              <span className="text-sm">{reservation.roomCount}개</span>
+              <span className="font-semibold text-green-800 text-xs">媛앹떎??/span>
+              <span className="text-sm">{reservation.roomCount}媛?/span>
             </div>
             {reservation.discount && (
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-500 text-xs">할인</span>
+                <span className="font-semibold text-green-800 text-xs">?좎씤</span>
                 <span className="text-sm text-green-600">{reservation.discount}</span>
               </div>
             )}
             {reservation.requestNote && (() => {
               const filtered = reservation.requestNote
                 .replace(/\[CHILD_OLDER_COUNTS:[^\]]*\]\s*/gi, '')
-                .replace(/\[옵션\s*\d+\][\s\S]*?(?=\n|$)/g, '')
+                .replace(/\[?듭뀡\s*\d+\][\s\S]*?(?=\n|$)/g, '')
                 .trim();
               return filtered ? (
                 <div className="flex items-start gap-2 mt-2 pt-2 border-t border-gray-200">
-                  <span className="font-semibold text-orange-600 text-xs whitespace-nowrap">📝</span>
+                  <span className="font-semibold text-green-800 text-xs whitespace-nowrap">?뱷</span>
                   <span className="text-sm text-gray-700 leading-relaxed">{filtered}</span>
                 </div>
               ) : null;
@@ -3066,16 +3066,16 @@ export default function ManagerSchedulePage() {
       );
     }
 
-    // 2. 스하차량 데이터
+    // 2. ?ㅽ븯李⑤웾 ?곗씠??
     else if (isVehicleData(reservation)) {
-      console.log('🚙 스하차량 렌더링:', {
+      console.log('?슇 ?ㅽ븯李⑤웾 ?뚮뜑留?', {
         orderId: reservation.orderId,
         boardingDate: reservation.boardingDate,
         vehicleNumber: reservation.vehicleNumber,
         customerName: reservation.customerName
       });
       const boardingDate = parseDate(reservation.boardingDate);
-      console.log('📅 파싱된 날짜:', boardingDate);
+      console.log('?뱟 ?뚯떛???좎쭨:', boardingDate);
       const isPast = isPastDate(reservation.boardingDate);
 
       return (
@@ -3088,25 +3088,25 @@ export default function ManagerSchedulePage() {
               <Car className="w-5 h-5 text-purple-600" />
             </div>
             <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
-              스하차량
+              ?ㅽ븯李⑤웾
             </h5>
             <div className="flex items-center gap-2">
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-purple-100 text-purple-800'}`}>
-                {isPast ? '완료' : '예정'}
+                {isPast ? '?꾨즺' : '?덉젙'}
               </span>
               <button
                 onClick={() => handleOpenGoogleSheetsDetail(reservation)}
                 className="bg-purple-500 text-white py-0.5 px-2 rounded text-xs hover:bg-purple-600 transition-colors"
               >
-                상세
+                ?곸꽭
               </button>
               {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
                 <button
                   onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
+                  title="??젣"
                 >
-                  🗑️
+                  ?뿊截?
                 </button>
               )}
             </div>
@@ -3136,29 +3136,29 @@ export default function ManagerSchedulePage() {
             )}
             {reservation.cruiseInfo && (
               <div className="flex items-start gap-2 mb-1 pb-1 border-b border-gray-100">
-                <span className="font-semibold text-gray-500 text-xs mt-0.5">크루즈</span>
+                <span className="font-semibold text-green-800 text-xs mt-0.5">?щ（利?/span>
                 <span className="text-sm text-purple-700 font-medium break-words">{reservation.cruiseInfo}</span>
               </div>
             )}
             <div className="flex items-center gap-2 mt-1">
               <Calendar className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-medium">
-                {boardingDate ? boardingDate.toLocaleDateString('ko-KR') : <span className="text-red-500">날짜 없음 ({reservation.boardingDate})</span>}
+                {boardingDate ? boardingDate.toLocaleDateString('ko-KR') : <span className="text-red-500">?좎쭨 ?놁쓬 ({reservation.boardingDate})</span>}
               </span>
             </div>
             <div className="flex items-start gap-2">
               <Car className="w-4 h-4 text-gray-400 mt-0.5" />
-              <span className="text-sm break-words">{reservation.vehicleNumber} / 좌석: {reservation.seatNumber}</span>
+              <span className="text-sm break-words">{reservation.vehicleNumber} / 醫뚯꽍: {reservation.seatNumber}</span>
             </div>
             {reservation.pickupLocation && (
               <div className="flex items-start gap-2 mt-1">
-                <span className="font-semibold text-gray-500 text-xs mt-0.5">픽업</span>
+                <span className="font-semibold text-green-800 text-xs mt-0.5">?쎌뾽</span>
                 <span className="text-sm break-words">{reservation.pickupLocation}</span>
               </div>
             )}
             {reservation.dropoffLocation && (
               <div className="flex items-start gap-2">
-                <span className="font-semibold text-gray-500 text-xs mt-0.5">드랍</span>
+                <span className="font-semibold text-green-800 text-xs mt-0.5">?쒕엻</span>
                 <span className="text-sm break-words">{reservation.dropoffLocation}</span>
               </div>
             )}
@@ -3167,12 +3167,12 @@ export default function ManagerSchedulePage() {
       );
     }
 
-    // 3. 공항 데이터
+    // 3. 怨듯빆 ?곗씠??
     else if (isAirportData(reservation)) {
       const serviceDate = parseDate(reservation.date);
       const isPast = isPastDate(reservation.date);
       const rawStopover = String(reservation.stopover || '').trim();
-      const locationLabel = rawStopover === '경유지' ? '숙박지 정보' : (rawStopover || '위치');
+      const locationLabel = rawStopover === '寃쎌쑀吏' ? '?숇컯吏 ?뺣낫' : (rawStopover || '?꾩튂');
       const rawPlaceName = String(reservation.placeName || '').trim();
       const locationValue = /^updating$/i.test(rawPlaceName) ? '-' : (rawPlaceName || '-');
 
@@ -3186,25 +3186,25 @@ export default function ManagerSchedulePage() {
               <Plane className="w-5 h-5 text-green-600" />
             </div>
             <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
-              공항서비스
+              怨듯빆?쒕퉬??
             </h5>
             <div className="flex items-center gap-2">
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-green-100 text-green-800'}`}>
-                {isPast ? '완료' : '예정'}
+                {isPast ? '?꾨즺' : '?덉젙'}
               </span>
               <button
                 onClick={() => handleOpenGoogleSheetsDetail(reservation)}
                 className="bg-green-500 text-white py-0.5 px-2 rounded text-xs hover:bg-green-600 transition-colors"
               >
-                상세
+                ?곸꽭
               </button>
               {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
                 <button
                   onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
+                  title="??젣"
                 >
-                  🗑️
+                  ?뿊截?
                 </button>
               )}
             </div>
@@ -3219,11 +3219,11 @@ export default function ManagerSchedulePage() {
               </div>
             )}
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-gray-500 text-xs mt-0.5">구분</span>
+              <span className="font-semibold text-green-800 text-xs mt-0.5">援щ텇</span>
               <span className="text-sm font-bold text-green-700 break-words">{reservation.tripType} - {reservation.category}</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-gray-500 text-xs mt-0.5">경로</span>
+              <span className="font-semibold text-green-800 text-xs mt-0.5">寃쎈줈</span>
               <span className="text-sm break-words">{reservation.route}</span>
             </div>
             <div className="flex items-center gap-2 mt-1">
@@ -3237,17 +3237,17 @@ export default function ManagerSchedulePage() {
               <span className="text-sm break-words">{reservation.airportName} / {reservation.flightNumber}</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-gray-500 text-xs mt-0.5">{locationLabel}</span>
+              <span className="font-semibold text-green-800 text-xs mt-0.5">{locationLabel}</span>
               <span className="text-sm break-words">{locationValue}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-500 text-xs">인원/차량</span>
-              <span className="text-sm">👥 {reservation.passengerCount}명 / 🚗 {reservation.carCount}대</span>
+              <span className="font-semibold text-green-800 text-xs">?몄썝/李⑤웾</span>
+              <span className="text-sm">?뫁 {reservation.passengerCount}紐?/ ?슅 {reservation.carCount}?</span>
             </div>
             {reservation.carrierCount > 0 && (
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-500 text-xs">캐리어</span>
-                <span className="text-sm">🧳 {reservation.carrierCount}개</span>
+                <span className="font-semibold text-green-800 text-xs">罹먮━??/span>
+                <span className="text-sm">?㎡ {reservation.carrierCount}媛?/span>
               </div>
             )}
           </div>
@@ -3255,7 +3255,7 @@ export default function ManagerSchedulePage() {
       );
     }
 
-    // 4. 호텔 데이터
+    // 4. ?명뀛 ?곗씠??
     else if (isHotelData(reservation)) {
       const checkinDate = parseDate(reservation.checkinDate);
       const isPast = isPastDate(reservation.checkinDate);
@@ -3270,25 +3270,25 @@ export default function ManagerSchedulePage() {
               <Building className="w-5 h-5 text-orange-600" />
             </div>
             <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
-              호텔
+              ?명뀛
             </h5>
             <div className="flex items-center gap-2">
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-orange-100 text-orange-800'}`}>
-                {isPast ? '완료' : '예정'}
+                {isPast ? '?꾨즺' : '?덉젙'}
               </span>
               <button
                 onClick={() => handleOpenGoogleSheetsDetail(reservation)}
                 className="bg-orange-500 text-white py-0.5 px-2 rounded text-xs hover:bg-orange-600 transition-colors"
               >
-                상세
+                ?곸꽭
               </button>
               {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
                 <button
                   onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
+                  title="??젣"
                 >
-                  🗑️
+                  ?뿊截?
                 </button>
               )}
             </div>
@@ -3303,36 +3303,36 @@ export default function ManagerSchedulePage() {
               </div>
             )}
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-gray-500 text-xs mt-0.5">호텔</span>
+              <span className="font-semibold text-green-800 text-xs mt-0.5">?명뀛</span>
               <span className="text-sm font-bold text-orange-700 break-words">{reservation.hotelName}</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-gray-500 text-xs mt-0.5">객실</span>
+              <span className="font-semibold text-green-800 text-xs mt-0.5">媛앹떎</span>
               <span className="text-sm break-words">{reservation.roomName} ({reservation.roomType})</span>
             </div>
             <div className="flex items-center gap-2 mt-1">
               <Calendar className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-medium">
                 {checkinDate?.toLocaleDateString('ko-KR')}
-                {reservation.days > 0 && <span className="text-xs text-gray-500 ml-1">({reservation.days}박)</span>}
+                {reservation.days > 0 && <span className="text-xs text-gray-500 ml-1">({reservation.days}諛?</span>}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-500 text-xs">인원</span>
+              <span className="font-semibold text-green-800 text-xs">?몄썝</span>
               <span className="text-sm">
-                {reservation.adult > 0 && `👨 ${reservation.adult}명`}
-                {reservation.child > 0 && ` 👶 ${reservation.child}명`}
-                {reservation.toddler > 0 && ` 🍼 ${reservation.toddler}명`}
+                {reservation.adult > 0 && `?뫅 ${reservation.adult}紐?}
+                {reservation.child > 0 && ` ?뫔 ${reservation.child}紐?}
+                {reservation.toddler > 0 && ` ?띁 ${reservation.toddler}紐?}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-500 text-xs">객실수</span>
-              <span className="text-sm">{reservation.roomCount}개</span>
+              <span className="font-semibold text-green-800 text-xs">媛앹떎??/span>
+              <span className="text-sm">{reservation.roomCount}媛?/span>
             </div>
             {reservation.breakfastService && (
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-500 text-xs">조식</span>
-                <span className="text-sm">🍳 포함</span>
+                <span className="font-semibold text-green-800 text-xs">議곗떇</span>
+                <span className="text-sm">?뜵 ?ы븿</span>
               </div>
             )}
           </div>
@@ -3340,7 +3340,7 @@ export default function ManagerSchedulePage() {
       );
     }
 
-    // 5. 투어 데이터
+    // 5. ?ъ뼱 ?곗씠??
     else if (isTourData(reservation)) {
       const startDate = parseDate(reservation.startDate);
       const isPast = isPastDate(reservation.startDate);
@@ -3355,25 +3355,25 @@ export default function ManagerSchedulePage() {
               <MapPin className="w-5 h-5 text-pink-600" />
             </div>
             <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
-              투어
+              ?ъ뼱
             </h5>
             <div className="flex items-center gap-2">
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-pink-100 text-pink-800'}`}>
-                {isPast ? '완료' : '예정'}
+                {isPast ? '?꾨즺' : '?덉젙'}
               </span>
               <button
                 onClick={() => handleOpenGoogleSheetsDetail(reservation)}
                 className="bg-pink-500 text-white py-0.5 px-2 rounded text-xs hover:bg-pink-600 transition-colors"
               >
-                상세
+                ?곸꽭
               </button>
               {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
                 <button
                   onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
+                  title="??젣"
                 >
-                  🗑️
+                  ?뿊截?
                 </button>
               )}
             </div>
@@ -3388,11 +3388,11 @@ export default function ManagerSchedulePage() {
               </div>
             )}
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-gray-500 text-xs mt-0.5">투어</span>
+              <span className="font-semibold text-green-800 text-xs mt-0.5">?ъ뼱</span>
               <span className="text-sm font-bold text-pink-700 break-words">{reservation.tourName}</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-gray-500 text-xs mt-0.5">종류</span>
+              <span className="font-semibold text-green-800 text-xs mt-0.5">醫낅쪟</span>
               <span className="text-sm break-words">{reservation.tourType}</span>
             </div>
             <div className="flex items-center gap-2 mt-1">
@@ -3400,8 +3400,8 @@ export default function ManagerSchedulePage() {
               <span className="text-sm font-medium">{startDate?.toLocaleDateString('ko-KR')}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-500 text-xs">인원</span>
-              <span className="text-sm">👥 {reservation.participants}명</span>
+              <span className="font-semibold text-green-800 text-xs">?몄썝</span>
+              <span className="text-sm">?뫁 {reservation.participants}紐?/span>
             </div>
             {reservation.pickupLocation && (
               <div className="flex items-start gap-2">
@@ -3411,7 +3411,7 @@ export default function ManagerSchedulePage() {
             )}
             {reservation.memo && (
               <div className="flex items-start gap-2">
-                <span className="font-semibold text-gray-500 text-xs mt-0.5">메모</span>
+                <span className="font-semibold text-green-800 text-xs mt-0.5">硫붾え</span>
                 <span className="text-sm text-gray-600 break-words">{reservation.memo}</span>
               </div>
             )}
@@ -3420,7 +3420,7 @@ export default function ManagerSchedulePage() {
       );
     }
 
-    // 6. 렌트카 데이터
+    // 6. ?뚰듃移??곗씠??
     else if (isRentcarData(reservation)) {
       const pickupDate = parseDate(reservation.pickupDate);
       const isPast = isPastDate(reservation.pickupDate);
@@ -3435,25 +3435,25 @@ export default function ManagerSchedulePage() {
               <Car className="w-5 h-5 text-indigo-600" />
             </div>
             <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
-              렌트카
+              ?뚰듃移?
             </h5>
             <div className="flex items-center gap-2">
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-indigo-100 text-indigo-800'}`}>
-                {isPast ? '완료' : '예정'}
+                {isPast ? '?꾨즺' : '?덉젙'}
               </span>
               <button
                 onClick={() => handleOpenGoogleSheetsDetail(reservation)}
                 className="bg-indigo-500 text-white py-0.5 px-2 rounded text-xs hover:bg-indigo-600 transition-colors"
               >
-                상세
+                ?곸꽭
               </button>
               {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
                 <button
                   onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
+                  title="??젣"
                 >
-                  🗑️
+                  ?뿊截?
                 </button>
               )}
             </div>
@@ -3468,11 +3468,11 @@ export default function ManagerSchedulePage() {
               </div>
             )}
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-gray-500 text-xs mt-0.5">차량</span>
+              <span className="font-semibold text-green-800 text-xs mt-0.5">李⑤웾</span>
               <span className="text-sm font-bold text-indigo-700 break-words">{reservation.carType}</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-gray-500 text-xs mt-0.5">경로</span>
+              <span className="font-semibold text-green-800 text-xs mt-0.5">寃쎈줈</span>
               <span className="text-sm break-words">{reservation.route} ({reservation.tripType})</span>
             </div>
             <div className="flex items-center gap-2 mt-1">
@@ -3485,16 +3485,16 @@ export default function ManagerSchedulePage() {
               <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
               <span className="text-sm break-words">
                 {reservation.pickupLocation}
-                {reservation.destination && ` → ${reservation.destination}`}
+                {reservation.destination && ` ??${reservation.destination}`}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-500 text-xs">인원/차량</span>
-              <span className="text-sm">👥 {reservation.passengerCount}명 / 🚗 {reservation.carCount}대</span>
+              <span className="font-semibold text-green-800 text-xs">?몄썝/李⑤웾</span>
+              <span className="text-sm">?뫁 {reservation.passengerCount}紐?/ ?슅 {reservation.carCount}?</span>
             </div>
             {reservation.usagePeriod && (
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-500 text-xs">사용기간</span>
+                <span className="font-semibold text-green-800 text-xs">?ъ슜湲곌컙</span>
                 <span className="text-sm">{reservation.usagePeriod}</span>
               </div>
             )}
@@ -3503,16 +3503,16 @@ export default function ManagerSchedulePage() {
       );
     }
 
-    // 7. 차량 데이터 (기본)
+    // 7. 李⑤웾 ?곗씠??(湲곕낯)
     else if (isCarData(reservation)) {
-      console.log('🚗 차량 렌더링:', {
+      console.log('?슅 李⑤웾 ?뚮뜑留?', {
         orderId: reservation.orderId,
         pickupDatetime: reservation.pickupDatetime,
         customerName: reservation.customerName,
         carType: reservation.carType
       });
       const pickupDate = parseDate(reservation.pickupDatetime);
-      console.log('📅 파싱된 날짜:', pickupDate);
+      console.log('?뱟 ?뚯떛???좎쭨:', pickupDate);
       const isPast = isPastDate(reservation.pickupDatetime);
 
       return (
@@ -3525,11 +3525,11 @@ export default function ManagerSchedulePage() {
               <Car className="w-5 h-5 text-blue-600" />
             </div>
             <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
-              크루즈 차량
+              ?щ（利?李⑤웾
             </h5>
             <div className="flex items-center gap-2">
               <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${reservation.segmentType === 'return' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                {reservation.segmentRibbon || (reservation.segmentType === 'return' ? '리턴' : '픽업')}
+                {reservation.segmentRibbon || (reservation.segmentType === 'return' ? '由ы꽩' : '?쎌뾽')}
               </span>
               <span
                 className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast
@@ -3537,21 +3537,21 @@ export default function ManagerSchedulePage() {
                   : 'bg-blue-100 text-blue-800'
                   }`}
               >
-                {isPast ? '완료' : '예정'}
+                {isPast ? '?꾨즺' : '?덉젙'}
               </span>
               <button
                 onClick={() => handleOpenGoogleSheetsDetail(reservation)}
                 className="bg-blue-500 text-white py-0.5 px-2 rounded text-xs hover:bg-blue-600 transition-colors"
               >
-                상세
+                ?곸꽭
               </button>
               {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
                 <button
                   onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
+                  title="??젣"
                 >
-                  🗑️
+                  ?뿊截?
                 </button>
               )}
             </div>
@@ -3570,31 +3570,31 @@ export default function ManagerSchedulePage() {
               </div>
             )}
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-gray-500 text-xs mt-0.5">차량</span>
+              <span className="font-semibold text-green-800 text-xs mt-0.5">李⑤웾</span>
               <span className="text-sm break-words">{reservation.carType}</span>
             </div>
             <div className="flex items-center gap-2 mt-1">
               <Calendar className="w-4 h-4 text-gray-400" />
               <span className="text-sm">
-                {pickupDate ? pickupDate.toLocaleDateString('ko-KR') : <span className="text-red-500">날짜 없음 ({reservation.pickupDatetime})</span>}
+                {pickupDate ? pickupDate.toLocaleDateString('ko-KR') : <span className="text-red-500">?좎쭨 ?놁쓬 ({reservation.pickupDatetime})</span>}
               </span>
             </div>
             {reservation.segmentType !== 'return' && reservation.pickupLocation && (
               <div className="flex items-start gap-2">
-                <span className="font-semibold text-gray-500 text-xs mt-0.5">승차</span>
+                <span className="font-semibold text-green-800 text-xs mt-0.5">?뱀감</span>
                 <span className="text-sm break-words">{reservation.pickupLocation}</span>
               </div>
             )}
             {reservation.segmentType === 'return' && reservation.dropoffLocation && (
               <div className="flex items-start gap-2">
-                <span className="font-semibold text-gray-500 text-xs mt-0.5">하차</span>
+                <span className="font-semibold text-green-800 text-xs mt-0.5">?섏감</span>
                 <span className="text-sm break-words">{reservation.dropoffLocation}</span>
               </div>
             )}
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-500 text-xs">인원/차량</span>
+              <span className="font-semibold text-green-800 text-xs">?몄썝/李⑤웾</span>
               <span className="text-sm">
-                👥 {reservation.passengerCount}명 / 🚗 {reservation.carCount}대
+                ?뫁 {reservation.passengerCount}紐?/ ?슅 {reservation.carCount}?
               </span>
             </div>
           </div>
@@ -3602,17 +3602,17 @@ export default function ManagerSchedulePage() {
       );
     }
 
-    // 기타 (fallback)
+    // 湲고? (fallback)
     return null;
   };
 
   if (loading) {
     return (
-      <ManagerLayout title="예약 일정 (신/구 구분)" activeTab="schedule-new">
+      <ManagerLayout title="?덉빟 ?쇱젙 (??援?援щ텇)" activeTab="schedule-new">
         <div className="flex justify-center items-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">일정 정보를 불러오는 중...</p>
+            <p className="mt-4 text-gray-600">?쇱젙 ?뺣낫瑜?遺덈윭?ㅻ뒗 以?..</p>
           </div>
         </div>
       </ManagerLayout>
@@ -3620,14 +3620,14 @@ export default function ManagerSchedulePage() {
   }
 
   return (
-    <ManagerLayout title="예약 일정 (신/구 구분)" activeTab="schedule-new">
+    <ManagerLayout title="?덉빟 ?쇱젙 (??援?援щ텇)" activeTab="schedule-new">
       <div className="space-y-6">
 
-        {/* 일정 컨트롤 */}
+        {/* ?쇱젙 而⑦듃濡?*/}
         <div className="bg-white rounded-lg shadow-md p-6">
-          {/* 1행: 날짜 네비게이션 + 검색 바 + 일간/주간/월간 버튼 */}
+          {/* 1?? ?좎쭨 ?ㅻ퉬寃뚯씠??+ 寃??諛?+ ?쇨컙/二쇨컙/?붽컙 踰꾪듉 */}
           <div className="flex items-center justify-between gap-4 mb-4">
-            {/* 왼쪽: 날짜 네비게이션 */}
+            {/* ?쇱そ: ?좎쭨 ?ㅻ퉬寃뚯씠??*/}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigateDate('prev')}
@@ -3640,7 +3640,7 @@ export default function ManagerSchedulePage() {
                 type="button"
                 onClick={openDatePicker}
                 className="text-lg font-semibold min-w-max hover:text-green-700"
-                title="날짜 선택"
+                title="?좎쭨 ?좏깮"
               >
                 {viewMode === 'day'
                   ? selectedDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -3662,12 +3662,12 @@ export default function ManagerSchedulePage() {
                 aria-hidden="true"
               />
 
-              {/* 오늘 버튼 */}
+              {/* ?ㅻ뒛 踰꾪듉 */}
               {viewMode === 'day' && (
                 <button
                   onClick={() => setSelectedDate(new Date())}
                   className="px-2 py-1 bg-blue-50 text-blue-600 rounded border border-blue-200 text-xs font-medium hover:bg-blue-100"
-                >오늘</button>
+                >?ㅻ뒛</button>
               )}
 
               <button
@@ -3678,7 +3678,7 @@ export default function ManagerSchedulePage() {
               </button>
             </div>
 
-            {/* 중앙: 검색 바 */}
+            {/* 以묒븰: 寃??諛?*/}
             <div className="flex items-center gap-1 flex-1 max-w-md">
               <div className="flex-1 relative">
                 <input
@@ -3686,7 +3686,7 @@ export default function ManagerSchedulePage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="검색..."
+                  placeholder="寃??.."
                   className="w-full px-3 py-2 pr-8 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -3695,44 +3695,44 @@ export default function ManagerSchedulePage() {
                 onClick={handleSearch}
                 className="px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
               >
-                검색
+                寃??
               </button>
               {activeSearchQuery && (
                 <button
                   onClick={handleClearSearch}
                   className="px-3 py-2 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition-colors"
                 >
-                  초기화
+                  珥덇린??
                 </button>
               )}
             </div>
 
-            {/* 오른쪽: 일간/주간/월간 버튼 */}
+            {/* ?ㅻⅨ履? ?쇨컙/二쇨컙/?붽컙 踰꾪듉 */}
             <div className="flex gap-1">
               <button
                 onClick={() => setViewMode('day')}
                 className={`px-3 py-2 rounded text-sm transition-colors ${viewMode === 'day' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
-                일간
+                ?쇨컙
               </button>
               <button
                 onClick={() => setViewMode('week')}
                 className={`px-3 py-2 rounded text-sm transition-colors ${viewMode === 'week' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
-                주간
+                二쇨컙
               </button>
               <button
                 onClick={() => setViewMode('month')}
                 className={`px-3 py-2 rounded text-sm transition-colors ${viewMode === 'month' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
-                월간
+                ?붽컙
               </button>
             </div>
           </div>
 
-          {/* 2행: 타입 필터 + 그룹화 + 검색 결과 */}
+          {/* 2?? ????꾪꽣 + 洹몃９??+ 寃??寃곌낵 */}
           <div className="flex items-center justify-start gap-4">
-            {/* 타입 필터 */}
+            {/* ????꾪꽣 */}
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-600" />
               <div className="flex gap-1 flex-wrap">
@@ -3740,7 +3740,7 @@ export default function ManagerSchedulePage() {
                   onClick={() => setTypeFilter('all')}
                   className={`px-2 py-1 rounded-full text-xs transition-colors ${typeFilter === 'all' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
                 >
-                  전체
+                  ?꾩껜
                 </button>
                 {['cruise', 'vehicle', 'sht', 'airport', 'hotel', 'tour', 'rentcar'].map(type => (
                   <button
@@ -3754,44 +3754,44 @@ export default function ManagerSchedulePage() {
               </div>
             </div>
 
-            {/* 그룹화 버튼 (주/월간 모드에만 표시) */}
+            {/* 洹몃９??踰꾪듉 (二??붽컙 紐⑤뱶?먮쭔 ?쒖떆) */}
             {(viewMode === 'week' || viewMode === 'month') && (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">그룹화:</span>
+                <span className="text-xs text-gray-600">洹몃９??</span>
                 <div className="inline-flex rounded overflow-hidden border border-gray-200">
                   <button
                     onClick={() => setGroupMode('day')}
                     className={`px-2 py-1 text-xs ${groupMode === 'day' ? 'bg-green-500 text-white' : 'bg-gray-50 text-gray-700'}`}
                   >
-                    일별
+                    ?쇰퀎
                   </button>
                   <button
                     onClick={() => setGroupMode('type')}
                     className={`px-2 py-1 text-xs ${groupMode === 'type' ? 'bg-green-500 text-white' : 'bg-gray-50 text-gray-700'}`}
                   >
-                    타입별
+                    ??낅퀎
                   </button>
                 </div>
               </div>
             )}
 
-            {/* 검색 결과 표시 */}
+            {/* 寃??寃곌낵 ?쒖떆 */}
             {activeSearchQuery && (
               <div className="text-xs text-blue-600 ml-auto">
-                검색: "{activeSearchQuery}"
+                寃?? "{activeSearchQuery}"
               </div>
             )}
           </div>
         </div>
 
-        {/* 일정 목록 - 2열 구조 */}
+        {/* ?쇱젙 紐⑸줉 - 2??援ъ“ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 왼쪽: Supabase 데이터 */}
+          {/* ?쇱そ: Supabase ?곗씠??*/}
           <div className="bg-white rounded-lg shadow-md">
             <div className="p-6 border-b bg-green-50">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Calendar className="w-6 h-6 text-green-600" />
-                DB 예약 일정 ({filteredSchedules.length}건)
+                DB ?덉빟 ?쇱젙 ({filteredSchedules.length}嫄?
               </h3>
             </div>
 
@@ -3799,12 +3799,12 @@ export default function ManagerSchedulePage() {
               <div className="p-8 text-center">
                 <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-600 mb-2">
-                  {typeFilter === 'all' ? '예약된 일정이 없습니다' : `${getTypeName(typeFilter)} 일정이 없습니다`}
+                  {typeFilter === 'all' ? '?덉빟???쇱젙???놁뒿?덈떎' : `${getTypeName(typeFilter)} ?쇱젙???놁뒿?덈떎`}
                 </h3>
               </div>
             ) : (
               <div className="p-6 space-y-10">
-                {/* 일간 보기: 기존 타입별 구분 없이 전체 리스트 */}
+                {/* ?쇨컙 蹂닿린: 湲곗〈 ??낅퀎 援щ텇 ?놁씠 ?꾩껜 由ъ뒪??*/}
                 {viewMode === 'day' && (
                   <div>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -3824,7 +3824,7 @@ export default function ManagerSchedulePage() {
                             )}
                             <div className="flex items-center gap-2">
                               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
-                                {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대기' : '취소'}
+                                {schedule.re_status === 'confirmed' ? '?뺤젙' : schedule.re_status === 'pending' ? '?湲? : '痍⑥냼'}
                               </span>
                               <button
                                 onClick={() => {
@@ -3836,7 +3836,7 @@ export default function ManagerSchedulePage() {
                                   }
                                 }}
                                 className="bg-blue-500 text-white py-0.5 px-2 rounded text-xs hover:bg-blue-600 transition-colors"
-                              >상세</button>
+                              >?곸꽭</button>
                             </div>
                           </div>
                           {renderDbCardBody(schedule)}
@@ -3846,7 +3846,7 @@ export default function ManagerSchedulePage() {
                   </div>
                 )}
 
-                {/* 주/월간 보기 */}
+                {/* 二??붽컙 蹂닿린 */}
                 {(viewMode === 'week' || viewMode === 'month') && (
                   <>
                     {groupMode === 'day' && (
@@ -3860,7 +3860,7 @@ export default function ManagerSchedulePage() {
                               <div key={key}>
                                 <div className="flex items-center justify-between mb-3">
                                   <h4 className="text-md font-semibold flex items-center gap-2">
-                                    <Calendar className="w-5 h-5 text-green-600" /> {formatDateLabel(d)} <span className="text-gray-500">({list.length}건)</span>
+                                    <Calendar className="w-5 h-5 text-green-600" /> {formatDateLabel(d)} <span className="text-gray-500">({list.length}嫄?</span>
                                   </h4>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -3878,7 +3878,7 @@ export default function ManagerSchedulePage() {
                                         )}
                                         <div className="flex items-center gap-2">
                                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
-                                            {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대기' : '취소'}
+                                            {schedule.re_status === 'confirmed' ? '?뺤젙' : schedule.re_status === 'pending' ? '?湲? : '痍⑥냼'}
                                           </span>
                                           <button onClick={() => {
                                             if (schedule.users?.id) {
@@ -3887,7 +3887,7 @@ export default function ManagerSchedulePage() {
                                               setSelectedSchedule(schedule);
                                               setIsModalOpen(true);
                                             }
-                                          }} className="bg-blue-500 text-white py-0.5 px-2 rounded text-xs hover:bg-blue-600 transition-colors">상세</button>
+                                          }} className="bg-blue-500 text-white py-0.5 px-2 rounded text-xs hover:bg-blue-600 transition-colors">?곸꽭</button>
                                         </div>
                                       </div>
                                       {renderDbCardBody(schedule)}
@@ -3906,7 +3906,7 @@ export default function ManagerSchedulePage() {
                           <div key={type}>
                             <div className="flex items-center justify-between mb-3">
                               <h4 className="text-md font-semibold flex items-center gap-2">
-                                {getTypeIcon(typeFilter === 'sht' || typeFilter === 'vehicle' ? 'vehicle' : type)} {typeFilter === 'sht' ? getTypeName('sht') : typeFilter === 'vehicle' ? getTypeName('vehicle') : getTypeName(type)} <span className="text-gray-500">({list.length}건)</span>
+                                {getTypeIcon(typeFilter === 'sht' || typeFilter === 'vehicle' ? 'vehicle' : type)} {typeFilter === 'sht' ? getTypeName('sht') : typeFilter === 'vehicle' ? getTypeName('vehicle') : getTypeName(type)} <span className="text-gray-500">({list.length}嫄?</span>
                               </h4>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -3924,7 +3924,7 @@ export default function ManagerSchedulePage() {
                                     )}
                                     <div className="flex items-center gap-2">
                                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
-                                        {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대기' : '취소'}
+                                        {schedule.re_status === 'confirmed' ? '?뺤젙' : schedule.re_status === 'pending' ? '?湲? : '痍⑥냼'}
                                       </span>
                                       <button onClick={() => {
                                         if (schedule.users?.id) {
@@ -3933,7 +3933,7 @@ export default function ManagerSchedulePage() {
                                           setSelectedSchedule(schedule);
                                           setIsModalOpen(true);
                                         }
-                                      }} className="bg-blue-500 text-white py-0.5 px-2 rounded text-xs hover:bg-blue-600 transition-colors">상세</button>
+                                      }} className="bg-blue-500 text-white py-0.5 px-2 rounded text-xs hover:bg-blue-600 transition-colors">?곸꽭</button>
                                     </div>
                                   </div>
                                   {renderDbCardBody(schedule)}
@@ -3950,25 +3950,25 @@ export default function ManagerSchedulePage() {
             )}
           </div >
 
-          {/* 오른쪽: 시트 데이터 */}
+          {/* ?ㅻⅨ履? ?쒗듃 ?곗씠??*/}
           <div className="bg-white rounded-lg shadow-md">
             <div className="p-6 border-b bg-blue-50">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Calendar className="w-6 h-6 text-blue-600" />
-                시트 예약 일정 ({filteredGoogleSheets.length}건)
+                ?쒗듃 ?덉빟 ?쇱젙 ({filteredGoogleSheets.length}嫄?
               </h3>
             </div>
 
             {googleSheetsLoading ? (
               <div className="p-8 text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="mt-4 text-gray-600">데이터를 불러오는 중...</p>
+                <p className="mt-4 text-gray-600">?곗씠?곕? 遺덈윭?ㅻ뒗 以?..</p>
               </div>
             ) : googleSheetsError ? (
               <div className="p-8 text-center">
                 <Calendar className="w-16 h-16 text-red-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-red-600 mb-2">
-                  데이터 로드 실패
+                  ?곗씠??濡쒕뱶 ?ㅽ뙣
                 </h3>
                 <p className="text-sm text-gray-500">{googleSheetsError}</p>
               </div>
@@ -3977,18 +3977,18 @@ export default function ManagerSchedulePage() {
                 <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-600 mb-2">
                   {googleSheetsData.length === 0
-                    ? 'DB에 데이터가 없습니다'
-                    : '예약된 일정이 없습니다'}
+                    ? 'DB???곗씠?곌? ?놁뒿?덈떎'
+                    : '?덉빟???쇱젙???놁뒿?덈떎'}
                 </h3>
                 {googleSheetsData.length === 0 && (
                   <p className="text-sm text-gray-500 mt-2">
-                    관리자 페이지에서 Google Sheets 데이터를 동기화해주세요.
+                    愿由ъ옄 ?섏씠吏?먯꽌 Google Sheets ?곗씠?곕? ?숆린?뷀빐二쇱꽭??
                   </p>
                 )}
               </div>
             ) : (
               <div className="p-6 space-y-10">
-                {/* 일간 보기 - 서비스별 그룹화 */}
+                {/* ?쇨컙 蹂닿린 - ?쒕퉬?ㅻ퀎 洹몃９??*/}
                 {viewMode === 'day' && (
                   <div className="space-y-6">
                     {Object.entries(groupedByService)
@@ -4007,16 +4007,16 @@ export default function ManagerSchedulePage() {
                               </div>
                               <h4 className="text-md font-semibold text-gray-800">
                                 {serviceInfo.name}
-                                <span className="ml-2 text-sm text-gray-500">({reservationArray.length}건)</span>
+                                <span className="ml-2 text-sm text-gray-500">({reservationArray.length}嫄?</span>
                               </h4>
                             </div>
 
-                            {/* 스하차량인 경우 분류(category)별로 서브그룹화 */}
+                            {/* ?ㅽ븯李⑤웾??寃쎌슦 遺꾨쪟(category)蹂꾨줈 ?쒕툕洹몃９??*/}
                             {serviceType === 'vehicle' ? (
                               <div className="space-y-4">
                                 {Object.entries(
                                   reservationArray.reduce((acc: Record<string, any[]>, reservation) => {
-                                    const category = reservation.category || '미분류';
+                                    const category = reservation.category || '誘몃텇瑜?;
                                     (acc[category] ||= []).push(reservation);
                                     return acc;
                                   }, {})
@@ -4026,7 +4026,7 @@ export default function ManagerSchedulePage() {
                                       <span className="px-3 py-1 rounded bg-purple-100 text-purple-700 text-sm font-semibold">
                                         {category}
                                       </span>
-                                      <span className="text-xs text-gray-500">({categoryReservations.length}건)</span>
+                                      <span className="text-xs text-gray-500">({categoryReservations.length}嫄?</span>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                       {categoryReservations.map((reservation, index) =>
@@ -4048,36 +4048,36 @@ export default function ManagerSchedulePage() {
                       })}
                     {Object.keys(groupedByService).length === 0 && (
                       <div className="text-center py-8 text-gray-500">
-                        예약된 일정이 없습니다.
+                        ?덉빟???쇱젙???놁뒿?덈떎.
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* 주/월간 보기 */}
+                {/* 二??붽컙 蹂닿린 */}
                 {(viewMode === 'week' || viewMode === 'month') && (
                   <>
                     {groupMode === 'day' && (
                       <div className="space-y-8">
                         {Object.entries(
                           filteredGoogleSheets.reduce((acc: Record<string, any[]>, reservation) => {
-                            // 각 서비스 타입별 날짜 필드 확인
+                            // 媛??쒕퉬????낅퀎 ?좎쭨 ?꾨뱶 ?뺤씤
                             let date: Date | null = null;
 
                             if (reservation.checkin) {
-                              date = parseDate(reservation.checkin); // 크루즈
+                              date = parseDate(reservation.checkin); // ?щ（利?
                             } else if (reservation.pickupDatetime) {
-                              date = parseDate(reservation.pickupDatetime); // 차량
+                              date = parseDate(reservation.pickupDatetime); // 李⑤웾
                             } else if (reservation.boardingDate) {
-                              date = parseDate(reservation.boardingDate); // 스하차량
+                              date = parseDate(reservation.boardingDate); // ?ㅽ븯李⑤웾
                             } else if (reservation.date) {
-                              date = parseDate(reservation.date); // 공항
+                              date = parseDate(reservation.date); // 怨듯빆
                             } else if (reservation.checkinDate) {
-                              date = parseDate(reservation.checkinDate); // 호텔
+                              date = parseDate(reservation.checkinDate); // ?명뀛
                             } else if (reservation.startDate) {
-                              date = parseDate(reservation.startDate); // 투어
+                              date = parseDate(reservation.startDate); // ?ъ뼱
                             } else if (reservation.pickupDate) {
-                              date = parseDate(reservation.pickupDate); // 렌트카
+                              date = parseDate(reservation.pickupDate); // ?뚰듃移?
                             }
 
                             if (date) {
@@ -4092,7 +4092,7 @@ export default function ManagerSchedulePage() {
                             const d = new Date(dateKey + 'T00:00:00');
                             const reservationArray = Array.isArray(reservations) ? reservations : [];
 
-                            // 날짜별로 서비스 타입별 그룹화
+                            // ?좎쭨蹂꾨줈 ?쒕퉬????낅퀎 洹몃９??
                             const serviceGroups = reservationArray.reduce((acc: Record<string, any[]>, reservation) => {
                               const serviceType = getServiceType(reservation);
                               (acc[serviceType] ||= []).push(reservation);
@@ -4105,7 +4105,7 @@ export default function ManagerSchedulePage() {
                                   <h4 className="text-lg font-bold flex items-center gap-2">
                                     <Calendar className="w-5 h-5 text-blue-600" />
                                     {formatDateLabel(d)}
-                                    <span className="text-gray-500">({reservationArray.length}건)</span>
+                                    <span className="text-gray-500">({reservationArray.length}嫄?</span>
                                   </h4>
                                 </div>
                                 <div className="space-y-4">
@@ -4125,16 +4125,16 @@ export default function ManagerSchedulePage() {
                                             </div>
                                             <h5 className="text-sm font-semibold text-gray-700">
                                               {serviceInfo.name}
-                                              <span className="ml-2 text-xs text-gray-500">({serviceReservationArray.length}건)</span>
+                                              <span className="ml-2 text-xs text-gray-500">({serviceReservationArray.length}嫄?</span>
                                             </h5>
                                           </div>
 
-                                          {/* 스하차량인 경우 분류(category)별로 서브그룹화 */}
+                                          {/* ?ㅽ븯李⑤웾??寃쎌슦 遺꾨쪟(category)蹂꾨줈 ?쒕툕洹몃９??*/}
                                           {serviceType === 'vehicle' ? (
                                             <div className="space-y-4">
                                               {Object.entries(
                                                 serviceReservationArray.reduce((acc: Record<string, any[]>, reservation) => {
-                                                  const category = reservation.category || '미분류';
+                                                  const category = reservation.category || '誘몃텇瑜?;
                                                   (acc[category] ||= []).push(reservation);
                                                   return acc;
                                                 }, {})
@@ -4144,7 +4144,7 @@ export default function ManagerSchedulePage() {
                                                     <span className="px-3 py-1 rounded bg-purple-100 text-purple-700 text-sm font-semibold">
                                                       {category}
                                                     </span>
-                                                    <span className="text-xs text-gray-500">({categoryReservations.length}건)</span>
+                                                    <span className="text-xs text-gray-500">({categoryReservations.length}嫄?</span>
                                                   </div>
                                                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                                     {categoryReservations.map((reservation, index) =>
@@ -4189,16 +4189,16 @@ export default function ManagerSchedulePage() {
                                   </div>
                                   <h4 className="text-md font-semibold text-gray-800">
                                     {serviceInfo.name}
-                                    <span className="ml-2 text-sm text-gray-500">({reservationArray.length}건)</span>
+                                    <span className="ml-2 text-sm text-gray-500">({reservationArray.length}嫄?</span>
                                   </h4>
                                 </div>
 
-                                {/* 스하차량인 경우 분류(category)별로 서브그룹화 */}
+                                {/* ?ㅽ븯李⑤웾??寃쎌슦 遺꾨쪟(category)蹂꾨줈 ?쒕툕洹몃９??*/}
                                 {serviceType === 'vehicle' ? (
                                   <div className="space-y-4">
                                     {Object.entries(
                                       reservationArray.reduce((acc: Record<string, any[]>, reservation) => {
-                                        const category = reservation.category || '미분류';
+                                        const category = reservation.category || '誘몃텇瑜?;
                                         (acc[category] ||= []).push(reservation);
                                         return acc;
                                       }, {})
@@ -4208,7 +4208,7 @@ export default function ManagerSchedulePage() {
                                           <span className="px-3 py-1 rounded bg-purple-100 text-purple-700 text-sm font-semibold">
                                             {category}
                                           </span>
-                                          <span className="text-xs text-gray-500">({categoryReservations.length}건)</span>
+                                          <span className="text-xs text-gray-500">({categoryReservations.length}嫄?</span>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                           {categoryReservations.map((reservation, index) =>
@@ -4238,7 +4238,7 @@ export default function ManagerSchedulePage() {
         </div>
       </div >
 
-      {/* 예약 디테일 모달 */}
+      {/* ?덉빟 ?뷀뀒??紐⑤떖 */}
       {selectedSchedule?.users?.id && (
         <UserReservationDetailModal
           isOpen={isModalOpen}
@@ -4247,7 +4247,7 @@ export default function ManagerSchedulePage() {
         />
       )}
 
-      {/* DB 예약 상세 모달 */}
+      {/* DB ?덉빟 ?곸꽭 紐⑤떖 */}
       <UserReservationDetailModal
         isOpen={isDBModalOpen}
         onClose={() => setIsDBModalOpen(false)}
@@ -4256,7 +4256,7 @@ export default function ManagerSchedulePage() {
         loading={dbModalLoading}
       />
 
-      {/* Google Sheets 예약 상세 모달 */}
+      {/* Google Sheets ?덉빟 ?곸꽭 紐⑤떖 */}
       <GoogleSheetsDetailModal
         isOpen={isGoogleSheetsModalOpen}
         onClose={() => setIsGoogleSheetsModalOpen(false)}
@@ -4271,3 +4271,5 @@ export default function ManagerSchedulePage() {
     </ManagerLayout>
   );
 }
+
+
