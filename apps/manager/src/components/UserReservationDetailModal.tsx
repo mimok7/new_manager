@@ -99,6 +99,7 @@ const getFilteredNoteText = (note: any): string => {
 
     const sanitizedNote = String(note)
         .replace(/\[CHILD_OLDER_COUNTS:[^\]]*\]\s*/gi, '')
+        .replace(/\[옵션\s*\d+\]\s*기본요금[^\n]*/g, '')
         .trim();
 
     const hiddenLinePattern = /^(?:비고\s*:\s*)?(?:\[(?:객실|구성|옵션)\s*\d+\]|(?:객실|구성)\s*\d+\b)/
