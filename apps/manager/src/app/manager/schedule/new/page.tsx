@@ -413,7 +413,7 @@ export default function ManagerSchedulePage() {
         }))
       ];
 
-      console.log('?뱥 濡쒕뱶??二쇰Ц ?쒕퉬??', allData.length, '媛?, allData);
+      console.log('Loaded order services:', allData.length, allData);
       setAllOrderServices(allData);
       return {
         email: userData?.email || ''
