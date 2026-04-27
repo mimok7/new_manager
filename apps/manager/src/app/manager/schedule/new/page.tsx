@@ -204,7 +204,8 @@ export default function ManagerSchedulePage() {
   const [dbUserServices, setDbUserServices] = useState<any[]>([]);
   const [dbModalLoading, setDbModalLoading] = useState(false);
 
-  // Google Sheets ?곗씠??  const [googleSheetsData, setGoogleSheetsData] = useState<any[]>([]);
+  // Google Sheets ?곗씠??
+  const [googleSheetsData, setGoogleSheetsData] = useState<any[]>([]);
   const [googleSheetsLoading, setGoogleSheetsLoading] = useState(true);
   const [googleSheetsError, setGoogleSheetsError] = useState<string | null>(null);
 
@@ -290,12 +291,14 @@ export default function ManagerSchedulePage() {
 
       // 紐⑤뱺 ?쒕퉬?????議고쉶 (蹂묐젹)
       const [shRData, shCData, shCCData, shPData, shHData, shTData, shRCData] = await Promise.all([
-        supabase.from('sh_r').select('*').eq('order_id', orderId),  // ?щ（利?        supabase.from('sh_c').select('*').eq('order_id', orderId),  // 李⑤웾
-        supabase.from('sh_cc').select('*').eq('order_id', orderId), // ?ㅽ븯李⑤웾
-        supabase.from('sh_p').select('*').eq('order_id', orderId),  // 怨듯빆
-        supabase.from('sh_h').select('*').eq('order_id', orderId),  // ?명뀛
-        supabase.from('sh_t').select('*').eq('order_id', orderId),  // ?ъ뼱
-        supabase.from('sh_rc').select('*').eq('order_id', orderId)  // ?뚰듃移?      ]);
+        supabase.from('sh_r').select('*').eq('order_id', orderId),
+        supabase.from('sh_c').select('*').eq('order_id', orderId),
+        supabase.from('sh_cc').select('*').eq('order_id', orderId),
+        supabase.from('sh_p').select('*').eq('order_id', orderId),
+        supabase.from('sh_h').select('*').eq('order_id', orderId),
+        supabase.from('sh_t').select('*').eq('order_id', orderId),
+        supabase.from('sh_rc').select('*').eq('order_id', orderId)
+      ]);
 
       // ?곗씠??留ㅽ븨 諛??⑹튂湲?(紐⑤뱺 ?꾨뱶 ?ы븿)
       const allData = [
@@ -1104,12 +1107,14 @@ export default function ManagerSchedulePage() {
         };
 
         const [shRData, shCData, shCCData, shPData, shHData, shTData, shRCData] = await Promise.all([
-          fetchAllRows('sh_r'),   // ?щ（利?          fetchAllRows('sh_c'),   // 李⑤웾
-          fetchAllRows('sh_cc'),  // ?ㅽ븯李⑤웾
-          fetchAllRows('sh_p'),   // 怨듯빆
-          fetchAllRows('sh_h'),   // ?명뀛
-          fetchAllRows('sh_t'),   // ?ъ뼱
-          fetchAllRows('sh_rc')   // ?뚰듃移?        ]);
+          fetchAllRows('sh_r'),
+          fetchAllRows('sh_c'),
+          fetchAllRows('sh_cc'),
+          fetchAllRows('sh_p'),
+          fetchAllRows('sh_h'),
+          fetchAllRows('sh_t'),
+          fetchAllRows('sh_rc')
+        ]);
 
         console.log('??DB 議고쉶 寃곌낵:');
         console.log('  sh_r (?щ（利?:', shRData.data?.length || 0, '嫄?, shRData.error ? `??${shRData.error.message}` : '');
