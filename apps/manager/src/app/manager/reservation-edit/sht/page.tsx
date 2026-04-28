@@ -18,7 +18,8 @@ import {
     Mail,
     Bus,
     LayoutGrid,
-    DollarSign
+    DollarSign,
+    Copy
 } from 'lucide-react';
 
 // 좌석 타입별 단가 정의 (VND) - rentcar_price 테이블 기준
@@ -568,6 +569,26 @@ function SHTReservationEditContent() {
         setIsSeatMapOpen(false);
     };
 
+    const copyPickupSeatToDropoff = () => {
+        const pickupVehicle = String(shtForms.Pickup.vehicle_number || '').trim();
+        const pickupSeat = String(shtForms.Pickup.seat_number || '').trim();
+
+        if (!pickupVehicle && !pickupSeat) {
+            alert('픽업 수정에 복사할 차량번호/좌석번호가 없습니다.');
+            return;
+        }
+
+        setShtForms(prev => ({
+            ...prev,
+            'Drop-off': {
+                ...prev['Drop-off'],
+                vehicle_number: prev.Pickup.vehicle_number,
+                seat_number: prev.Pickup.seat_number,
+            },
+        }));
+        setActiveCategory('Drop-off');
+    };
+
     const handleSave = async () => {
         if (!reservation) return;
 
@@ -818,6 +839,14 @@ function SHTReservationEditContent() {
                                         }`}
                                 >
                                     드롭오프 수정
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={copyPickupSeatToDropoff}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 text-sm hover:bg-emerald-100"
+                                >
+                                    <Copy className="w-3.5 h-3.5" />
+                                    좌석복사
                                 </button>
                                 <span className="text-xs text-gray-500 self-center">
                                     현재 수정: {activeCategory === 'Pickup' ? '픽업' : '드롭오프'}
