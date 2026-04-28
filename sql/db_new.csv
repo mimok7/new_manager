@@ -1,0 +1,7 @@
+﻿airport,id,uuid
+airport,airport_code,character varying
+airport,passenger_count,integer
+airport,special_requests,text
+airport,base_price,numeric
+airport,created_at,timestamp with time zone
+airport,updated_at,timestamp with time zone
