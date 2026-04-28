@@ -23,8 +23,8 @@ import {
 
 interface SHCReservation {
   orderId: string;
-  customerName: string; // SH_M에서 조회한 고객이름
-  customerEnglishName: string; // SH_M에서 조회한 고객영문이름
+  customerName: string; // SH_M에서 조회한 한글이름
+  customerEnglishName?: string; // SH_M에서 조회한 영문이름
   carType: string;
   carCode: string;
   carCount: number;
@@ -39,8 +39,8 @@ interface SHCReservation {
 
 interface SHRReservation {
   orderId: string;
-  customerName: string; // SH_M에서 조회한 고객이름
-  customerEnglishName: string; // SH_M에서 조회한 고객영문이름
+  customerName: string; // SH_M에서 조회한 한글이름
+  customerEnglishName?: string; // SH_M에서 조회한 영문이름
   cruise: string;
   category: string;
   roomType: string;
@@ -58,22 +58,23 @@ interface SHRReservation {
   boardingHelp: string;
   discountCode: string;
   note: string;
-  requestNote: string; // 요청사항/배송정보/메모
+  requestNote?: string; // 요청사항/특이사항/메모
 }
 
 // 스하차량 (SH_CC)
 interface SHCCReservation {
   orderId: string;
   customerName: string;
-  customerEnglishName: string;
-  cruiseInfo: string; // SH_R에서 조회크루즈명 (C
-  boardingDate: string; // C 승차일  serviceType: string; // D 구분
-  category: string; // E 분류
-  vehicleNumber: string; // F 차량번호
-  seatNumber: string; // G 좌석번호
-  name: string; // H 이름
-  pickupLocation: string; // L 승차위치
-  dropoffLocation: string; // M 하차위치
+  customerEnglishName?: string;
+  cruiseInfo?: string; // SH_R에서 조회한 크루즈명 (C열)
+  boardingDate: string; // C열: 승차일
+  serviceType: string; // D열: 구분
+  category: string; // E열: 분류
+  vehicleNumber: string; // F열: 차량번호
+  seatNumber: string; // G열: 좌석번호
+  name: string; // H열: 이름
+  pickupLocation?: string; // L열: 승차위치
+  dropoffLocation?: string; // M열: 하차위치
   email: string;
 }
 
@@ -81,13 +82,13 @@ interface SHCCReservation {
 interface SHPReservation {
   orderId: string;
   customerName: string;
-  customerEnglishName: string;
-  tripType: string; // C 구분
-  category: string; // D 분류
-  route: string; // E 경로
+  customerEnglishName?: string;
+  tripType: string; // C열: 구분
+  category: string; // D열: 분류
+  route: string; // E열: 경로
   carCode: string;
   carType: string;
-  date: string; // H 일자
+  date: string; // H열: 일자
   time: string;
   airportName: string;
   flightNumber: string;
@@ -105,15 +106,15 @@ interface SHPReservation {
 interface SHHReservation {
   orderId: string;
   customerName: string;
-  customerEnglishName: string;
+  customerEnglishName?: string;
   hotelCode: string;
   hotelName: string;
   roomName: string;
   roomType: string;
   roomCount: number;
   days: number;
-  checkinDate: string; // I 체크인날짜
-  checkoutDate: string; // O 체크아웃날짜
+  checkinDate: string; // I열: 체크인날짜
+  checkoutDate: string;
   breakfastService: string;
   adult: number;
   child: number;
@@ -130,13 +131,13 @@ interface SHHReservation {
 interface SHTReservation {
   orderId: string;
   customerName: string;
-  customerEnglishName: string;
+  customerEnglishName?: string;
   tourCode: string;
   tourName: string;
   tourType: string;
   detailCategory: string;
   quantity: number;
-  startDate: string; // H 시작일자
+  startDate: string; // H열: 시작일자
   endDate: string;
   participants: number;
   dispatch: string;
@@ -149,18 +150,18 @@ interface SHTReservation {
   tourNote: string;
 }
 
-// 렌트카(SH_RC)
+// 렌트카 (SH_RC)
 interface SHRCReservation {
   orderId: string;
   customerName: string;
-  customerEnglishName: string;
+  customerEnglishName?: string;
   carCode: string;
   tripType: string;
   category: string;
   route: string;
   carType: string;
   carCount: number;
-  pickupDate: string; // I 승차일자
+  pickupDate: string; // I열: 승차일자
   pickupTime: string;
   pickupLocation: string;
   carrierCount: number;
@@ -182,11 +183,11 @@ export default function ManagerSchedulePage() {
   const [selectedDate, setSelectedDate] = useState(today);
   const datePickerRef = useRef<HTMLInputElement | null>(null);
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
-  // 주월간 보기에서 일별 그룹추가 (기준: 일별)
+  // 주/월간 보기에서 일별 그룹화 추가 (기본: 일별)
   const [groupMode, setGroupMode] = useState<'type' | 'day'>('day');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState(''); // 입력 입력 검색어
-  const [activeSearchQuery, setActiveSearchQuery] = useState(''); // 현재 검색에 사용하는 검색어
+  const [searchQuery, setSearchQuery] = useState(''); // 입력 중인 검색어
+  const [activeSearchQuery, setActiveSearchQuery] = useState(''); // 실제 검색에 사용되는 검색어
   const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -200,7 +201,7 @@ export default function ManagerSchedulePage() {
   const [relatedDbServices, setRelatedDbServices] = useState<any[]>([]);
   const [relatedDbLoading, setRelatedDbLoading] = useState(false);
 
-  // DB 예약 상세 떖 상태 (schedule/page.tsx대 참조)
+  // DB 예약 상세 모달 상태 (schedule/page.tsx와 동일)
   const [isDBModalOpen, setIsDBModalOpen] = useState(false);
   const [dbUserInfo, setDbUserInfo] = useState<any>(null);
   const [dbUserServices, setDbUserServices] = useState<any[]>([]);
@@ -211,36 +212,15 @@ export default function ManagerSchedulePage() {
   const [googleSheetsLoading, setGoogleSheetsLoading] = useState(true);
   const [googleSheetsError, setGoogleSheetsError] = useState<string | null>(null);
 
-  // 현재 사용자 정보 (삭제 권한 확인
+  // 현재 사용자 정보 (삭제 권한 확인용)
   const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    const originalConsole = {
-      log: console.log,
-      info: console.info,
-      debug: console.debug,
-      warn: console.warn,
-    };
-
-    console.log = () => {};
-    console.info = () => {};
-    console.debug = () => {};
-    console.warn = () => {};
-
-    return () => {
-      console.log = originalConsole.log;
-      console.info = originalConsole.info;
-      console.debug = originalConsole.debug;
-      console.warn = originalConsole.warn;
-    };
-  }, []);
 
   // 현재 사용자 정보 로드
   useEffect(() => {
     const loadCurrentUser = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user.email) {
+        if (user?.email) {
           setUserEmail(user.email);
         }
       } catch (error) {
@@ -258,25 +238,25 @@ export default function ManagerSchedulePage() {
     loadGoogleSheetsData();
   }, [typeFilter]);
 
-  // 검색실행
+  // 검색 실행
   const handleSearch = () => {
     setActiveSearchQuery(searchQuery);
   };
 
-  // 검색초기화
+  // 검색 초기화
   const handleClearSearch = () => {
     setSearchQuery('');
     setActiveSearchQuery('');
   };
 
-  // Enter 섎
+  // Enter 키 처리
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
   };
 
-  // 주문 ID로뱺 서비스 조회 (Google Sheets - SH_M)
+  // 주문 ID로 모든 서비스 조회 (Google Sheets - SH_M)
   const loadAllOrderServices = async (orderId: string) => {
     if (!orderId) {
       setAllOrderServices([]);
@@ -304,34 +284,35 @@ export default function ManagerSchedulePage() {
           reservationDate: userData.reservation_date,
           paymentMethod: userData.payment_method,
           plan: userData.plan,
-          memberLevel: userData.member_grade,  // member_grade가 미정확한컬럼명          kakaoId: userData.kakao_id,
+          memberLevel: userData.member_grade,  // ✅ member_grade가 정확한 컬럼명
+          kakaoId: userData.kakao_id,
           discountCode: userData.discount_code,
           requestNote: userData.request_note,
           specialNote: userData.special_note,
           memo: userData.memo
         });
-        console.log('뫀 sh_m 사용자 정보:', userData);
+        console.log('👤 sh_m 사용자 정보:', userData);
       }
 
-      // 뱺 서비스별 대형조회 (분류)
+      // 모든 서비스 타입 조회 (병렬)
       const [shRData, shCData, shCCData, shPData, shHData, shTData, shRCData] = await Promise.all([
-        supabase.from('sh_r').select('*').eq('order_id', orderId),
-        supabase.from('sh_c').select('*').eq('order_id', orderId),
-        supabase.from('sh_cc').select('*').eq('order_id', orderId),
-        supabase.from('sh_p').select('*').eq('order_id', orderId),
-        supabase.from('sh_h').select('*').eq('order_id', orderId),
-        supabase.from('sh_t').select('*').eq('order_id', orderId),
-        supabase.from('sh_rc').select('*').eq('order_id', orderId)
+        supabase.from('sh_r').select('*').eq('order_id', orderId),  // 크루즈
+        supabase.from('sh_c').select('*').eq('order_id', orderId),  // 차량
+        supabase.from('sh_cc').select('*').eq('order_id', orderId), // 스하차량
+        supabase.from('sh_p').select('*').eq('order_id', orderId),  // 공항
+        supabase.from('sh_h').select('*').eq('order_id', orderId),  // 호텔
+        supabase.from('sh_t').select('*').eq('order_id', orderId),  // 투어
+        supabase.from('sh_rc').select('*').eq('order_id', orderId)  // 렌트카
       ]);
 
-      // 데이터 매핑 튂(뱺 필드 포함)
+      // 데이터 매핑 및 합치기 (모든 필드 포함)
       const allData = [
         ...(shRData.data || []).map((r: any) => ({
           ...r,
           serviceType: 'cruise',
           orderId: r.order_id,
-          customerName: userData.korean_name || '',
-          customerEnglishName: userData.english_name || '',
+          customerName: userData?.korean_name || '',
+          customerEnglishName: userData?.english_name || '',
           cruise: r.cruise_name,
           checkin: r.checkin_date,
           time: r.checkin_time,
@@ -346,21 +327,21 @@ export default function ManagerSchedulePage() {
           ...c,
           serviceType: 'car',
           orderId: c.order_id,
-          customerName: userData.korean_name || '',
-          customerEnglishName: userData.english_name || '',
+          customerName: userData?.korean_name || '',
+          customerEnglishName: userData?.english_name || '',
           carType: c.vehicle_type,
           pickupDatetime: c.boarding_datetime,
-          pickupLocation: c.boarding_location,  // boarding_location
+          pickupLocation: c.boarding_location,  // ✅ boarding_location
           dropoffLocation: c.dropoff_location,
           passengerCount: c.passenger_count || 0,
-          carCount: c.vehicle_count || 0  // vehicle_count
+          carCount: c.vehicle_count || 0  // ✅ vehicle_count
         })),
         ...(shCCData.data || []).map((cc: any) => ({
           ...cc,
           serviceType: 'vehicle',
           orderId: cc.order_id,
-          customerName: userData.korean_name || '',
-          customerEnglishName: userData.english_name || '',
+          customerName: userData?.korean_name || '',
+          customerEnglishName: userData?.english_name || '',
           boardingDate: cc.boarding_date,
           vehicleNumber: cc.vehicle_number,
           seatNumber: cc.seat_number,
@@ -371,8 +352,8 @@ export default function ManagerSchedulePage() {
           ...p,
           serviceType: 'airport',
           orderId: p.order_id,
-          customerName: userData.korean_name || '',
-          customerEnglishName: userData.english_name || '',
+          customerName: userData?.korean_name || '',
+          customerEnglishName: userData?.english_name || '',
           tripType: p.division,
           category: p.category,
           route: p.route,
@@ -381,22 +362,22 @@ export default function ManagerSchedulePage() {
           airportName: p.airport_name,
           flightNumber: p.flight_number,
           passengerCount: p.passenger_count || 0,
-          carCount: p.vehicle_count || 0,  // vehicle_count
+          carCount: p.vehicle_count || 0,  // ✅ vehicle_count
           carrierCount: p.carrier_count || 0,
-          placeName: p.accommodation_info || p.location_name || ''  // accommodation_info 확인, 놁쑝location_name
+          placeName: p.accommodation_info || p.location_name || ''  // ✅ accommodation_info 우선, 없으면 location_name
         })),
         ...(shHData.data || []).map((h: any) => ({
           ...h,
           serviceType: 'hotel',
           orderId: h.order_id,
-          customerName: userData.korean_name || '',
-          customerEnglishName: userData.english_name || '',
+          customerName: userData?.korean_name || '',
+          customerEnglishName: userData?.english_name || '',
           hotelName: h.hotel_name,
           roomName: h.room_name,
           roomType: h.room_type,
           checkinDate: h.checkin_date,
           checkoutDate: h.checkout_date,
-          days: h.schedule,  // schedule 필드
+          days: h.schedule,  // ✅ schedule 필드
           adult: h.adult || 0,
           child: h.child || 0,
           toddler: h.toddler || 0,
@@ -407,13 +388,13 @@ export default function ManagerSchedulePage() {
           ...t,
           serviceType: 'tour',
           orderId: t.order_id,
-          customerName: userData.korean_name || '',
-          customerEnglishName: userData.english_name || '',
+          customerName: userData?.korean_name || '',
+          customerEnglishName: userData?.english_name || '',
           tourName: t.tour_name,
           tourType: t.tour_type,
           startDate: t.start_date,
           endDate: t.end_date,
-          participants: t.tour_count || 0,  // tour_count
+          participants: t.tour_count || 0,  // ✅ tour_count
           pickupLocation: t.pickup_location,
           dropoffLocation: t.dropoff_location,
           quantity: t.quantity || 0
@@ -422,25 +403,25 @@ export default function ManagerSchedulePage() {
           ...rc,
           serviceType: 'rentcar',
           orderId: rc.order_id,
-          customerName: userData.korean_name || '',
-          customerEnglishName: userData.english_name || '',
+          customerName: userData?.korean_name || '',
+          customerEnglishName: userData?.english_name || '',
           carType: rc.vehicle_type,
           route: rc.route,
           tripType: rc.division,
-          pickupDate: rc.boarding_date,  // boarding_date
-          pickupTime: rc.boarding_time,  // boarding_time
-          pickupLocation: rc.boarding_location,  // boarding_location
+          pickupDate: rc.boarding_date,  // ✅ boarding_date
+          pickupTime: rc.boarding_time,  // ✅ boarding_time
+          pickupLocation: rc.boarding_location,  // ✅ boarding_location
           destination: rc.destination,
           usagePeriod: rc.usage_period,
           passengerCount: rc.passenger_count || 0,
-          carCount: rc.vehicle_count || 0  // vehicle_count
+          carCount: rc.vehicle_count || 0  // ✅ vehicle_count
         }))
       ];
 
-      console.log('Loaded order services:', allData.length, allData);
+      console.log('📋 로드된 주문 서비스:', allData.length, '개', allData);
       setAllOrderServices(allData);
       return {
-        email: userData.email || ''
+        email: userData?.email || ''
       };
     } catch (error) {
       console.error('주문 서비스 조회 실패:', error);
@@ -452,30 +433,31 @@ export default function ManagerSchedulePage() {
     }
   };
 
-  // Google Sheets 데이터삭제 (권한 확인 포함)
+  // Google Sheets 데이터 삭제 (권한 확인 포함)
   const handleDeleteGoogleSheetsReservation = async (reservation: any) => {
     const emailLower = (userEmail || '').toLowerCase();
     const canDelete = emailLower === 'kys@hyojacho.es.kr' || emailLower === 'kjh@hyojacho.es.kr';
 
     if (!canDelete) {
-      alert('삭제 권한없습니다.');
+      alert('삭제 권한이 없습니다.');
       return;
     }
 
-    if (!confirm(`${reservation.customerName || '예약'} 데이터를 삭제합시좎뒿덇퉴`)) {
+    if (!confirm(`${reservation.customerName || '예약'} 데이터를 삭제하시겠습니까?`)) {
       return;
     }
 
     try {
       const orderId = reservation.orderId;
       if (!orderId) {
-        alert('주문 ID얠쓣 없습니다.');
+        alert('주문 ID를 찾을 수 없습니다.');
         return;
       }
 
-      // 서비스대낆뿉 표시 해당 테이블에서삭제
+      // 서비스 타입에 따라 해당 테이블에서 삭제
       const serviceType = getServiceType(reservation);
-      let tableName = 'sh_r'; // 기준개
+      let tableName = 'sh_r'; // 기본값
+
       if (serviceType === 'cruise') tableName = 'sh_r';
       else if (serviceType === 'car') tableName = 'sh_c';
       else if (serviceType === 'vehicle') tableName = 'sh_cc';
@@ -484,7 +466,7 @@ export default function ManagerSchedulePage() {
       else if (serviceType === 'tour') tableName = 'sh_t';
       else if (serviceType === 'rentcar') tableName = 'sh_rc';
 
-      // 데이터삭제
+      // 데이터 삭제
       const { error } = await supabase
         .from(tableName)
         .delete()
@@ -496,22 +478,22 @@ export default function ManagerSchedulePage() {
         return;
       }
 
-      // 당신 붿떆
-      alert('삭제섏뿀듬땲');
+      // 성공 메시지
+      alert('삭제되었습니다.');
 
-      // 데이터새로고침
+      // 데이터 새로고침
       setGoogleSheetsData(prev =>
         prev.filter(item => item.orderId !== orderId)
       );
     } catch (error: any) {
-      console.error('삭제 섎 중오류:', error);
+      console.error('삭제 처리 중 오류:', error);
       alert('삭제 중 오류가 발생했습니다.');
     }
   };
 
-  // 이메일기준 DB 예약(추가 예약 포함) 조회
+  // 이메일 기준 DB 예약(추가 예약 포함) 조회
   const loadRelatedDbReservationsByEmail = async (email: string) => {
-    const normalizedEmail = email.trim();
+    const normalizedEmail = email?.trim();
     setRelatedEmail(normalizedEmail || '');
 
     if (!normalizedEmail) {
@@ -626,7 +608,7 @@ export default function ManagerSchedulePage() {
           const rateInfo = cruiseRateMap.get(row.car_price_code);
           return {
             ...row,
-            vehicle_type: row.vehicle_type || rateInfo.vehicle_type || null,
+            vehicle_type: row.vehicle_type || rateInfo?.vehicle_type || null,
           };
         }),
         ...mergeWithBase(carShtRes.data || [], 'sht'),
@@ -638,10 +620,10 @@ export default function ManagerSchedulePage() {
 
           return {
             ...row,
-            way_type: row.ra_way_type || row.way_type || priceInfo.service_type || null,
-            service_type: row.service_type || priceInfo.service_type || null,
-            route: row.route || priceInfo.route || null,
-            vehicle_type: row.vehicle_type || priceInfo.vehicle_type || null,
+            way_type: row.ra_way_type || row.way_type || priceInfo?.service_type || null,
+            service_type: row.service_type || priceInfo?.service_type || null,
+            route: row.route || priceInfo?.route || null,
+            vehicle_type: row.vehicle_type || priceInfo?.vehicle_type || null,
           };
         }),
         ...mergeWithBase(hotelRes.data || [], 'hotel'),
@@ -649,26 +631,26 @@ export default function ManagerSchedulePage() {
           const priceInfo = tourPriceMap.get(row.tour_price_code);
           return {
             ...row,
-            tour_name: row.tour_name || priceInfo.tour_name || null,
+            tour_name: row.tour_name || priceInfo?.tour_name || null,
           };
         }),
         ...mergeWithBase(rentcarRes.data || [], 'rentcar')
       ].sort((a: any, b: any) => {
-        const aTime = new Date(a.reservation.re_created_at || 0).getTime();
-        const bTime = new Date(b.reservation.re_created_at || 0).getTime();
+        const aTime = new Date(a?.reservation?.re_created_at || 0).getTime();
+        const bTime = new Date(b?.reservation?.re_created_at || 0).getTime();
         return bTime - aTime;
       });
 
       setRelatedDbServices(mergedServices);
     } catch (error) {
-      console.error('이메일기준 DB 예약 조회 실패:', error);
+      console.error('이메일 기준 DB 예약 조회 실패:', error);
       setRelatedDbServices([]);
     } finally {
       setRelatedDbLoading(false);
     }
   };
 
-  // 사용자ID로뱺 DB 예약 조회 (schedule/page.tsx대 참조)
+  // 사용자 ID로 모든 DB 예약 조회 (schedule/page.tsx와 동일)
   const loadAllUserReservations = async (userId: string) => {
     if (!userId) return;
 
@@ -686,7 +668,7 @@ export default function ManagerSchedulePage() {
       if (userError) throw userError;
       setDbUserInfo(userData);
 
-      // 2. 슜먯쓽 뱺 예약 ID 조회
+      // 2. 사용자의 모든 예약 ID 조회
       const { data: reservations, error: resError } = await supabase
         .from('reservation')
         .select('re_id, re_type, re_status, re_created_at')
@@ -703,7 +685,7 @@ export default function ManagerSchedulePage() {
         return;
       }
 
-      // 3. 쒕퉬테이블에서상세 정보 조회
+      // 3. 각 서비스 테이블에서 상세 정보 조회
       const [cruiseRes, airportRes, hotelRes, rentcarRes, tourRes, cruiseCarRes, carShtRes] = await Promise.all([
         supabase.from('reservation_cruise').select('*').in('reservation_id', reservationIds),
         supabase.from('reservation_airport').select('*').in('reservation_id', reservationIds),
@@ -714,7 +696,7 @@ export default function ManagerSchedulePage() {
         supabase.from('reservation_car_sht').select('*').in('reservation_id', reservationIds)
       ]);
 
-      // 4. 추가 정보 조회 (bulk 페이지 참조사)
+      // 4. 추가 정보 조회 (bulk 페이지와 동일한 수준)
       const cruiseCodes = (cruiseRes.data || []).map(r => r.room_price_code).filter(Boolean);
       const tourCodes = (tourRes.data || []).map(r => r.tour_price_code).filter(Boolean);
       const hotelCodes = (hotelRes.data || []).map(r => r.hotel_price_code).filter(Boolean);
@@ -723,18 +705,18 @@ export default function ManagerSchedulePage() {
       const rentCodes = Array.from(
         new Set(
           (rentcarRes.data || []).flatMap((r: any) => {
-            const rawCode = String(r.rentcar_price_code || '').trim();
+            const rawCode = String(r?.rentcar_price_code || '').trim();
             if (!rawCode) return [];
             return Array.from(new Set([rawCode, rawCode.toUpperCase(), rawCode.toLowerCase()]));
           })
         )
       );
 
-      // cruise_rate_card: id + room_type + legacy room_price (bulk 페이지 참조)
+      // cruise_rate_card: id + room_type + legacy room_price (bulk 페이지와 동일)
       const [roomPricesById, roomPricesByType, roomPricesLegacy, tourPrices, hotelPrices, rentPrices, airportPrices, carPrices] = await Promise.all([
         cruiseCodes.length > 0 ? supabase.from('cruise_rate_card').select('id, cruise_name, room_type, price_adult, price_child, price_infant, price_extra_bed, price_single, price_child_extra_bed').in('id', cruiseCodes) : Promise.resolve({ data: [] }),
         cruiseCodes.length > 0 ? supabase.from('cruise_rate_card').select('id, cruise_name, room_type, price_adult, price_child, price_infant, price_extra_bed, price_single, price_child_extra_bed').in('room_type', cruiseCodes) : Promise.resolve({ data: [] }),
-        // legacy room_price 테이블 이상 의심 (404 방지)
+        // legacy room_price 테이블은 더 이상 사용하지 않음 (404 방지)
         Promise.resolve({ data: [] }),
         tourCodes.length > 0 ? supabase.from('tour_pricing').select('pricing_id, price_per_person, tour_id').in('pricing_id', tourCodes) : Promise.resolve({ data: [] }),
         hotelCodes.length > 0 ? supabase.from('hotel_price').select('hotel_price_code, base_price, hotel_name, room_name').in('hotel_price_code', hotelCodes) : Promise.resolve({ data: [] }),
@@ -743,28 +725,28 @@ export default function ManagerSchedulePage() {
         cruiseCarCodes.length > 0 ? supabase.from('rentcar_price').select('rent_code, vehicle_type, way_type, route, price, category').in('rent_code', cruiseCarCodes) : Promise.resolve({ data: [] })
       ]);
 
-      // roomPriceMap: id + room_type + legacy 분류 (bulk 페이지 참조)
+      // roomPriceMap: id + room_type + legacy 병합 (bulk 페이지와 동일)
       const roomPriceMap = new Map((roomPricesById.data || []).map((r: any) => [r.id, r]));
       (roomPricesByType.data || []).forEach((r: any) => {
-        if (r.room_type && !roomPriceMap.has(r.room_type)) roomPriceMap.set(r.room_type, r);
+        if (r?.room_type && !roomPriceMap.has(r.room_type)) roomPriceMap.set(r.room_type, r);
       });
-      const getLegacyCategoryKey = (category: string) => {
+      const getLegacyCategoryKey = (category?: string) => {
         const c = String(category || '').trim();
-        if (c.includes('꾨룞') && c.includes('묒뒪몃씪')) return 'price_child_extra_bed';
+        if (c.includes('아동') && c.includes('엑스트라')) return 'price_child_extra_bed';
         if (c.includes('유아')) return 'price_infant';
-        if (c.includes('꾨룞')) return 'price_child';
-        if (c.includes('묒뒪몃씪')) return 'price_extra_bed';
-        if (c.includes('깃')) return 'price_single';
+        if (c.includes('아동')) return 'price_child';
+        if (c.includes('엑스트라')) return 'price_extra_bed';
+        if (c.includes('싱글')) return 'price_single';
         return 'price_adult';
       };
       const legacyRoomByCode = new Map<string, any>();
       (roomPricesLegacy.data || []).forEach((row: any) => {
-        const code = row.room_code;
+        const code = row?.room_code;
         if (!code) return;
-        const current = legacyRoomByCode.get(code) || { id: code, cruise_name: row.cruise, room_type: row.room_type, price_adult: 0, price_child: 0, price_infant: 0, price_extra_bed: 0, price_single: 0, price_child_extra_bed: 0 };
-        current[getLegacyCategoryKey(row.room_category)] = Number(row.price || 0);
-        if (!current.cruise_name && row.cruise) current.cruise_name = row.cruise;
-        if (!current.room_type && row.room_type) current.room_type = row.room_type;
+        const current = legacyRoomByCode.get(code) || { id: code, cruise_name: row?.cruise, room_type: row?.room_type, price_adult: 0, price_child: 0, price_infant: 0, price_extra_bed: 0, price_single: 0, price_child_extra_bed: 0 };
+        current[getLegacyCategoryKey(row?.room_category)] = Number(row?.price || 0);
+        if (!current.cruise_name && row?.cruise) current.cruise_name = row.cruise;
+        if (!current.room_type && row?.room_type) current.room_type = row.room_type;
         legacyRoomByCode.set(code, current);
       });
       legacyRoomByCode.forEach((legacy, code) => {
@@ -780,9 +762,7 @@ export default function ManagerSchedulePage() {
 
       // tourPriceMap
       const tourIds = Array.from(new Set((tourPrices.data || []).map((r: any) => r.tour_id).filter(Boolean)));
-      const { data: toursById } = tourIds.length > 0
-        ? await supabase.from('tour').select('tour_id, tour_name, tour_code').in('tour_id', tourIds)
-        : { data: [] };
+      const { data: toursById } = tourIds.length > 0 ? await supabase.from('tour').select('tour_id, tour_name, tour_code').in('tour_id', tourIds) : { data: [] };
       const tourByIdMap = new Map((toursById || []).map((t: any) => [t.tour_id, t]));
       const tourPriceMap = new Map((tourPrices.data || []).map((r: any) => [r.pricing_id, { ...r, tour: tourByIdMap.get(r.tour_id) || null }]));
 
@@ -795,14 +775,14 @@ export default function ManagerSchedulePage() {
 
       let rentPriceRows = [...(rentPrices.data || [])];
       if (rentCodes.length > 0) {
-        const requested = Array.from(new Set((rentcarRes.data || []).map((r: any) => normalizeRentCode(r.rentcar_price_code).toUpperCase()).filter(Boolean)));
-        const present = new Set(rentPriceRows.map((r: any) => normalizeRentCode(r.rent_code).toUpperCase()).filter(Boolean));
+        const requested = Array.from(new Set((rentcarRes.data || []).map((r: any) => normalizeRentCode(r?.rentcar_price_code).toUpperCase()).filter(Boolean)));
+        const present = new Set(rentPriceRows.map((r: any) => normalizeRentCode(r?.rent_code).toUpperCase()).filter(Boolean));
         if (requested.some(c => !present.has(c))) {
           const { data: allRentRows } = await supabase.from('rentcar_price').select('rent_code, vehicle_type, way_type, route, price, category');
-          if (allRentRows.length) {
+          if (allRentRows?.length) {
             const byCode = new Map<string, any>();
             for (const row of [...rentPriceRows, ...allRentRows]) {
-              const key = normalizeRentCode(row.rent_code).toUpperCase();
+              const key = normalizeRentCode(row?.rent_code).toUpperCase();
               if (key) byCode.set(key, row);
             }
             rentPriceRows = Array.from(byCode.values());
@@ -811,20 +791,20 @@ export default function ManagerSchedulePage() {
       }
       const rentPriceMap = new Map<string, any>();
       for (const row of rentPriceRows) {
-        const rawCode = String(row.rent_code || '').trim();
+        const rawCode = String(row?.rent_code || '').trim();
         const compactCode = compactRentCode(rawCode);
         [rawCode, rawCode.toUpperCase(), rawCode.toLowerCase(), compactCode, compactCode.toUpperCase(), compactCode.toLowerCase()]
           .filter(Boolean)
           .forEach(k => { if (!rentPriceMap.has(k)) rentPriceMap.set(k, row); });
       }
 
-      // 5. 데이터 매핑 (bulk 페이지 flattenedServices대 참조필드 )
+      // 5. 데이터 매핑 (bulk 페이지 flattenedServices와 동일한 필드 구조)
       const reservationMap = new Map(reservations.map(r => [r.re_id, r]));
 
       const allServices = [
         ...(cruiseRes.data || []).map(r => {
           const info = roomPriceMap.get(r.room_price_code);
-          const adultCount = r.adult_count || r.guest_count || 0;
+          const adultCount = r.adult_count ?? r.guest_count ?? 0;
           const childCount = r.child_count || 0;
           const infantCount = r.infant_count || 0;
           const extraBedCount = r.extra_bed_count || 0;
@@ -833,10 +813,10 @@ export default function ManagerSchedulePage() {
           return {
             ...r,
             serviceType: 'cruise',
-            status: reservationMap.get(r.reservation_id).re_status,
-            cruise: info.cruise_name || '크루즈',
-            cruiseName: info.cruise_name || '크루즈',
-            roomType: info.room_type || r.room_price_code,
+            status: reservationMap.get(r.reservation_id)?.re_status,
+            cruise: info?.cruise_name || '크루즈',
+            cruiseName: info?.cruise_name || '크루즈',
+            roomType: info?.room_type || r.room_price_code,
             checkin: r.checkin,
             adult: adultCount,
             child: childCount,
@@ -844,12 +824,12 @@ export default function ManagerSchedulePage() {
             extraBedCount,
             singleCount,
             childExtraBedCount,
-            priceAdult: info.price_adult || 0,
-            priceChild: info.price_child || 0,
-            priceInfant: info.price_infant || 0,
-            priceExtraBed: info.price_extra_bed || 0,
-            priceSingle: info.price_single || 0,
-            priceChildExtraBed: info.price_child_extra_bed || 0,
+            priceAdult: info?.price_adult || 0,
+            priceChild: info?.price_child || 0,
+            priceInfant: info?.price_infant || 0,
+            priceExtraBed: info?.price_extra_bed || 0,
+            priceSingle: info?.price_single || 0,
+            priceChildExtraBed: info?.price_child_extra_bed || 0,
             note: r.request_note,
             unitPrice: r.unit_price,
             totalPrice: r.room_total_price,
@@ -862,19 +842,19 @@ export default function ManagerSchedulePage() {
           const base = {
             ...r,
             serviceType: 'vehicle',
-            status: reservationMap.get(r.reservation_id).re_status,
-            carCategory: info.way_type || info.category || r.way_type || '',
-            carType: info.vehicle_type || r.vehicle_type || '',
-            route: info.route || r.route || '',
+            status: reservationMap.get(r.reservation_id)?.re_status,
+            carCategory: info?.way_type || info?.category || r.way_type || '',
+            carType: info?.vehicle_type || r.vehicle_type || '',
+            route: info?.route || r.route || '',
             passengerCount: r.passenger_count,
             note: r.request_note,
-            unitPrice: info.price || r.unit_price || 0,
+            unitPrice: info?.price || r.unit_price || 0,
             totalPrice: r.car_total_price,
           };
 
           const rows: any[] = [];
 
-          // 픽업 필드: 픽업일자 + 승차 위치표시
+          // 픽업 카드: 픽업일자 + 승차 위치만 표시
           if (r.pickup_datetime) {
             rows.push({
               ...base,
@@ -886,7 +866,7 @@ export default function ManagerSchedulePage() {
             });
           }
 
-          // 리턴 필드: 리턴일자 + 하차 위치표시
+          // 리턴 카드: 리턴일자 + 하차 위치만 표시
           if (r.return_datetime) {
             rows.push({
               ...base,
@@ -898,7 +878,7 @@ export default function ManagerSchedulePage() {
             });
           }
 
-          // 리턴일자가 놁쑝기존섎읆 픽업 1건 자
+          // 리턴일자가 없으면 기존처럼 픽업 1건만 유지
           if (rows.length === 0) {
             rows.push({
               ...base,
@@ -914,17 +894,17 @@ export default function ManagerSchedulePage() {
         }),
         ...(airportRes.data || []).map(r => {
           const info = airportPriceMap.get(r.airport_price_code);
-          const rawWayType = String(r.way_type || r.ra_way_type || info.service_type || '').toLowerCase();
+          const rawWayType = String(r.way_type || r.ra_way_type || info?.service_type || '').toLowerCase();
           const isPickup = rawWayType.includes('pickup') || rawWayType.includes('픽업');
           const airportLocation = r.ra_airport_location || '';
           const accommodationInfo = r.accommodation_info || r.ra_stopover_location || '';
           return {
             ...r,
             serviceType: 'airport',
-            status: reservationMap.get(r.reservation_id).re_status,
-            category: info.service_type || '',
-            route: info.route || '',
-            carType: info.vehicle_type || '',
+            status: reservationMap.get(r.reservation_id)?.re_status,
+            category: info?.service_type || '',
+            route: info?.route || '',
+            carType: info?.vehicle_type || '',
             airportName: airportLocation,
             destination: r.ra_stopover_location,
             pickupLocation: isPickup ? airportLocation : accommodationInfo,
@@ -935,7 +915,7 @@ export default function ManagerSchedulePage() {
             ra_datetime: r.ra_datetime,
             way_type: r.way_type,
             note: r.request_note,
-            unitPrice: info.price || r.unit_price || 0,
+            unitPrice: info?.price || r.unit_price || 0,
             totalPrice: r.total_price,
           };
         }),
@@ -944,14 +924,14 @@ export default function ManagerSchedulePage() {
           return {
             ...r,
             serviceType: 'hotel',
-            status: reservationMap.get(r.reservation_id).re_status,
-            hotelName: info.hotel_name || r.hotel_category,
-            roomType: info.room_name || r.hotel_price_code,
+            status: reservationMap.get(r.reservation_id)?.re_status,
+            hotelName: info?.hotel_name || r.hotel_category,
+            roomType: info?.room_name || r.hotel_price_code,
             checkinDate: r.checkin_date,
             nights: r.room_count,
             guestCount: r.guest_count,
             note: r.request_note,
-            unitPrice: info.base_price || r.unit_price,
+            unitPrice: info?.base_price || r.unit_price,
             totalPrice: r.total_price,
           };
         }),
@@ -960,8 +940,8 @@ export default function ManagerSchedulePage() {
           return {
             ...r,
             serviceType: 'tour',
-            status: reservationMap.get(r.reservation_id).re_status,
-            tourName: info.tour.tour_name || '-',
+            status: reservationMap.get(r.reservation_id)?.re_status,
+            tourName: info?.tour?.tour_name || '-',
             tourDate: r.usage_date,
             tourCapacity: r.tour_capacity,
             pickupLocation: r.pickup_location,
@@ -972,7 +952,7 @@ export default function ManagerSchedulePage() {
             child: r.child_count || 0,
             infant: r.infant_count || 0,
             note: r.request_note,
-            unitPrice: info.price_per_person || r.unit_price,
+            unitPrice: info?.price_per_person || r.unit_price,
             totalPrice: r.total_price,
           };
         }),
@@ -985,11 +965,11 @@ export default function ManagerSchedulePage() {
           return {
             ...r,
             serviceType: 'rentcar',
-            status: reservationMap.get(r.reservation_id).re_status,
-            carType: info.vehicle_type || r.vehicle_type || '-',
-            route: info.route || r.route || '',
-            category: info.way_type || r.way_type || '',
-            way_type: info.way_type || r.way_type || '',
+            status: reservationMap.get(r.reservation_id)?.re_status,
+            carType: info?.vehicle_type || r.vehicle_type || '-',
+            route: info?.route || r.route || '',
+            category: info?.way_type || r.way_type || '',
+            way_type: info?.way_type || r.way_type || '',
             pickupDatetime: r.pickup_datetime,
             pickupLocation: r.pickup_location,
             destination: r.destination,
@@ -1001,7 +981,7 @@ export default function ManagerSchedulePage() {
             returnViaLocation: r.return_via_location,
             returnViaWaiting: r.return_via_waiting,
             note: r.request_note,
-            unitPrice: info.price || r.unit_price,
+            unitPrice: info?.price || r.unit_price,
             totalPrice: r.total_price,
             carCount: r.car_count || 1,
             passengerCount: r.passenger_count,
@@ -1012,7 +992,7 @@ export default function ManagerSchedulePage() {
         ...(carShtRes.data || []).map(r => ({
           ...r,
           serviceType: 'sht',
-          status: reservationMap.get(r.reservation_id).re_status,
+          status: reservationMap.get(r.reservation_id)?.re_status,
           category: r.sht_category,
           usageDate: r.pickup_datetime,
           vehicleNumber: r.vehicle_number,
@@ -1029,16 +1009,16 @@ export default function ManagerSchedulePage() {
       setDbUserServices(allServices);
 
     } catch (error) {
-      console.error('사용자예약 정보 조회 실패:', error);
+      console.error('사용자 예약 정보 조회 실패:', error);
       setDbUserServices([]);
     } finally {
       setDbModalLoading(false);
     }
   };
 
-  // Google Sheets 상세보기 떖 표시
+  // Google Sheets 상세보기 모달 열기
   const handleOpenGoogleSheetsDetail = async (reservation: any) => {
-    // 서비스대형관리
+    // 서비스 타입 감지
     let serviceType = 'unknown';
     if (isCruiseData(reservation)) serviceType = 'cruise';
     else if (isVehicleData(reservation)) serviceType = 'vehicle';
@@ -1048,18 +1028,18 @@ export default function ManagerSchedulePage() {
     else if (isRentcarData(reservation)) serviceType = 'rentcar';
     else if (isCarData(reservation)) serviceType = 'car';
 
-    // 선택예약serviceType 추가
+    // 선택된 예약에 serviceType 추가
     setSelectedGoogleSheetsReservation({ ...reservation, serviceType });
     setIsGoogleSheetsModalOpen(true);
     setRelatedDbServices([]);
     setRelatedEmail('');
 
-    // 해당 주문 ID뱺 서비스 조회
+    // 해당 주문 ID의 모든 서비스 조회
     let resolvedEmail = (reservation.email || '').trim();
 
     if (reservation.orderId) {
       const loadedInfo = await loadAllOrderServices(reservation.orderId);
-      if (loadedInfo.email) {
+      if (loadedInfo?.email) {
         resolvedEmail = loadedInfo.email;
       }
     }
@@ -1076,26 +1056,26 @@ export default function ManagerSchedulePage() {
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
     } else if (mode === 'week') {
-      // 주간: 시작 기준
+      // 주간: 월요일 시작 기준
       const day = start.getDay();
-      const diffToMonday = (day === 0 ? -6 : 1) - day; // 0 -> -6, 1->0 ...
+      const diffToMonday = (day === 0 ? -6 : 1) - day; // 일요일(0) -> -6, 월(1)->0 ...
       start.setDate(start.getDate() + diffToMonday);
       start.setHours(0, 0, 0, 0);
       end.setTime(start.getTime());
       end.setDate(end.getDate() + 6);
       end.setHours(23, 59, 59, 999);
     } else {
-      // 월간: 해당 1~ 먯씪
+      // 월간: 해당 월 1일 ~ 말일
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
-      end.setMonth(start.getMonth() + 1, 0); // 다음 0= 먯씪
+      end.setMonth(start.getMonth() + 1, 0); // 다음 달 0일 = 말일
       end.setHours(23, 59, 59, 999);
     }
     return { start, end };
   };
 
   const loadGoogleSheetsData = async () => {
-    console.log(' loadGoogleSheetsData 몄텧');
+    console.log('🚀 loadGoogleSheetsData 호출됨!');
     console.log('   typeFilter:', typeFilter);
     console.log('   현재 시각:', new Date().toLocaleTimeString());
 
@@ -1103,13 +1083,13 @@ export default function ManagerSchedulePage() {
       setGoogleSheetsLoading(true);
       setGoogleSheetsError(null);
 
-      console.log('봽 loadGoogleSheetsData 시작, typeFilter:', typeFilter);
+      console.log('🔄 loadGoogleSheetsData 시작, typeFilter:', typeFilter);
 
-      // DB에서 데이터조회 (sh_* 뚯씠
+      // DB에서 데이터 조회 (sh_* 테이블)
       if (typeFilter === 'all') {
-        console.log('뱿 뱺 서비스데이터조회 시작...');
+        console.log('📥 모든 서비스 데이터 조회 시작...');
 
-        // 뱺 서비스별 분류로조회 (뱺 데이터 가져오기
+        // 모든 서비스를 병렬로 조회 (모든 데이터 가져오기)
         const fetchAllRows = async (tableName: string) => {
           let allData: any[] = [];
           let from = 0;
@@ -1133,46 +1113,46 @@ export default function ManagerSchedulePage() {
         };
 
         const [shRData, shCData, shCCData, shPData, shHData, shTData, shRCData] = await Promise.all([
-          fetchAllRows('sh_r'),
-          fetchAllRows('sh_c'),
-          fetchAllRows('sh_cc'),
-          fetchAllRows('sh_p'),
-          fetchAllRows('sh_h'),
-          fetchAllRows('sh_t'),
-          fetchAllRows('sh_rc')
+          fetchAllRows('sh_r'),   // 크루즈
+          fetchAllRows('sh_c'),   // 차량
+          fetchAllRows('sh_cc'),  // 스하차량
+          fetchAllRows('sh_p'),   // 공항
+          fetchAllRows('sh_h'),   // 호텔
+          fetchAllRows('sh_t'),   // 투어
+          fetchAllRows('sh_rc')   // 렌트카
         ]);
 
-        console.log('DB 조회 결과:');
-        console.log('  sh_r (크루즈):', shRData.data.length || 0, '건', shRData.error ? `${shRData.error.message}` : '');
-        console.log('  sh_c (차량):', shCData.data.length || 0, '건', shCData.error ? `${shCData.error.message}` : '');
-        console.log('  sh_cc (스하차량):', shCCData.data.length || 0, '건', shCCData.error ? `${shCCData.error.message}` : '');
-        console.log('  sh_p (공항):', shPData.data.length || 0, '건', shPData.error ? `${shPData.error.message}` : '');
-        console.log('  sh_h (호텔):', shHData.data.length || 0, '건', shHData.error ? `${shHData.error.message}` : '');
-        console.log('  sh_t (투어):', shTData.data.length || 0, '건', shTData.error ? `${shTData.error.message}` : '');
-        console.log('  sh_rc (렌트카):', shRCData.data.length || 0, '건', shRCData.error ? `${shRCData.error.message}` : '');
+        console.log('✅ DB 조회 결과:');
+        console.log('  sh_r (크루즈):', shRData.data?.length || 0, '건', shRData.error ? `❌ ${shRData.error.message}` : '');
+        console.log('  sh_c (차량):', shCData.data?.length || 0, '건', shCData.error ? `❌ ${shCData.error.message}` : '');
+        console.log('  sh_cc (스하차량):', shCCData.data?.length || 0, '건', shCCData.error ? `❌ ${shCCData.error.message}` : '');
+        console.log('  sh_p (공항):', shPData.data?.length || 0, '건', shPData.error ? `❌ ${shPData.error.message}` : '');
+        console.log('  sh_h (호텔):', shHData.data?.length || 0, '건', shHData.error ? `❌ ${shHData.error.message}` : '');
+        console.log('  sh_t (투어):', shTData.data?.length || 0, '건', shTData.error ? `❌ ${shTData.error.message}` : '');
+        console.log('  sh_rc (렌트카):', shRCData.data?.length || 0, '건', shRCData.error ? `❌ ${shRCData.error.message}` : '');
 
-        // 크루즈 데이터샘플 쒓퉭 (날짜 형식 확인
+        // 크루즈 데이터 샘플 로깅 (날짜 형식 확인용)
         if (shRData.data && shRData.data.length > 0) {
-          console.log('뱟 크루즈날짜 샘플 (쒓렐 5건:');
+          console.log('📅 크루즈 날짜 샘플 (최근 5건):');
           shRData.data.slice(0, 5).forEach((r: any, i: number) => {
             console.log(`  ${i + 1}. ${r.checkin_date} | ${r.cruise_name} | ${r.order_id}`);
           });
         }
 
-        // sh_m 사용자 정보 조회 (뱺 데이터
+        // sh_m 사용자 정보 조회 (모든 데이터)
         const usersDataResult = await fetchAllRows('sh_m');
         const usersData = usersDataResult.data;
-        console.log(' sh_m 사용자 정보:', usersData.length || 0, '건');
+        console.log('👥 sh_m 사용자 정보:', usersData?.length || 0, '건');
         const userMap = new Map((usersData || []).map((u: any) => [u.order_id, { korean_name: u.korean_name, english_name: u.english_name, email: u.email }]));
 
-        // 데이터 매핑 튂
+        // 데이터 매핑 및 합치기
         const allData = [
           ...(shRData.data || []).map((r: any) => {
             const user = userMap.get(r.order_id);
             return {
               orderId: r.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               cruise: r.cruise_name,
               category: r.division,
               roomType: r.room_type,
@@ -1191,15 +1171,15 @@ export default function ManagerSchedulePage() {
               discountCode: r.discount_code,
               note: r.room_note,
               requestNote: r.connecting_room,
-              email: user.email || r.email
+              email: user?.email || r.email
             };
           }),
           ...(shCData.data || []).map((c: any) => {
             const user = userMap.get(c.order_id);
             return {
               orderId: c.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               carType: c.vehicle_type,
               carCode: c.vehicle_code,
               carCount: parseInt(c.vehicle_count) || 0,
@@ -1209,15 +1189,15 @@ export default function ManagerSchedulePage() {
               dropoffLocation: c.dropoff_location,
               unitPrice: parseFloat(c.amount) || 0,
               totalPrice: parseFloat(c.total) || 0,
-              email: user.email || c.email
+              email: user?.email || c.email
             };
           }),
           ...(shCCData.data || []).map((cc: any) => {
             const user = userMap.get(cc.order_id);
             return {
               orderId: cc.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               cruiseInfo: '',
               boardingDate: cc.boarding_date,
               serviceType: cc.division,
@@ -1227,15 +1207,15 @@ export default function ManagerSchedulePage() {
               name: cc.name,
               pickupLocation: '',
               dropoffLocation: '',
-              email: user.email || cc.email
+              email: user?.email || cc.email
             };
           }),
           ...(shPData.data || []).map((p: any) => {
             const user = userMap.get(p.order_id);
             return {
               orderId: p.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               tripType: p.division,
               category: p.category,
               route: p.route,
@@ -1252,15 +1232,15 @@ export default function ManagerSchedulePage() {
               carCount: parseInt(p.vehicle_count) || 0,
               unitPrice: parseFloat(p.amount) || 0,
               totalPrice: parseFloat(p.total) || 0,
-              email: user.email || p.email
+              email: user?.email || p.email
             };
           }),
           ...(shHData.data || []).map((h: any) => {
             const user = userMap.get(h.order_id);
             return {
               orderId: h.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               hotelCode: h.hotel_code,
               hotelName: h.hotel_name,
               roomName: h.room_name,
@@ -1278,15 +1258,15 @@ export default function ManagerSchedulePage() {
               note: h.note,
               unitPrice: parseFloat(h.amount) || 0,
               totalPrice: parseFloat(h.total) || 0,
-              email: user.email || h.email
+              email: user?.email || h.email
             };
           }),
           ...(shTData.data || []).map((t: any) => {
             const user = userMap.get(t.order_id);
             return {
               orderId: t.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               tourCode: t.tour_code,
               tourName: t.tour_name,
               tourType: t.tour_type,
@@ -1301,7 +1281,7 @@ export default function ManagerSchedulePage() {
               memo: t.memo,
               unitPrice: parseFloat(t.amount) || 0,
               totalPrice: parseFloat(t.total) || 0,
-              email: user.email || t.email,
+              email: user?.email || t.email,
               tourNote: t.tour_note
             };
           }),
@@ -1309,8 +1289,8 @@ export default function ManagerSchedulePage() {
             const user = userMap.get(rc.order_id);
             return {
               orderId: rc.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               carCode: rc.vehicle_code,
               tripType: rc.division,
               category: rc.category,
@@ -1328,21 +1308,21 @@ export default function ManagerSchedulePage() {
               memo: rc.memo,
               unitPrice: parseFloat(rc.amount) || 0,
               totalPrice: parseFloat(rc.total) || 0,
-              email: user.email || rc.email
+              email: user?.email || rc.email
             };
           })
         ];
 
-        console.log('뱤 전체 로드데이터', allData.length, '건');
-        console.log('  - 크루즈', shRData.data.length || 0, '건');
-        console.log('  - 차량:', shCData.data.length || 0, '건');
-        console.log('  - 스하차량:', shCCData.data.length || 0, '건');
-        console.log('  - 공항:', shPData.data.length || 0, '건');
-        console.log('  - 호텔:', shHData.data.length || 0, '건');
-        console.log('  - 투어:', shTData.data.length || 0, '건');
-        console.log('  - 렌트카', shRCData.data.length || 0, '건');
+        console.log('📊 전체 로드된 데이터:', allData.length, '건');
+        console.log('  - 크루즈:', shRData.data?.length || 0, '건');
+        console.log('  - 차량:', shCData.data?.length || 0, '건');
+        console.log('  - 스하차량:', shCCData.data?.length || 0, '건');
+        console.log('  - 공항:', shPData.data?.length || 0, '건');
+        console.log('  - 호텔:', shHData.data?.length || 0, '건');
+        console.log('  - 투어:', shTData.data?.length || 0, '건');
+        console.log('  - 렌트카:', shRCData.data?.length || 0, '건');
 
-        // 데이터 샘플 확인 (날짜 필드 묒젏 확인)
+        // 데이터 샘플 확인 (날짜 필드 중점 확인)
         const cruiseSample = allData.filter(d => d.cruise)[0];
         const carSample = allData.filter(d => d.carType && d.pickupDatetime)[0];
         const vhcSample = allData.filter(d => d.vehicleNumber)[0];
@@ -1351,15 +1331,15 @@ export default function ManagerSchedulePage() {
         const tourSample = allData.filter(d => d.tourName)[0];
         const rentcarSample = allData.filter(d => d.carCode && d.pickupDate)[0];
 
-        console.log(' 크루즈 샘플:', cruiseSample, 'checkin:', cruiseSample.checkin);
-        console.log(' 차량 샘플:', carSample, 'pickupDatetime:', carSample.pickupDatetime);
-        console.log(' 스하차량 샘플:', vhcSample, 'boardingDate:', vhcSample.boardingDate);
-        console.log(' 공항 샘플:', airportSample, 'date:', airportSample.date);
-        console.log(' 호텔 샘플:', hotelSample, 'checkinDate:', hotelSample.checkinDate);
-        console.log(' 투어 샘플:', tourSample, 'startDate:', tourSample.startDate);
-        console.log(' 렌트카샘플:', rentcarSample, 'pickupDate:', rentcarSample.pickupDate);
+        console.log('📝 크루즈 샘플:', cruiseSample, '→ checkin:', cruiseSample?.checkin);
+        console.log('📝 차량 샘플:', carSample, '→ pickupDatetime:', carSample?.pickupDatetime);
+        console.log('📝 스하차량 샘플:', vhcSample, '→ boardingDate:', vhcSample?.boardingDate);
+        console.log('📝 공항 샘플:', airportSample, '→ date:', airportSample?.date);
+        console.log('📝 호텔 샘플:', hotelSample, '→ checkinDate:', hotelSample?.checkinDate);
+        console.log('📝 투어 샘플:', tourSample, '→ startDate:', tourSample?.startDate);
+        console.log('📝 렌트카 샘플:', rentcarSample, '→ pickupDate:', rentcarSample?.pickupDate);
 
-        // 오늘 날짜(2025-11-14) 데이터쒖닔 확인 (뼇날짜 형식 
+        // 오늘 날짜(2025-11-14) 데이터 개수 확인 (다양한 날짜 형식 지원)
         const todayFormats = ['2025-11-14', '2025. 11. 14', '2025/11/14', '11/14/2025', '14/11/2025', '11-14-2025'];
         const matchesToday = (dateStr: string) => {
           if (!dateStr) return false;
@@ -1367,17 +1347,17 @@ export default function ManagerSchedulePage() {
         };
 
         const todayData = {
-          cruise: allData.filter(d => d.cruise && matchesToday(d.checkin)).length,
-          car: allData.filter(d => d.carType && d.pickupDatetime && matchesToday(d.pickupDatetime)).length,
-          sht: allData.filter(d => d.vehicleNumber && matchesToday(d.boardingDate)).length,
-          airport: allData.filter(d => d.airportName && matchesToday(d.date)).length,
-          hotel: allData.filter(d => d.hotelName && matchesToday(d.checkinDate)).length,
-          tour: allData.filter(d => d.tourName && matchesToday(d.startDate)).length,
-          rentcar: allData.filter(d => d.carCode && d.pickupDate && matchesToday(d.pickupDate)).length
+          크루즈: allData.filter(d => d.cruise && matchesToday(d.checkin)).length,
+          차량: allData.filter(d => d.carType && d.pickupDatetime && matchesToday(d.pickupDatetime)).length,
+          스하차량: allData.filter(d => d.vehicleNumber && matchesToday(d.boardingDate)).length,
+          공항: allData.filter(d => d.airportName && matchesToday(d.date)).length,
+          호텔: allData.filter(d => d.hotelName && matchesToday(d.checkinDate)).length,
+          투어: allData.filter(d => d.tourName && matchesToday(d.startDate)).length,
+          렌트카: allData.filter(d => d.carCode && d.pickupDate && matchesToday(d.pickupDate)).length
         };
-        console.log('뱟 오늘(2025-11-14) 날짜 몄옄검색', todayData);
+        console.log('📅 오늘(2025-11-14) 날짜 문자열 검색:', todayData);
 
-        // 202511데이터몢 얘린 (날짜 형식 꾨떒)
+        // 2025년 11월 데이터 모두 찾기 (날짜 형식 진단)
         const nov2025Cruise = allData.filter(d => d.cruise && d.checkin && (
           d.checkin.includes('2025-11') ||
           d.checkin.includes('2025. 11') ||
@@ -1386,7 +1366,7 @@ export default function ManagerSchedulePage() {
           d.checkin.includes('11-2025')
         ));
 
-        console.log('202511크루즈 데이터', nov2025Cruise.length, '건');
+        console.log('� 2025년 11월 크루즈 데이터:', nov2025Cruise.length, '건');
         if (nov2025Cruise.length > 0) {
           console.log('   날짜 형식 샘플:');
           nov2025Cruise.slice(0, 10).forEach((d, idx) => {
@@ -1394,29 +1374,29 @@ export default function ManagerSchedulePage() {
           });
         }
 
-        // 현재 오늘 데이터 샘플 쒕젰 (크루즈확인)
+        // 실제 오늘 데이터 샘플 출력 (크루즈 확인)
         const todayCruise = allData.filter(d => d.cruise && matchesToday(d.checkin));
         if (todayCruise.length > 0) {
-          console.log('슓 오늘 크루즈 데이터', todayCruise.length, '건');
+          console.log('🚢 오늘 크루즈 데이터:', todayCruise.length, '건');
           todayCruise.forEach((d, idx) => {
             console.log(`   [${idx + 1}] ${d.orderId} - checkin: "${d.checkin}"`);
           });
         } else {
-          console.log('오늘 크루즈 데이터몄옄검색실패');
+          console.log('❌ 오늘 크루즈 데이터 문자열 검색 실패');
         }
 
-        console.log('벀 븨전체 데이터', allData.length, '건');
-        console.log('   - 크루즈', allData.filter(d => d.cruise).length, '건');
+        console.log('📦 매핑된 전체 데이터:', allData.length, '건');
+        console.log('   - 크루즈:', allData.filter(d => d.cruise).length, '건');
         console.log('   - 차량:', allData.filter(d => d.carType && d.pickupDatetime).length, '건');
         console.log('   - 스하차량:', allData.filter(d => d.vehicleNumber).length, '건');
         console.log('   - 공항:', allData.filter(d => d.airportName).length, '건');
         console.log('   - 호텔:', allData.filter(d => d.hotelName).length, '건');
         console.log('   - 투어:', allData.filter(d => d.tourName).length, '건');
-        console.log('   - 렌트카', allData.filter(d => d.carCode && d.pickupDate).length, '건');
+        console.log('   - 렌트카:', allData.filter(d => d.carCode && d.pickupDate).length, '건');
 
         setGoogleSheetsData(allData);
       } else {
-        // 개별 서비스별 대형조회
+        // 개별 서비스 타입 조회
         const typeMapping: Record<string, string> = {
           'cruise': 'sh_r',
           'car': 'sh_c',
@@ -1432,13 +1412,13 @@ export default function ManagerSchedulePage() {
         const data = result.data;
 
         if (result.error) {
-          throw new Error(`데이터조회 실패: ${result.error.message}`);
+          throw new Error(`데이터 조회 실패: ${result.error.message}`);
         }
 
-        // 대낅퀎 데이터 매핑
+        // 타입별 데이터 매핑
         let mappedData: any[] = [];
 
-        // sh_m에서 쒓/곷 이름 조회 (뱺 데이터
+        // sh_m에서 한글/영문 이름 조회 (모든 데이터)
         const usersDataResult = await fetchAllRows('sh_m');
         const usersData = usersDataResult.data;
         const userMap = new Map((usersData || []).map((u: any) => [u.order_id, u]));
@@ -1448,8 +1428,8 @@ export default function ManagerSchedulePage() {
             const user = userMap.get(r.order_id);
             return {
               orderId: r.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               cruise: r.cruise_name,
               category: r.division,
               roomType: r.room_type,
@@ -1468,7 +1448,7 @@ export default function ManagerSchedulePage() {
               discountCode: r.discount_code,
               note: r.room_note,
               requestNote: r.connecting_room,
-              email: user.email || r.email
+              email: user?.email || r.email
             };
           });
         } else if (tableName === 'sh_c') {
@@ -1476,8 +1456,8 @@ export default function ManagerSchedulePage() {
             const user = userMap.get(c.order_id);
             return {
               orderId: c.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               carType: c.vehicle_type,
               carCode: c.vehicle_code,
               carCount: parseInt(c.vehicle_count) || 0,
@@ -1487,7 +1467,7 @@ export default function ManagerSchedulePage() {
               dropoffLocation: c.dropoff_location,
               unitPrice: parseFloat(c.amount) || 0,
               totalPrice: parseFloat(c.total) || 0,
-              email: user.email || c.email
+              email: user?.email || c.email
             };
           });
         } else if (tableName === 'sh_cc') {
@@ -1495,8 +1475,8 @@ export default function ManagerSchedulePage() {
             const user = userMap.get(cc.order_id);
             return {
               orderId: cc.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               cruiseInfo: '',
               boardingDate: cc.boarding_date,
               serviceType: cc.division,
@@ -1506,7 +1486,7 @@ export default function ManagerSchedulePage() {
               name: cc.name,
               pickupLocation: '',
               dropoffLocation: '',
-              email: user.email || cc.email
+              email: user?.email || cc.email
             };
           });
         } else if (tableName === 'sh_p') {
@@ -1514,8 +1494,8 @@ export default function ManagerSchedulePage() {
             const user = userMap.get(p.order_id);
             return {
               orderId: p.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               tripType: p.division,
               category: p.category,
               route: p.route,
@@ -1532,7 +1512,7 @@ export default function ManagerSchedulePage() {
               carCount: parseInt(p.vehicle_count) || 0,
               unitPrice: parseFloat(p.amount) || 0,
               totalPrice: parseFloat(p.total) || 0,
-              email: user.email || p.email
+              email: user?.email || p.email
             };
           });
         } else if (tableName === 'sh_h') {
@@ -1540,8 +1520,8 @@ export default function ManagerSchedulePage() {
             const user = userMap.get(h.order_id);
             return {
               orderId: h.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               hotelCode: h.hotel_code,
               hotelName: h.hotel_name,
               roomName: h.room_name,
@@ -1559,7 +1539,7 @@ export default function ManagerSchedulePage() {
               note: h.note,
               unitPrice: parseFloat(h.amount) || 0,
               totalPrice: parseFloat(h.total) || 0,
-              email: user.email || h.email
+              email: user?.email || h.email
             };
           });
         } else if (tableName === 'sh_t') {
@@ -1567,8 +1547,8 @@ export default function ManagerSchedulePage() {
             const user = userMap.get(t.order_id);
             return {
               orderId: t.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               tourCode: t.tour_code,
               tourName: t.tour_name,
               tourType: t.tour_type,
@@ -1583,7 +1563,7 @@ export default function ManagerSchedulePage() {
               memo: t.memo,
               unitPrice: parseFloat(t.amount) || 0,
               totalPrice: parseFloat(t.total) || 0,
-              email: user.email || t.email,
+              email: user?.email || t.email,
               tourNote: t.tour_note
             };
           });
@@ -1592,8 +1572,8 @@ export default function ManagerSchedulePage() {
             const user = userMap.get(rc.order_id);
             return {
               orderId: rc.order_id,
-              customerName: user.korean_name || '',
-              customerEnglishName: user.english_name || '',
+              customerName: user?.korean_name || '',
+              customerEnglishName: user?.english_name || '',
               carCode: rc.vehicle_code,
               tripType: rc.division,
               category: rc.category,
@@ -1611,7 +1591,7 @@ export default function ManagerSchedulePage() {
               memo: rc.memo,
               unitPrice: parseFloat(rc.amount) || 0,
               totalPrice: parseFloat(rc.total) || 0,
-              email: user.email || rc.email
+              email: user?.email || rc.email
             };
           });
         }
@@ -1619,7 +1599,7 @@ export default function ManagerSchedulePage() {
         setGoogleSheetsData(mappedData);
       }
     } catch (err: any) {
-      setGoogleSheetsError(err.message || '데이터를 부르뒗 중 오류가 발생했습니다.');
+      setGoogleSheetsError(err.message || '데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setGoogleSheetsLoading(false);
     }
@@ -1629,18 +1609,18 @@ export default function ManagerSchedulePage() {
     if (!dateStr) return null;
 
     try {
-      // "YYYY. MM. DD" 형식 섎
+      // "YYYY. MM. DD" 형식 처리
       if (dateStr.includes('. ')) {
         const parts = dateStr.split('. ').map(p => p.trim());
         if (parts.length >= 3) {
           const [year, month, day] = parts;
-          const dayNum = day.split(' ')[0]; // 시간 분쒓굅
-          // 쒖뺄 시간대로Date 앹껜 생성 (뺤삤 12쒕줈 젙섏뿬 시간대 몄젣 방지)
+          const dayNum = day.split(' ')[0]; // 시간 부분 제거
+          // 로컬 시간대로 Date 객체 생성 (정오 12시로 설정하여 시간대 문제 방지)
           const date = new Date(
             parseInt(year),
-            parseInt(month) - 1, // 붿 0시작
+            parseInt(month) - 1, // 월은 0부터 시작
             parseInt(dayNum),
-            12, 0, 0, 0 // 뺤삤젙
+            12, 0, 0, 0 // 정오로 설정
           );
           return date;
         }
@@ -1650,12 +1630,12 @@ export default function ManagerSchedulePage() {
       if (dateStr.includes('-')) {
         const datePart = dateStr.split(' ')[0];
         const [year, month, day] = datePart.split('-');
-        // 쒖뺄 시간대로Date 앹껜 생성 (뺤삤 12쒕줈 젙)
+        // 로컬 시간대로 Date 객체 생성 (정오 12시로 설정)
         const date = new Date(
           parseInt(year),
           parseInt(month) - 1,
           parseInt(day),
-          12, 0, 0, 0 // 뺤삤젙
+          12, 0, 0, 0 // 정오로 설정
         );
         return date;
       }
@@ -1663,19 +1643,19 @@ export default function ManagerSchedulePage() {
       // 기타 형식
       const date = new Date(dateStr);
       if (!isNaN(date.getTime())) {
-        // 시간뺤삤젙
+        // 시간을 정오로 설정
         date.setHours(12, 0, 0, 0);
         return date;
       }
     } catch (error) {
-      // 에러 댁떆
+      // 에러 무시
     }
 
     return null;
   };
 
   const formatPrice = (price: number): string => {
-    return price.toLocaleString('ko-KR') + '';
+    return price.toLocaleString('ko-KR') + '동';
   };
 
   const isPastDate = (dateStr: string): boolean => {
@@ -1695,7 +1675,7 @@ export default function ManagerSchedulePage() {
       month: '2-digit',
       day: '2-digit',
     }).formatToParts(date);
-    const pick = (type: string) => parts.find((p) => p.type === type).value || '';
+    const pick = (type: string) => parts.find((p) => p.type === type)?.value || '';
     const y = pick('year');
     const m = pick('month');
     const d = pick('day');
@@ -1740,7 +1720,7 @@ export default function ManagerSchedulePage() {
         return rows;
       };
 
-      // 서비스별 날짜 컬럼 곗쇰줈 기간 데이터조회 (곗튂)
+      // 서비스별 날짜 컬럼 기준으로 기간 내 데이터 조회 (배치)
       let cruiseRows: any[] = [];
       let airportRows: any[] = [];
       let hotelRows: any[] = [];
@@ -1750,7 +1730,7 @@ export default function ManagerSchedulePage() {
       let carShtRows: any[] = [];
 
       if (hasSearch) {
-        // 검색 모드: 기간닿섍쾶 reservation 전체페이지 조회
+        // 검색 모드: 기간과 무관하게 reservation 전체를 페이지 조회
         const allReservations = await fetchReservationsPaged(
           () => supabase
             .from('reservation')
@@ -1811,7 +1791,7 @@ export default function ManagerSchedulePage() {
             .or(
               `and(pickup_datetime.gte.${start.toISOString()},pickup_datetime.lte.${end.toISOString()}),and(return_datetime.gte.${start.toISOString()},return_datetime.lte.${end.toISOString()})`
             ),
-          // tour: usage_date (date) - 놁쓣 덉쓬, maybeSingle 대형범위 조회
+          // tour: usage_date (date) - 없을 수 있음, maybeSingle 대신 범위 조회
           supabase
             .from('reservation_tour')
             .select('*, reservation_id')
@@ -1851,12 +1831,12 @@ export default function ManagerSchedulePage() {
         { table: 'reservation_car_sht', rows: carShtRows }
       ];
 
-      // 크루즈room_price_code cruise_rate_card(cruise_name, room_type) 븨 조회
+      // 크루즈 room_price_code → cruise_rate_card(cruise_name, room_type) 매핑 조회
       const cruiseCodes = Array.from(
         new Set((cruiseRows || []).map((r: any) => r.room_price_code).filter(Boolean))
       );
-      // cruise_rate_card.id uuid 컬럼대로 덇굅UUID 붾뱶욎뼱.in('id', ...) 몄텧섎
-      // 겕 전체가 'invalid input syntax for type uuid' 에러로실패븨듭로꾧쾶 
+      // cruise_rate_card.id 는 uuid 컬럼이므로, 레거시 비-UUID 코드를 섞어서 .in('id', ...) 호출하면
+      // 청크 전체가 'invalid input syntax for type uuid' 에러로 실패해 매핑이 통째로 비게 됨
       const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const cruiseCodesUuid = cruiseCodes.filter((c: any) => UUID_RE.test(String(c || '')));
       const tourCodes = Array.from(
@@ -1871,7 +1851,7 @@ export default function ManagerSchedulePage() {
       const rentCodes = Array.from(
         new Set(
           (rentcarRows || []).flatMap((r: any) => {
-            const rawCode = String(r.rentcar_price_code || '').trim();
+            const rawCode = String(r?.rentcar_price_code || '').trim();
             if (!rawCode) return [];
             const upperCode = rawCode.toUpperCase();
             const lowerCode = rawCode.toLowerCase();
@@ -1882,7 +1862,7 @@ export default function ManagerSchedulePage() {
       const cruiseCarRentCodes = Array.from(
         new Set(
           (cruiseCarRows || []).flatMap((r: any) => {
-            const rawCode = String(r.rentcar_price_code || '').trim();
+            const rawCode = String(r?.rentcar_price_code || '').trim();
             if (!rawCode) return [];
             const upperCode = rawCode.toUpperCase();
             const lowerCode = rawCode.toLowerCase();
@@ -1891,12 +1871,12 @@ export default function ManagerSchedulePage() {
         )
       );
       const allRentCodes = Array.from(new Set([...rentCodes, ...cruiseCarRentCodes]));
-      let cruiseInfoByCode = new Map<string, { cruise: string; room_type: string; room_category: string }>();
-      let tourInfoByCode = new Map<string, { tour_name: string; tour_code: string; category: string; vehicle_type: string }>();
-      let airportInfoByKey = new Map<string, { service_type: string; route: string; vehicle_type: string }>();
-      let airportInfoByCode = new Map<string, { service_type: string; route: string; vehicle_type: string }>();
-      let hotelInfoByCode = new Map<string, { hotel_name: string; room_name: string; room_type: string; include_breakfast: boolean }>();
-      let rentInfoByCode = new Map<string, { vehicle_type: string; route: string; way_type: string; category: string; cruise: string }>();
+      let cruiseInfoByCode = new Map<string, { cruise?: string; room_type?: string; room_category?: string }>();
+      let tourInfoByCode = new Map<string, { tour_name?: string; tour_code?: string; category?: string; vehicle_type?: string }>();
+      let airportInfoByKey = new Map<string, { service_type?: string; route?: string; vehicle_type?: string }>();
+      let airportInfoByCode = new Map<string, { service_type?: string; route?: string; vehicle_type?: string }>();
+      let hotelInfoByCode = new Map<string, { hotel_name?: string; room_name?: string; room_type?: string; include_breakfast?: boolean }>();
+      let rentInfoByCode = new Map<string, { vehicle_type?: string; route?: string; way_type?: string; category?: string; cruise?: string }>();
 
       const normalizeAirportWay = (value: string) => {
         const way = (value || '').toLowerCase();
@@ -1906,7 +1886,8 @@ export default function ManagerSchedulePage() {
       };
       const normalizeCruiseCode = (value: any) => String(value || '').trim().toLowerCase();
 
-      // 검색 모드에서 IN 리스트멸 슦 URL 몄씠 초과묐떟꾩뼱 객실명크루즈명꾨씫      // 200쐞로겕 꾪븷 조회
+      // 검색 모드에서 IN 리스트가 매우 커지면 URL 길이 초과로 응답이 비어 객실명/크루즈명이 누락됨
+      // → 200건 단위로 청크 분할 조회
       const fetchInChunked = async (table: string, selectCols: string, column: string, values: any[], chunkSize = 200) => {
         const acc: any[] = [];
         const uniq = Array.from(new Set((values || []).filter(v => v !== null && v !== undefined && v !== '')));
@@ -1914,7 +1895,7 @@ export default function ManagerSchedulePage() {
           const chunk = uniq.slice(i, i + chunkSize);
           const { data, error } = await supabase.from(table).select(selectCols).in(column, chunk);
           if (error) {
-            console.error(`${table}.${column} 겕 조회 실패:`, error);
+            console.error(`${table}.${column} 청크 조회 실패:`, error);
             continue;
           }
           acc.push(...(data || []));
@@ -1952,17 +1933,17 @@ export default function ManagerSchedulePage() {
           allRentCodes.map((c) => normalizeRentCode(c).toUpperCase()).filter(Boolean)
         ));
         const present = new Set(
-          rentPriceRows.map((r: any) => normalizeRentCode(r.rent_code).toUpperCase()).filter(Boolean)
+          rentPriceRows.map((r: any) => normalizeRentCode(r?.rent_code).toUpperCase()).filter(Boolean)
         );
         const hasMissing = requested.some((code) => !present.has(code));
         if (hasMissing) {
           const { data: allRentRows } = await supabase
             .from('rentcar_price')
             .select('rent_code, vehicle_type, route, way_type, category, cruise');
-          if (allRentRows.length) {
+          if (allRentRows?.length) {
             const byCode = new Map<string, any>();
             for (const row of [...rentPriceRows, ...allRentRows]) {
-              const key = normalizeRentCode(row.rent_code).toUpperCase();
+              const key = normalizeRentCode(row?.rent_code).toUpperCase();
               if (key) byCode.set(key, row);
             }
             rentPriceRows = Array.from(byCode.values());
@@ -1970,7 +1951,7 @@ export default function ManagerSchedulePage() {
         }
       }
 
-      // cruise_rate_card: id 조회 + room_type 조회 곌낵 묓빀
+      // cruise_rate_card: id 조회 + room_type 조회 결과 병합
       const rpMergedMap = new Map<string, any>();
       for (const rp of [...(rpByIdRes.data || []), ...(rpByTypeRes.data || [])]) {
         const idKey = String(rp.id || '').trim();
@@ -1979,9 +1960,9 @@ export default function ManagerSchedulePage() {
         if (typeKey && !rpMergedMap.has(typeKey)) rpMergedMap.set(typeKey, rp);
       }
 
-      // legacy room_price 뚯씠붿 이상 슜사 의심 (cruise_rate_card로통합)
+      // legacy room_price 테이블은 더 이상 사용하지 않음 (cruise_rate_card로 통합)
 
-      // cruise_info에서 room_name 조회 (cruise_info먮뒗 room_type 컬럼없음 cruise_name 뒤로븨)
+      // cruise_info에서 room_name 조회 (cruise_info에는 room_type 컬럼이 없음 → cruise_name 키로만 매핑)
       const cruiseNames = Array.from(new Set(Array.from(rpMergedMap.values()).map(rp => rp.cruise_name).filter(Boolean)));
       let cruiseInfoDataMap = new Map<string, any>();
       if (cruiseNames.length > 0) {
@@ -1992,7 +1973,7 @@ export default function ManagerSchedulePage() {
           cruiseNames
         );
         for (const ci of cruiseInfoData || []) {
-          // 같은 cruise_name윭 room_name쇰줈 댁옱덉쑝로좎
+          // 같은 cruise_name이 여러 room_name으로 존재할 수 있으므로 첫 행 유지
           if (!cruiseInfoDataMap.has(ci.cruise_name)) {
             cruiseInfoDataMap.set(ci.cruise_name, ci);
           }
@@ -2006,7 +1987,7 @@ export default function ManagerSchedulePage() {
         const cruiseInfo = {
           cruise: rp.cruise_name || undefined,
           room_type: rp.room_type || undefined,
-          room_name: ciData.room_name || undefined,
+          room_name: ciData?.room_name || undefined,
           room_category: undefined
         };
         if (idCode) {
@@ -2037,7 +2018,7 @@ export default function ManagerSchedulePage() {
           hotel_name: hp.hotel_name || undefined,
           room_name: hp.room_name || undefined,
           room_type: hp.room_type || undefined,
-          include_breakfast: hp.include_breakfast || undefined,
+          include_breakfast: hp.include_breakfast ?? undefined,
         });
       }
 
@@ -2075,34 +2056,34 @@ export default function ManagerSchedulePage() {
         }
       }
 
-      // 뱦 STEP 1: pricing_id tour_id 븨
-      const tpData: any[] = tpDataRes.data || [];
+      // 📌 STEP 1: pricing_id → tour_id 매핑
+      const tpData: any[] = tpDataRes?.data || [];
       if (tpData.length > 0) {
-        // 뱦 STEP 2: tour_id 목록 붿텧
+        // 📌 STEP 2: tour_id 목록 추출
         const tourIds = Array.from(new Set((tpData).map((tp: any) => tp.tour_id).filter(Boolean)));
 
         if (tourIds.length > 0) {
-          // 뱦 STEP 3: tour_id tour_name 조회
+          // 📌 STEP 3: tour_id → tour_name 조회
           const { data: toursById } = await supabase
             .from('tour')
             .select('tour_id, tour_name, tour_code, category')
             .in('tour_id', tourIds);
 
-          // 뱦 STEP 4: tour_name 듯븨 (pricing_id tour_name)
+          // 📌 STEP 4: tour_name 맵핑 (pricing_id → tour_name)
           const tourById = new Map((toursById || []).map((t: any) => [t.tour_id, t]));
           for (const tp of tpData) {
             const tourInfo = tourById.get(tp.tour_id);
             tourInfoByCode.set(tp.pricing_id, {
-              tour_name: tourInfo.tour_name || undefined,
-              tour_code: tourInfo.tour_code || undefined,
-              category: tourInfo.category || undefined,
+              tour_name: tourInfo?.tour_name || undefined,
+              tour_code: tourInfo?.tour_code || undefined,
+              category: tourInfo?.category || undefined,
               vehicle_type: tp.vehicle_type || undefined,
             });
           }
         }
       }
 
-      // 해당섎뒗 예약 ID조회
+      // 해당되는 예약 ID들 조회
       const reservationIds = Array.from(
         new Set(
           serviceRows.flatMap(s => (s.rows || []).map((r: any) => r.reservation_id)).filter(Boolean)
@@ -2114,7 +2095,7 @@ export default function ManagerSchedulePage() {
         return;
       }
 
-      // 예약 기준 정보대 사용자 정보겕 조회 (대형IN 곌굔 대형
+      // 예약 기본 정보와 사용자 정보를 청크 조회 (대량 IN 조건 대응)
       const CHUNK_SIZE = 200;
       const reservationsData: any[] = [];
       for (let i = 0; i < reservationIds.length; i += CHUNK_SIZE) {
@@ -2125,7 +2106,7 @@ export default function ManagerSchedulePage() {
           .in('re_id', chunk)
           .neq('re_type', 'car_sht');
         if (error) {
-          console.error('reservation 겕 조회 실패:', error);
+          console.error('reservation 청크 조회 실패:', error);
           setSchedules([]);
           return;
         }
@@ -2145,7 +2126,7 @@ export default function ManagerSchedulePage() {
             .select('id, name, email')
             .in('id', chunk);
           if (error) {
-            console.error('users 겕 조회 실패:', error);
+            console.error('users 청크 조회 실패:', error);
             continue;
           }
           usersData.push(...(data || []));
@@ -2153,9 +2134,9 @@ export default function ManagerSchedulePage() {
         usersById = new Map((usersData || []).map(u => [u.id, u]));
       }
 
-      // 중앙 제로
+      // 스케줄 객체로 변환
       const result: any[] = [];
-      const hasTimezone = (value: string) => /[zZ]$|[+-]\d{2}:\d{2}$/.test(value);
+      const hasTimezone = (value: string) => /[zZ]$|[+-]\d{2}:?\d{2}$/.test(value);
       const parseKstDateTime = (value: any): Date | null => {
         if (!value) return null;
         if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
@@ -2196,14 +2177,14 @@ export default function ManagerSchedulePage() {
           let type = reservationAny.re_type;
 
           if (table === 'reservation_cruise') {
-            // checkin대 date덉쓣 가꽦
+            // checkin은 date만 있을 가능성
             if (row.checkin) {
               scheduleDate = new Date(row.checkin + 'T09:00:00');
-              // 덈뒗 시간 쒓린 단가
+              // 크루즈는 시간 표기 숨김
               scheduleTime = '';
             }
-            location = '섎좎씠';
-            // room_price_code로크루즈명가 정보
+            location = '하롱베이';
+            // room_price_code로 크루즈/룸타입 부가 정보
             if (row.room_price_code) {
               const rawCode = String(row.room_price_code || '').trim();
               const info = cruiseInfoByCode.get(rawCode) || cruiseInfoByCode.get(normalizeCruiseCode(row.room_price_code));
@@ -2243,9 +2224,9 @@ export default function ManagerSchedulePage() {
               scheduleDate = new Date(row.checkin_date + 'T15:00:00');
               scheduleTime = '15:00';
             }
-            // 예약 hotel_category호텔명대븯꽩
+            // 예약 시 hotel_category에 호텔명 저장하는 패턴
             location = row.hotel_category || null;
-            if (row.nights) duration = `${row.nights}`;
+            if (row.nights) duration = `${row.nights}박`;
           } else if (table === 'reservation_rentcar') {
             if (row.rentcar_price_code) {
               const rentCode = String(row.rentcar_price_code || '').trim();
@@ -2273,14 +2254,14 @@ export default function ManagerSchedulePage() {
               }
             }
             if (row.pickup_location && row.destination) {
-              location = `${row.pickup_location}  ${row.destination} `;
+              location = `${row.pickup_location} → ${row.destination}`;
             } else {
               location = row.pickup_location || row.destination || null;
             }
 
             if (!scheduleDate) continue;
 
-            // 뚰듃대뒗 픽업/리턴곴컖 개별 일정쇰줈 표시
+            // 렌트카는 픽업/리턴을 각각 개별 일정으로 표시
             result.push({
               re_id: reservationAny.re_id,
               re_type: type,
@@ -2297,11 +2278,11 @@ export default function ManagerSchedulePage() {
               cruise_info: (row as any)._cruise_info || null
             });
 
-            // 리턴 필드: return_datetime 처리 생성 (같은 로직)
+            // 리턴 카드: return_datetime이 있으면 항상 생성 (같은 날이어도)
             const rentcarReturnDate = row.return_datetime ? parseKstDateTime(row.return_datetime) : null;
             if (rentcarReturnDate) {
               const returnLocation = (row.return_pickup_location && row.return_destination)
-                ? `${row.return_pickup_location}  ${row.return_destination} `
+                ? `${row.return_pickup_location} → ${row.return_destination}`
                 : row.return_pickup_location || row.return_destination || row.dropoff_location || location;
 
               result.push({
@@ -2325,15 +2306,15 @@ export default function ManagerSchedulePage() {
           } else if (table === 'reservation_tour') {
             if (row.usage_date) {
               scheduleDate = new Date(row.usage_date + 'T09:00:00');
-              // 투어 필드시간 단가 뺤콉
+              // 투어 카드는 시간 숨김 정책
               scheduleTime = '';
             }
             if (row.pickup_location && row.dropoff_location) {
-              location = `${row.pickup_location}  ${row.dropoff_location} `;
+              location = `${row.pickup_location} → ${row.dropoff_location}`;
             } else {
               location = row.pickup_location || row.dropoff_location || null;
             }
-            // 투어명enrichment: tour_price_code (=pricing_id) tour_name
+            // 투어명 enrichment: tour_price_code (=pricing_id) → tour_name
             if (row.tour_price_code && tourInfoByCode.has(row.tour_price_code)) {
               (row as any)._tour_info = tourInfoByCode.get(row.tour_price_code);
             }
@@ -2355,7 +2336,7 @@ export default function ManagerSchedulePage() {
               }
             }
 
-            // 픽업 필드 생성
+            // 픽업 카드 생성
             if (row.pickup_datetime) {
               const pickupDate = new Date(row.pickup_datetime + 'T09:00:00');
               result.push({
@@ -2375,9 +2356,9 @@ export default function ManagerSchedulePage() {
               });
             }
 
-            // 픽업 필드 생성: 픽업 같은 로직 필드 생성
+            // 드롭 카드 생성: 왕복이면 같은날이어도 반드시 생성
             const wayType = String(row.way_type || '').trim();
-            const isRoundTrip = wayType.includes('픽업');
+            const isRoundTrip = wayType.includes('왕복');
             const returnDateSource = row.return_datetime || (isRoundTrip ? row.pickup_datetime : null);
             if (returnDateSource) {
               const returnDate = new Date(returnDateSource + 'T09:00:00');
@@ -2392,7 +2373,7 @@ export default function ManagerSchedulePage() {
                   location: row.dropoff_location || null,
                   duration,
                   segment_type: 'return',
-                  segment_ribbon: '픽업',
+                  segment_ribbon: '드롭',
                   service_table: table,
                   service_row: row,
                   cruise_info: (row as any)._cruise_info || null
@@ -2433,7 +2414,7 @@ export default function ManagerSchedulePage() {
             }
           }
 
-          if (!scheduleDate) continue; // 날짜가 놁쑝쒖쇅
+          if (!scheduleDate) continue; // 날짜가 없으면 제외
 
           result.push({
             re_id: reservationAny.re_id,
@@ -2451,12 +2432,12 @@ export default function ManagerSchedulePage() {
         }
       }
 
-      // 대형필터데이터에서 적용섎릺, 린쒕뒗 날짜 범위 곌낵명똿
-      // 쒖떊정렬 (시간 기준)
+      // 타입 필터는 렌더에서 적용하되, 여기서는 날짜 범위 내 결과만 세팅
+      // 최신순 정렬 (시간 기준)
       result.sort((a, b) => a.schedule_date.getTime() - b.schedule_date.getTime());
       setSchedules(result);
     } catch (error) {
-      // 에러 댁떆
+      // 에러 무시
     } finally {
       setLoading(false);
     }
@@ -2482,38 +2463,38 @@ export default function ManagerSchedulePage() {
       case 'hotel': return '호텔';
       case 'tour': return '투어';
       case 'rentcar': return '렌트카';
-      case 'car': return '드롭';
-      case 'vehicle': return '드롭';
+      case 'car': return '크차';
+      case 'vehicle': return '크차';
       case 'sht': return '스하차량';
       default: return type;
     }
   };
 
-  // 표시대낅챸/아이(service_table섏쁺)
+  // 표시용 타입명/아이콘 (service_table을 반영)
   const getDisplayTypeName = (schedule: any) => {
-    if (schedule.service_table === 'reservation_car_sht') return getTypeName('sht');
-    if (schedule.service_table === 'reservation_cruise_car') return getTypeName('vehicle');
-    return getTypeName(schedule.re_type);
+    if (schedule?.service_table === 'reservation_car_sht') return getTypeName('sht');
+    if (schedule?.service_table === 'reservation_cruise_car') return getTypeName('vehicle');
+    return getTypeName(schedule?.re_type);
   };
 
   const renderDbCardBody = (schedule: any) => {
-    const row = schedule.service_row || {};
-    const dateText = schedule.schedule_date
+    const row = schedule?.service_row || {};
+    const dateText = schedule?.schedule_date
       ? new Date(schedule.schedule_date).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })
       : undefined;
-    const serviceType = schedule.service_table || schedule.re_type || '';
+    const serviceType = schedule?.service_table || schedule?.re_type || '';
     const cardData = (() => {
       if (serviceType === 'reservation_rentcar' || serviceType === 'rentcar') {
-        return { ...row, _rentcar_phase: schedule.rentcar_phase || '' };
+        return { ...row, _rentcar_phase: schedule?.rentcar_phase || '' };
       }
       if (serviceType === 'reservation_cruise_car' || serviceType === 'cruise_car') {
-        return { ...row, _cruise_car_phase: schedule.segment_type || '' };
+        return { ...row, _cruise_car_phase: schedule?.segment_type || '' };
       }
       if (serviceType === 'reservation_cruise' || serviceType === 'cruise') {
         return {
           ...row,
-          _cruise_info: row._cruise_info || schedule.cruise_info || null,
-          cruise_info: row.cruise_info || schedule.cruise_info || null,
+          _cruise_info: row?._cruise_info || schedule?.cruise_info || null,
+          cruise_info: row?.cruise_info || schedule?.cruise_info || null,
         };
       }
       return row;
@@ -2523,13 +2504,13 @@ export default function ManagerSchedulePage() {
       serviceType === 'reservation_rentcar' ||
       serviceType === 'airport' ||
       serviceType === 'rentcar';
-    const timeText = shouldShowTime ? (schedule.schedule_time || undefined) : undefined;
+    const timeText = shouldShowTime ? (schedule?.schedule_time || undefined) : undefined;
 
     return (
       <ServiceCardBody
         serviceType={serviceType}
         data={cardData}
-        customerName={schedule?.users?.name}
+        customerName={schedule.users?.name}
         showCustomer={true}
         dateText={dateText}
         timeText={timeText}
@@ -2538,36 +2519,36 @@ export default function ManagerSchedulePage() {
   };
 
   const getDisplayTypeIcon = (schedule: any) => {
-    if (schedule.service_table === 'reservation_car_sht') return getTypeIcon('vehicle');
-    if (schedule.service_table === 'reservation_cruise_car') return getTypeIcon('vehicle');
-    return getTypeIcon(schedule.re_type);
+    if (schedule?.service_table === 'reservation_car_sht') return getTypeIcon('vehicle');
+    if (schedule?.service_table === 'reservation_cruise_car') return getTypeIcon('vehicle');
+    return getTypeIcon(schedule?.re_type);
   };
 
-  // 크루즈명 + 객실대형표시좏떥 (가필드에서 쒕붿텧)
+  // 크루즈명 + 객실타입 표시용 유틸 (가용 필드에서 최대한 추출)
   const getCruiseNameAndRoom = (row: any) => {
     const cruise =
-      row.cruise_name ||
-      row.cruise ||
-      row.cruise_title ||
-      row.room_cruise ||
+      row?.cruise_name ||
+      row?.cruise ||
+      row?.cruise_title ||
+      row?.room_cruise ||
       '';
     const roomType =
-      row.room_type ||
-      row.room_category ||
-      row.room ||
+      row?.room_type ||
+      row?.room_category ||
+      row?.room ||
       '';
-    const code = row.room_price_code || '';
-    const left = cruise || (code ? `가격:${code} ` : '크루즈');
+    const code = row?.room_price_code || '';
+    const left = cruise || (code ? `코드:${code}` : '크루즈');
     const right = roomType;
     return [left, right].filter(Boolean).join(' ');
   };
 
-  // 크루즈덉씠붿쓣 '크루즈/ 객실대형 형식쇰줈 섑솚 (옒욌뮘 듬갚 포함)
+  // 크루즈 레이블을 '크루즈 / 객실타입' 형식으로 반환 (슬래시 앞뒤 공백 포함)
   const formatCruiseLabel = (schedule: any) => {
-    const row = schedule.service_row || {};
-    const info = schedule.cruise_info || {};
-    const cruise = info.cruise || row.cruise_name || row.cruise || row.cruise_title || '';
-    const roomType = info.room_type || row.room_type || row.room_category || row.room || '';
+    const row = schedule?.service_row || {};
+    const info = schedule?.cruise_info || {};
+    const cruise = info?.cruise || row?.cruise_name || row?.cruise || row?.cruise_title || '';
+    const roomType = info?.room_type || row?.room_type || row?.room_category || row?.room || '';
     if (cruise && roomType) return `${cruise} / ${roomType}`;
     if (cruise) return cruise;
     if (roomType) return roomType;
@@ -2576,14 +2557,14 @@ export default function ManagerSchedulePage() {
     return getCruiseNameAndRoom(row).replace(/\s+/, ' / ');
   };
 
-  // 시간 댁떆, 날짜(YYYY-MM-DD) 곗쇰줈분류
-  // 꾩 날짜 곗쇰줈 꾧탳 (UTC 오류 방지)
+  // 시간 무시, 날짜(YYYY-MM-DD) 기준으로만 분류
+  // 현지 날짜 기준으로 비교 (UTC 변환 오류 방지)
   const isSameLocalDate = (d1: Date, d2: Date) =>
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate();
 
-  // 주월간 포함 범위 꾧탳 (묐걹 포함)
+  // 주/월간 포함 범위 비교 (양끝 포함)
   const isDateInRange = (date: Date, start: Date, end: Date) => {
     const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
@@ -2598,7 +2579,7 @@ export default function ManagerSchedulePage() {
       } else if (typeFilter === 'vehicle') {
         if (schedule.service_table !== 'reservation_cruise_car') return false;
       } else if (typeFilter === 'cruise') {
-        // 크루즈필터: 차량 뚯씠붿 구조섍퀬 cruise 예약포함
+        // 크루즈 필터: 차량 테이블은 제외하고 cruise 예약만 포함
         if (schedule.service_table === 'reservation_cruise_car' || schedule.service_table === 'reservation_car_sht') return false;
         if (schedule.re_type !== 'cruise') return false;
       } else if (schedule.re_type !== typeFilter) {
@@ -2608,7 +2589,7 @@ export default function ManagerSchedulePage() {
     return true;
   });
 
-  // DB 검색 검색어가 덉쑝날짜 필터댁떆섍퀬 전체(DB)에서 검색
+  // DB 검색: 검색어가 있으면 날짜 필터를 무시하고 전체(DB)에서 검색
   let filteredSchedules = typeFilteredSchedules;
   if (activeSearchQuery.trim()) {
     const query = activeSearchQuery.toLowerCase().trim();
@@ -2619,8 +2600,8 @@ export default function ManagerSchedulePage() {
         schedule.re_type,
         schedule.re_status,
         schedule.location,
-        schedule?.users?.name,
-        schedule?.users?.email,
+        schedule.users?.name,
+        schedule.users?.email,
         row.room_price_code,
         row.car_price_code,
         row.rentcar_price_code,
@@ -2640,7 +2621,7 @@ export default function ManagerSchedulePage() {
       return searchFields.some(field => field && String(field).toLowerCase().includes(query));
     });
   } else {
-    // 검색어가 놁쓣 뚮쭔 날짜 범위 필터 적용
+    // 검색어가 없을 때만 날짜 범위 필터 적용
     filteredSchedules = typeFilteredSchedules.filter(schedule => {
       if (!schedule.schedule_date) return false;
       if (viewMode === 'day') return isSameLocalDate(schedule.schedule_date, selectedDate);
@@ -2649,11 +2630,11 @@ export default function ManagerSchedulePage() {
     });
   }
 
-  // 중복 쒓굅: 참조 상세id)쒓굅섍퀬, 같은 예약굔 상세자
+  // 중복 제거: 동일 상세행(id)만 제거하고, 같은 예약의 다건 상세는 유지
   const uniqueSchedules = filteredSchedules.filter((schedule, index, self) =>
     index === self.findIndex((s) => {
-      const sRowId = s.service_row.id || '';
-      const rowId = schedule.service_row.id || '';
+      const sRowId = s?.service_row?.id || '';
+      const rowId = schedule?.service_row?.id || '';
       if (sRowId && rowId) {
         return s.re_id === schedule.re_id
           && s.service_table === schedule.service_table
@@ -2670,7 +2651,7 @@ export default function ManagerSchedulePage() {
     })
   );
 
-  // 서비스대낅퀎 그룹
+  // 서비스 타입별 그룹
   const groupedByType: Record<string, any[]> = uniqueSchedules.reduce(
     (acc: Record<string, any[]>, cur) => {
       const k = cur.re_type || 'other';
@@ -2680,14 +2661,14 @@ export default function ManagerSchedulePage() {
     {}
   );
 
-  // 날짜(YYYY-MM-DD) 기준 그룹 (주월간 일별 그룹붿슜)
+  // 날짜(YYYY-MM-DD) 기준 그룹 (주/월간 일별 그룹화용)
   const toKey = (d: Date) => {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
   };
-  const weekdayShort = ['', ' ', '', ' ', '명', ' ', ''];
+  const weekdayShort = ['일', '월', '화', '수', '목', '금', '토'];
   const formatDateLabel = (d: Date) => {
     const dateStr = d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
     return `${dateStr} (${weekdayShort[d.getDay()]})`;
@@ -2701,55 +2682,62 @@ export default function ManagerSchedulePage() {
     {}
   );
 
-  // 날짜 범위 계산 (view 모드)
+  // 날짜 범위 계산 (디버그용)
   const { start: rangeStart, end: rangeEnd } = viewMode === 'day'
     ? { start: selectedDate, end: selectedDate }
     : getRange(selectedDate, viewMode);
 
-  console.log('뱟 필터 날짜 범위:', {
-    start: toLocalDateString(rangeStart),
-    end: toLocalDateString(rangeEnd),
+  console.log('📅 필터 날짜 범위:', {
+    시작: toLocalDateString(rangeStart),
+    종료: toLocalDateString(rangeEnd),
     viewMode
   });
 
-  // Google Sheets 데이터필터
+  // Google Sheets 데이터 필터링
   let filteredGoogleSheets = googleSheetsData.filter(reservation => {
     let targetDate: Date | null = null;
     let dateType = '';
     let dateFieldValue = '';
 
-    // 쒕퉬대낅퀎 날짜 필드 확인
+    // 각 서비스 타입별 날짜 필드 확인
     if (reservation.checkin) {
-      // 크루즈 데이터      dateFieldValue = reservation.checkin;
+      // 크루즈 데이터
+      dateFieldValue = reservation.checkin;
       targetDate = parseDate(reservation.checkin);
-      dateType = '크루즈체크인';
+      dateType = '크루즈 체크인';
     } else if (reservation.pickupDatetime) {
-      // 차량 데이터      dateFieldValue = reservation.pickupDatetime;
+      // 차량 데이터
+      dateFieldValue = reservation.pickupDatetime;
       targetDate = parseDate(reservation.pickupDatetime);
       dateType = '차량 승차일시';
     } else if (reservation.boardingDate) {
-      // 스하차량 데이터      dateFieldValue = reservation.boardingDate;
+      // 스하차량 데이터
+      dateFieldValue = reservation.boardingDate;
       targetDate = parseDate(reservation.boardingDate);
       dateType = '스하차량 승차일';
     } else if (reservation.date) {
-      // 공항 데이터      dateFieldValue = reservation.date;
+      // 공항 데이터
+      dateFieldValue = reservation.date;
       targetDate = parseDate(reservation.date);
       dateType = '공항 일자';
     } else if (reservation.checkinDate) {
-      // 호텔 데이터      dateFieldValue = reservation.checkinDate;
+      // 호텔 데이터
+      dateFieldValue = reservation.checkinDate;
       targetDate = parseDate(reservation.checkinDate);
       dateType = '호텔 체크인';
     } else if (reservation.startDate) {
-      // 투어 데이터      dateFieldValue = reservation.startDate;
+      // 투어 데이터
+      dateFieldValue = reservation.startDate;
       targetDate = parseDate(reservation.startDate);
-      dateType = '투어 시작';
+      dateType = '투어 시작일';
     } else if (reservation.pickupDate) {
-      // 렌트카데이터      dateFieldValue = reservation.pickupDate;
+      // 렌트카 데이터
+      dateFieldValue = reservation.pickupDate;
       targetDate = parseDate(reservation.pickupDate);
-      dateType = '렌트카승차일';
+      dateType = '렌트카 승차일';
     }
 
-    // 날짜가 없는 경우 필터할때 구조
+    // 날짜가 없는 데이터는 필터링에서 제외
     if (!targetDate) {
       const serviceType = reservation.cruise ? '크루즈' :
         reservation.carType && reservation.pickupDatetime ? '차량' :
@@ -2757,13 +2745,13 @@ export default function ManagerSchedulePage() {
             reservation.airportName ? '공항' :
               reservation.hotelName ? '호텔' :
                 reservation.tourName ? '투어' :
-                  reservation.carCode && reservation.pickupDate ? '렌트카' : '명칭 ';
-      // 우 서브타입 분류 (0.1% 비효율)
+                  reservation.carCode && reservation.pickupDate ? '렌트카' : '미확인';
+      // 매우 드물게만 로깅 (0.1% 확률)
       if (Math.random() < 0.001) {
-        console.log(`좑툘 날짜 녿뒗 ${serviceType} 구조:`, reservation.orderId);
+        console.log(`⚠️ 날짜 없는 ${serviceType} 제외:`, reservation.orderId);
       }
-      return false; // 날짜 놁쑝표시 덊븿
-    }    // 날짜 범위 필터
+      return false; // ✅ 날짜 없으면 표시 안함
+    }    // 날짜 범위 필터링
     if (viewMode === 'day') {
       const result = isSameLocalDate(targetDate, selectedDate);
       return result;
@@ -2771,7 +2759,7 @@ export default function ManagerSchedulePage() {
     const { start, end } = getRange(selectedDate, viewMode);
     const result = isDateInRange(targetDate, start, end);
 
-    // 붾쾭 쒕뜡 샘플곸쑝로쒓렇 확인
+    // 디버깅: 랜덤 샘플링으로 로그 확인
     if (Math.random() < 0.005) {
       const formatLocalDate = (d: Date) => {
         const year = d.getFullYear();
@@ -2779,24 +2767,24 @@ export default function ManagerSchedulePage() {
         const day = String(d.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
       };
-      console.log('뵊 날짜 꾧탳:', {
+      console.log('🔎 날짜 비교:', {
         orderId: reservation.orderId,
-        original: dateFieldValue,
-        formatted: formatLocalDate(targetDate),
-        rangeStart: formatLocalDate(start),
-        rangeEnd: formatLocalDate(end),
-        match: result ? "yes" : "no"
+        원본날짜: dateFieldValue,
+        파싱결과: formatLocalDate(targetDate),
+        범위시작: formatLocalDate(start),
+        범위종료: formatLocalDate(end),
+        매칭: result ? '✅' : '❌'
       });
     }
 
     return result;
   });
 
-  // 검색어 필터(뱺 곗씠곗뿉검색 날짜 필터 댁떆)
+  // 검색어 필터링 (모든 데이터에서 검색, 날짜 필터 무시)
   if (activeSearchQuery.trim()) {
     const query = activeSearchQuery.toLowerCase().trim();
     filteredGoogleSheets = googleSheetsData.filter(item => {
-      // 뱺 필드에서 검색
+      // 모든 필드에서 검색
       const searchFields = [
         item.orderId,
         item.customerName,
@@ -2826,12 +2814,12 @@ export default function ManagerSchedulePage() {
     });
   }
 
-  // 필터링 결과 쒓퉭
-  console.log('뵇 필터링 결과:');
-  console.log('  전체데이터', googleSheetsData.length, '건');
-  console.log('  필터곹썑:', filteredGoogleSheets.length, '건');
+  // 필터링 결과 로깅
+  console.log('🔍 필터링 결과:');
+  console.log('  전체데이터:', googleSheetsData.length, '건');
+  console.log('  필터링후:', filteredGoogleSheets.length, '건');
   console.log('  현재 선택 날짜:', toLocalDateString(selectedDate));
-  console.log('  곕', viewMode);
+  console.log('  뷰모드:', viewMode);
 
   // 서비스별 필터링 결과
   const filteredServiceCounts = {
@@ -2885,7 +2873,7 @@ export default function ManagerSchedulePage() {
     input.click();
   };
 
-  // Google Sheets 데이터대형확인 닔
+  // Google Sheets 데이터 타입 확인 함수들
   const isCruiseData = (item: any): item is SHRReservation => {
     return 'checkin' in item && 'cruise' in item;
   };
@@ -2914,7 +2902,7 @@ export default function ManagerSchedulePage() {
     return 'pickupDatetime' in item && !('boardingDate' in item) && !('pickupDate' in item);
   };
 
-  // 서비스대형먮퀎 닔
+  // 서비스 타입 판별 함수
   const getServiceType = (reservation: any): string => {
     if (isCruiseData(reservation)) return 'cruise';
     if (isVehicleData(reservation)) return 'vehicle';
@@ -2926,7 +2914,7 @@ export default function ManagerSchedulePage() {
     return 'unknown';
   };
 
-  // 서비스대낅퀎 아이이름
+  // 서비스 타입별 아이콘 및 이름
   const getServiceInfo = (type: string) => {
     const serviceMap: Record<string, { icon: React.ReactNode; name: string; color: string }> = {
       cruise: { icon: <Ship className="w-5 h-5" />, name: '크루즈', color: 'blue' },
@@ -2940,27 +2928,27 @@ export default function ManagerSchedulePage() {
     return serviceMap[type] || { icon: <Calendar className="w-5 h-5" />, name: '기타', color: 'gray' };
   };
 
-  // 서비스별 그룹
+  // 서비스별 그룹화
   const groupedByService = filteredGoogleSheets.reduce((acc: Record<string, any[]>, reservation) => {
     const serviceType = getServiceType(reservation);
     (acc[serviceType] ||= []).push(reservation);
     return acc;
   }, {});
 
-  // 필터링 결과 쒓렇
-  console.log('뵇 필터링 결과:');
-  console.log('  전체데이터', googleSheetsData.length, '건');
-  console.log('  필터곹썑:', filteredGoogleSheets.length, '건');
+  // 필터링 결과 로그
+  console.log('🔍 필터링 결과:');
+  console.log('  전체데이터:', googleSheetsData.length, '건');
+  console.log('  필터링후:', filteredGoogleSheets.length, '건');
   console.log('  현재 선택 날짜:', selectedDate.toISOString().split('T')[0]);
-  console.log('  곕', viewMode);
+  console.log('  뷰모드:', viewMode);
   console.log('  서비스별 필터링 결과:');
   Object.entries(groupedByService).forEach(([type, items]) => {
-    console.log(`    ${type}: ${items.length} `);
+    console.log(`    ${type}: ${items.length}건`);
   });
 
-  // 필터곷맂 데이터 샘플 확인 (섏쓬 3개
+  // 필터링된 데이터 샘플 확인 (처음 3개)
   if (filteredGoogleSheets.length > 0) {
-    console.log('  뱥 필터곷맂 데이터 샘플:');
+    console.log('  📋 필터링된 데이터 샘플:');
     filteredGoogleSheets.slice(0, 3).forEach((item, idx) => {
       const dateField = item.checkin || item.pickupDatetime || item.boardingDate ||
         item.date || item.checkinDate || item.startDate || item.pickupDate;
@@ -2968,7 +2956,7 @@ export default function ManagerSchedulePage() {
     });
   }
 
-  // Google Sheets 예약 필드 데이터
+  // Google Sheets 예약 카드 렌더링
   const renderGoogleSheetsCard = (reservation: any, index: number) => {
     // 1. 크루즈 데이터
     if (isCruiseData(reservation)) {
@@ -2978,20 +2966,21 @@ export default function ManagerSchedulePage() {
       return (
         <div
           key={`${reservation.orderId}-${index}`}
-          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''
-            } `}
+          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''}`}
         >
           <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
             <div className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-50 border border-blue-200">
               <Ship className="w-5 h-5 text-blue-600" />
             </div>
             <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
-              크루즈            </h5>
+              크루즈
+            </h5>
             <div className="flex items-center gap-2">
               <span
-                className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700'
+                className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast
+                  ? 'bg-gray-200 text-gray-700'
                   : 'bg-blue-100 text-blue-800'
-                  } `}
+                  }`}
               >
                 {isPast ? '완료' : '예정'}
               </span>
@@ -3007,7 +2996,8 @@ export default function ManagerSchedulePage() {
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
                   title="삭제"
                 >
-                  고객                </button>
+                  🗑️
+                </button>
               )}
             </div>
           </div>
@@ -3035,36 +3025,42 @@ export default function ManagerSchedulePage() {
             <div className="flex items-center gap-2 mt-1">
               <Calendar className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-medium">
-                {checkinDate.toLocaleDateString('ko-KR')}
+                {checkinDate?.toLocaleDateString('ko-KR')}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-500 text-xs">인원</span>
               <span className="text-sm">
-                {reservation.adult > 0 && ` ${reservation.adult} 명`}
-                {reservation.child > 0 && `  뫔 ${reservation.child} 명`}
-                {reservation.toddler > 0 && `  ${reservation.toddler} 명`}
+                {reservation.adult > 0 && `👨 ${reservation.adult}명`}
+                {reservation.child > 0 && ` 👶 ${reservation.child}명`}
+                {reservation.toddler > 0 && ` 🍼 ${reservation.toddler}명`}
                 {reservation.adult === 0 && reservation.child === 0 && reservation.toddler === 0 && (
                   <span className="text-gray-400">-</span>
                 )}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-500 text-xs">객실</span>
+              <span className="font-semibold text-gray-500 text-xs">객실수</span>
               <span className="text-sm">{reservation.roomCount}개</span>
             </div>
             {reservation.discount && (
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-500 text-xs">날짜</span>
+                <span className="font-semibold text-gray-500 text-xs">할인</span>
                 <span className="text-sm text-green-600">{reservation.discount}</span>
               </div>
             )}
-            {reservation.requestNote && (
-              <div className="flex items-start gap-2 mt-2 pt-2 border-t border-gray-200">
-                <span className="font-semibold text-orange-600 text-xs whitespace-nowrap"></span>
-                <span className="text-sm text-gray-700 leading-relaxed">{reservation.requestNote}</span>
-              </div>
-            )}
+            {reservation.requestNote && (() => {
+              const filtered = reservation.requestNote
+                .replace(/\[CHILD_OLDER_COUNTS:[^\]]*\]\s*/gi, '')
+                .replace(/\[옵션\s*\d+\][\s\S]*?(?=\n|$)/g, '')
+                .trim();
+              return filtered ? (
+                <div className="flex items-start gap-2 mt-2 pt-2 border-t border-gray-200">
+                  <span className="font-semibold text-orange-600 text-xs whitespace-nowrap">📝</span>
+                  <span className="text-sm text-gray-700 leading-relaxed">{filtered}</span>
+                </div>
+              ) : null;
+            })()}
           </div>
         </div>
       );
@@ -3072,20 +3068,20 @@ export default function ManagerSchedulePage() {
 
     // 2. 스하차량 데이터
     else if (isVehicleData(reservation)) {
-      console.log('슇 스하차량 데이터', {
+      console.log('🚙 스하차량 렌더링:', {
         orderId: reservation.orderId,
         boardingDate: reservation.boardingDate,
         vehicleNumber: reservation.vehicleNumber,
         customerName: reservation.customerName
       });
       const boardingDate = parseDate(reservation.boardingDate);
-      console.log('뱟 뚯떛날짜:', boardingDate);
+      console.log('📅 파싱된 날짜:', boardingDate);
       const isPast = isPastDate(reservation.boardingDate);
 
       return (
         <div
           key={`${reservation.orderId}-${index}`}
-          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''} `}
+          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''}`}
         >
           <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
             <div className="flex items-center justify-center w-9 h-9 rounded-full bg-purple-50 border border-purple-200">
@@ -3095,7 +3091,7 @@ export default function ManagerSchedulePage() {
               스하차량
             </h5>
             <div className="flex items-center gap-2">
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-purple-100 text-purple-800'} `}>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-purple-100 text-purple-800'}`}>
                 {isPast ? '완료' : '예정'}
               </span>
               <button
@@ -3110,7 +3106,8 @@ export default function ManagerSchedulePage() {
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
                   title="삭제"
                 >
-                  고객                </button>
+                  🗑️
+                </button>
               )}
             </div>
           </div>
@@ -3175,23 +3172,24 @@ export default function ManagerSchedulePage() {
       const serviceDate = parseDate(reservation.date);
       const isPast = isPastDate(reservation.date);
       const rawStopover = String(reservation.stopover || '').trim();
-      const locationLabel = rawStopover === '쎌쑀' ? '숇컯 정보' : (rawStopover || '위치');
+      const locationLabel = rawStopover === '경유지' ? '숙박지 정보' : (rawStopover || '위치');
       const rawPlaceName = String(reservation.placeName || '').trim();
       const locationValue = /^updating$/i.test(rawPlaceName) ? '-' : (rawPlaceName || '-');
 
       return (
         <div
           key={`${reservation.orderId}-${index}`}
-          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''} `}
+          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''}`}
         >
           <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
             <div className="flex items-center justify-center w-9 h-9 rounded-full bg-green-50 border border-green-200">
               <Plane className="w-5 h-5 text-green-600" />
             </div>
             <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
-              공항서비스            </h5>
+              공항서비스
+            </h5>
             <div className="flex items-center gap-2">
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-green-100 text-green-800'} `}>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-green-100 text-green-800'}`}>
                 {isPast ? '완료' : '예정'}
               </span>
               <button
@@ -3206,7 +3204,8 @@ export default function ManagerSchedulePage() {
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
                   title="삭제"
                 >
-                  고객                </button>
+                  🗑️
+                </button>
               )}
             </div>
           </div>
@@ -3230,7 +3229,7 @@ export default function ManagerSchedulePage() {
             <div className="flex items-center gap-2 mt-1">
               <Calendar className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-medium">
-                {serviceDate.toLocaleDateString('ko-KR')} {reservation.time}
+                {serviceDate?.toLocaleDateString('ko-KR')} {reservation.time}
               </span>
             </div>
             <div className="flex items-start gap-2">
@@ -3243,12 +3242,12 @@ export default function ManagerSchedulePage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-500 text-xs">인원/차량</span>
-              <span className="text-sm"> {reservation.passengerCount}명/  {reservation.carCount}대</span>
+              <span className="text-sm">👥 {reservation.passengerCount}명 / 🚗 {reservation.carCount}대</span>
             </div>
             {reservation.carrierCount > 0 && (
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-500 text-xs">캐리어</span>
-                <span className="text-sm"> {reservation.carrierCount}개</span>
+                <span className="text-sm">🧳 {reservation.carrierCount}개</span>
               </div>
             )}
           </div>
@@ -3264,7 +3263,7 @@ export default function ManagerSchedulePage() {
       return (
         <div
           key={`${reservation.orderId}-${index}`}
-          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''} `}
+          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''}`}
         >
           <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
             <div className="flex items-center justify-center w-9 h-9 rounded-full bg-orange-50 border border-orange-200">
@@ -3274,7 +3273,7 @@ export default function ManagerSchedulePage() {
               호텔
             </h5>
             <div className="flex items-center gap-2">
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-orange-100 text-orange-800'} `}>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-orange-100 text-orange-800'}`}>
                 {isPast ? '완료' : '예정'}
               </span>
               <button
@@ -3289,7 +3288,8 @@ export default function ManagerSchedulePage() {
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
                   title="삭제"
                 >
-                  고객                </button>
+                  🗑️
+                </button>
               )}
             </div>
           </div>
@@ -3313,26 +3313,26 @@ export default function ManagerSchedulePage() {
             <div className="flex items-center gap-2 mt-1">
               <Calendar className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-medium">
-                {checkinDate.toLocaleDateString('ko-KR')}
-                {reservation.days > 0 && <span className="text-xs text-gray-500 ml-1">({reservation.days}</span>}
+                {checkinDate?.toLocaleDateString('ko-KR')}
+                {reservation.days > 0 && <span className="text-xs text-gray-500 ml-1">({reservation.days}박)</span>}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-500 text-xs">인원</span>
               <span className="text-sm">
-                {reservation.adult > 0 && ` ${reservation.adult} 명`}
-                {reservation.child > 0 && `  뫔 ${reservation.child} 명`}
-                {reservation.toddler > 0 && `  ${reservation.toddler} 명`}
+                {reservation.adult > 0 && `👨 ${reservation.adult}명`}
+                {reservation.child > 0 && ` 👶 ${reservation.child}명`}
+                {reservation.toddler > 0 && ` 🍼 ${reservation.toddler}명`}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-500 text-xs">객실</span>
+              <span className="font-semibold text-gray-500 text-xs">객실수</span>
               <span className="text-sm">{reservation.roomCount}개</span>
             </div>
             {reservation.breakfastService && (
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-500 text-xs">조식</span>
-                <span className="text-sm"> 포함</span>
+                <span className="text-sm">🍳 포함</span>
               </div>
             )}
           </div>
@@ -3348,7 +3348,7 @@ export default function ManagerSchedulePage() {
       return (
         <div
           key={`${reservation.orderId}-${index}`}
-          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''} `}
+          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''}`}
         >
           <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
             <div className="flex items-center justify-center w-9 h-9 rounded-full bg-pink-50 border border-pink-200">
@@ -3358,7 +3358,7 @@ export default function ManagerSchedulePage() {
               투어
             </h5>
             <div className="flex items-center gap-2">
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-pink-100 text-pink-800'} `}>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-pink-100 text-pink-800'}`}>
                 {isPast ? '완료' : '예정'}
               </span>
               <button
@@ -3373,7 +3373,8 @@ export default function ManagerSchedulePage() {
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
                   title="삭제"
                 >
-                  고객                </button>
+                  🗑️
+                </button>
               )}
             </div>
           </div>
@@ -3396,11 +3397,11 @@ export default function ManagerSchedulePage() {
             </div>
             <div className="flex items-center gap-2 mt-1">
               <Calendar className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-medium">{startDate.toLocaleDateString('ko-KR')}</span>
+              <span className="text-sm font-medium">{startDate?.toLocaleDateString('ko-KR')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-500 text-xs">인원</span>
-              <span className="text-sm"> {reservation.participants}명</span>
+              <span className="text-sm">👥 {reservation.participants}명</span>
             </div>
             {reservation.pickupLocation && (
               <div className="flex items-start gap-2">
@@ -3419,7 +3420,7 @@ export default function ManagerSchedulePage() {
       );
     }
 
-    // 6. 렌트카데이터
+    // 6. 렌트카 데이터
     else if (isRentcarData(reservation)) {
       const pickupDate = parseDate(reservation.pickupDate);
       const isPast = isPastDate(reservation.pickupDate);
@@ -3427,16 +3428,17 @@ export default function ManagerSchedulePage() {
       return (
         <div
           key={`${reservation.orderId}-${index}`}
-          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''} `}
+          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''}`}
         >
           <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
             <div className="flex items-center justify-center w-9 h-9 rounded-full bg-indigo-50 border border-indigo-200">
               <Car className="w-5 h-5 text-indigo-600" />
             </div>
             <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
-              렌트카            </h5>
+              렌트카
+            </h5>
             <div className="flex items-center gap-2">
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-indigo-100 text-indigo-800'} `}>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700' : 'bg-indigo-100 text-indigo-800'}`}>
                 {isPast ? '완료' : '예정'}
               </span>
               <button
@@ -3451,7 +3453,8 @@ export default function ManagerSchedulePage() {
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
                   title="삭제"
                 >
-                  고객                </button>
+                  🗑️
+                </button>
               )}
             </div>
           </div>
@@ -3475,19 +3478,19 @@ export default function ManagerSchedulePage() {
             <div className="flex items-center gap-2 mt-1">
               <Calendar className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-medium">
-                {pickupDate.toLocaleDateString('ko-KR')} {reservation.pickupTime}
+                {pickupDate?.toLocaleDateString('ko-KR')} {reservation.pickupTime}
               </span>
             </div>
             <div className="flex items-start gap-2">
               <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
               <span className="text-sm break-words">
                 {reservation.pickupLocation}
-                {reservation.destination && ` ${reservation.destination} `}
+                {reservation.destination && ` → ${reservation.destination}`}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-500 text-xs">인원/차량</span>
-              <span className="text-sm"> {reservation.passengerCount}명/  {reservation.carCount}대</span>
+              <span className="text-sm">👥 {reservation.passengerCount}명 / 🚗 {reservation.carCount}대</span>
             </div>
             {reservation.usagePeriod && (
               <div className="flex items-center gap-2">
@@ -3500,38 +3503,39 @@ export default function ManagerSchedulePage() {
       );
     }
 
-    // 7. 차량 데이터(기준)
+    // 7. 차량 데이터 (기본)
     else if (isCarData(reservation)) {
-      console.log(' 차량 데이터', {
+      console.log('🚗 차량 렌더링:', {
         orderId: reservation.orderId,
         pickupDatetime: reservation.pickupDatetime,
         customerName: reservation.customerName,
         carType: reservation.carType
       });
       const pickupDate = parseDate(reservation.pickupDatetime);
-      console.log('뱟 뚯떛날짜:', pickupDate);
+      console.log('📅 파싱된 날짜:', pickupDate);
       const isPast = isPastDate(reservation.pickupDatetime);
 
       return (
         <div
           key={`${reservation.orderId}-${index}`}
-          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''} `}
+          className={`bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full ${isPast ? 'opacity-60' : ''}`}
         >
           <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
             <div className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-50 border border-blue-200">
               <Car className="w-5 h-5 text-blue-600" />
             </div>
             <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
-              크루즈차량
+              크루즈 차량
             </h5>
             <div className="flex items-center gap-2">
-              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${reservation.segmentType === 'return' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'} `}>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${reservation.segmentType === 'return' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
                 {reservation.segmentRibbon || (reservation.segmentType === 'return' ? '리턴' : '픽업')}
               </span>
               <span
-                className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast ? 'bg-gray-200 text-gray-700'
+                className={`px-2 py-0.5 rounded-full text-xs font-medium ${isPast
+                  ? 'bg-gray-200 text-gray-700'
                   : 'bg-blue-100 text-blue-800'
-                  } `}
+                  }`}
               >
                 {isPast ? '완료' : '예정'}
               </span>
@@ -3547,7 +3551,8 @@ export default function ManagerSchedulePage() {
                   className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
                   title="삭제"
                 >
-                  고객                </button>
+                  🗑️
+                </button>
               )}
             </div>
           </div>
@@ -3589,7 +3594,7 @@ export default function ManagerSchedulePage() {
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-500 text-xs">인원/차량</span>
               <span className="text-sm">
-                {reservation.passengerCount}명/  {reservation.carCount}대
+                👥 {reservation.passengerCount}명 / 🚗 {reservation.carCount}대
               </span>
             </div>
           </div>
@@ -3603,11 +3608,11 @@ export default function ManagerSchedulePage() {
 
   if (loading) {
     return (
-      <ManagerLayout title="예약 일정 (서비스별 구분)" activeTab="schedule-new">
+      <ManagerLayout title="예약 일정 (신/구 구분)" activeTab="schedule-new">
         <div className="flex justify-center items-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">일정 정보부르뒗 중..</p>
+            <p className="mt-4 text-gray-600">일정 정보를 불러오는 중...</p>
           </div>
         </div>
       </ManagerLayout>
@@ -3615,14 +3620,14 @@ export default function ManagerSchedulePage() {
   }
 
   return (
-    <ManagerLayout title="예약 일정 (서비스별 구분)" activeTab="schedule-new">
+    <ManagerLayout title="예약 일정 (신/구 구분)" activeTab="schedule-new">
       <div className="space-y-6">
 
-        {/* 일정 필터로*/}
+        {/* 일정 컨트롤 */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          {/* 1 날짜 퉬뚯씠+ 검색+ 일간/주간/월간 버튼 */}
+          {/* 1행: 날짜 네비게이션 + 검색 바 + 일간/주간/월간 버튼 */}
           <div className="flex items-center justify-between gap-4 mb-4">
-            {/* 쇱: 날짜 퉬뚯씠*/}
+            {/* 왼쪽: 날짜 네비게이션 */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigateDate('prev')}
@@ -3642,7 +3647,7 @@ export default function ManagerSchedulePage() {
                   : viewMode === 'week'
                     ? (() => {
                       const { start, end } = getRange(selectedDate, 'week');
-                      return `${start.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} - ${end.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} `;
+                      return `${start.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} - ${end.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}`;
                     })()
                     : selectedDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' })}
               </button>
@@ -3673,7 +3678,7 @@ export default function ManagerSchedulePage() {
               </button>
             </div>
 
-            {/* 묒븰: 검색*/}
+            {/* 중앙: 검색 바 */}
             <div className="flex items-center gap-1 flex-1 max-w-md">
               <div className="flex-1 relative">
                 <input
@@ -3690,48 +3695,50 @@ export default function ManagerSchedulePage() {
                 onClick={handleSearch}
                 className="px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
               >
-                검색              </button>
+                검색
+              </button>
               {activeSearchQuery && (
                 <button
                   onClick={handleClearSearch}
                   className="px-3 py-2 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition-colors"
                 >
-                  초기화                </button>
+                  초기화
+                </button>
               )}
             </div>
 
-            {/*  일간/주간/월간 버튼 */}
+            {/* 오른쪽: 일간/주간/월간 버튼 */}
             <div className="flex gap-1">
               <button
                 onClick={() => setViewMode('day')}
-                className={`px-3 py-2 rounded text-sm transition-colors ${viewMode === 'day' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'} `}
+                className={`px-3 py-2 rounded text-sm transition-colors ${viewMode === 'day' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
                 일간
               </button>
               <button
                 onClick={() => setViewMode('week')}
-                className={`px-3 py-2 rounded text-sm transition-colors ${viewMode === 'week' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'} `}
+                className={`px-3 py-2 rounded text-sm transition-colors ${viewMode === 'week' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
                 주간
               </button>
               <button
                 onClick={() => setViewMode('month')}
-                className={`px-3 py-2 rounded text-sm transition-colors ${viewMode === 'month' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'} `}
+                className={`px-3 py-2 rounded text-sm transition-colors ${viewMode === 'month' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
                 월간
               </button>
             </div>
           </div>
 
-          {/* 2 대형필터 + 그룹+ 검색 결과 */}
+          {/* 2행: 타입 필터 + 그룹화 + 검색 결과 */}
           <div className="flex items-center justify-start gap-4">
-            {/* 대형필터 */}
+            {/* 타입 필터 */}
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-600" />
               <div className="flex gap-1 flex-wrap">
                 <button
                   onClick={() => setTypeFilter('all')}
-                  className={`px-2 py-1 rounded-full text-xs transition-colors ${typeFilter === 'all' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'} `}
+                  className={`px-2 py-1 rounded-full text-xs transition-colors ${typeFilter === 'all' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
                 >
                   전체
                 </button>
@@ -3739,7 +3746,7 @@ export default function ManagerSchedulePage() {
                   <button
                     key={type}
                     onClick={() => setTypeFilter(type)}
-                    className={`px-2 py-1 rounded-full text-xs transition-colors ${typeFilter === type ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'} `}
+                    className={`px-2 py-1 rounded-full text-xs transition-colors ${typeFilter === type ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
                   >
                     {getTypeName(type)}
                   </button>
@@ -3747,22 +3754,22 @@ export default function ManagerSchedulePage() {
               </div>
             </div>
 
-            {/* 그룹버튼 (주월간 모드먮쭔 표시) */}
+            {/* 그룹화 버튼 (주/월간 모드에만 표시) */}
             {(viewMode === 'week' || viewMode === 'month') && (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">그룹</span>
+                <span className="text-xs text-gray-600">그룹화:</span>
                 <div className="inline-flex rounded overflow-hidden border border-gray-200">
                   <button
                     onClick={() => setGroupMode('day')}
-                    className={`px-2 py-1 text-xs ${groupMode === 'day' ? 'bg-green-500 text-white' : 'bg-gray-50 text-gray-700'} `}
+                    className={`px-2 py-1 text-xs ${groupMode === 'day' ? 'bg-green-500 text-white' : 'bg-gray-50 text-gray-700'}`}
                   >
                     일별
                   </button>
                   <button
                     onClick={() => setGroupMode('type')}
-                    className={`px-2 py-1 text-xs ${groupMode === 'type' ? 'bg-green-500 text-white' : 'bg-gray-50 text-gray-700'} `}
+                    className={`px-2 py-1 text-xs ${groupMode === 'type' ? 'bg-green-500 text-white' : 'bg-gray-50 text-gray-700'}`}
                   >
-                    대낅퀎
+                    타입별
                   </button>
                 </div>
               </div>
@@ -3771,20 +3778,20 @@ export default function ManagerSchedulePage() {
             {/* 검색 결과 표시 */}
             {activeSearchQuery && (
               <div className="text-xs text-blue-600 ml-auto">
-                검색 "{activeSearchQuery}"
+                검색: "{activeSearchQuery}"
               </div>
             )}
           </div>
         </div>
 
-        {/* 일정 목록 - 2 */}
+        {/* 일정 목록 - 2열 구조 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 쇱: Supabase 데이터*/}
+          {/* 왼쪽: Supabase 데이터 */}
           <div className="bg-white rounded-lg shadow-md">
             <div className="p-6 border-b bg-green-50">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Calendar className="w-6 h-6 text-green-600" />
-                DB 예약 일정 ({filteredSchedules.length}건
+                DB 예약 일정 ({filteredSchedules.length}건)
               </h3>
             </div>
 
@@ -3792,17 +3799,17 @@ export default function ManagerSchedulePage() {
               <div className="p-8 text-center">
                 <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-600 mb-2">
-                  {typeFilter === 'all' ? '예약일정없습니다' : `${getTypeName(typeFilter)} 일정없습니다`}
+                  {typeFilter === 'all' ? '예약된 일정이 없습니다' : `${getTypeName(typeFilter)} 일정이 없습니다`}
                 </h3>
               </div>
             ) : (
               <div className="p-6 space-y-10">
-                {/* 일간 보기: 기존 대낅퀎 구분 놁씠 전체 리스트*/}
+                {/* 일간 보기: 기존 타입별 구분 없이 전체 리스트 */}
                 {viewMode === 'day' && (
                   <div>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {uniqueSchedules.map((schedule: any, idx: number) => (
-                        <div key={`${schedule.re_id} -${schedule.service_table} -${schedule.segment_type || schedule.rentcar_phase || 'default'} -${idx} `} className="bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full">
+                        <div key={`${schedule.re_id}-${schedule.service_table}-${schedule.segment_type || schedule.rentcar_phase || 'default'}-${idx}`} className="bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full">
                           <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
                             <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-50 border border-gray-200">
                               {getDisplayTypeIcon(schedule)}
@@ -3811,18 +3818,18 @@ export default function ManagerSchedulePage() {
                               {getDisplayTypeName(schedule)}
                             </h5>
                             {schedule.segment_ribbon && (
-                              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${(schedule.segment_type === 'return' || schedule.rentcar_phase === 'return') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'} `}>
+                              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${(schedule.segment_type === 'return' || schedule.rentcar_phase === 'return') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
                                 {schedule.segment_ribbon}
                               </span>
                             )}
                             <div className="flex items-center gap-2">
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'} `}>
-                                {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대' : '취소'}
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                                {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대기' : '취소'}
                               </span>
                               <button
                                 onClick={() => {
-                                  if (schedule?.users?.id) {
-                                    loadAllUserReservations(schedule?.users?.id);
+                                  if (schedule.users?.id) {
+                                    loadAllUserReservations(schedule.users.id);
                                   } else {
                                     setSelectedSchedule(schedule);
                                     setIsModalOpen(true);
@@ -3839,7 +3846,7 @@ export default function ManagerSchedulePage() {
                   </div>
                 )}
 
-                {/* 주월간 보기 */}
+                {/* 주/월간 보기 */}
                 {(viewMode === 'week' || viewMode === 'month') && (
                   <>
                     {groupMode === 'day' && (
@@ -3853,29 +3860,29 @@ export default function ManagerSchedulePage() {
                               <div key={key}>
                                 <div className="flex items-center justify-between mb-3">
                                   <h4 className="text-md font-semibold flex items-center gap-2">
-                                    <Calendar className="w-5 h-5 text-green-600" /> {formatDateLabel(d)} <span className="text-gray-500">({list.length}건</span>
+                                    <Calendar className="w-5 h-5 text-green-600" /> {formatDateLabel(d)} <span className="text-gray-500">({list.length}건)</span>
                                   </h4>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                   {list.map((schedule: any, idx: number) => (
-                                    <div key={`${schedule.re_id} -${schedule.service_table} -${schedule.segment_type || schedule.rentcar_phase || 'default'} -${idx} `} className="bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full">
+                                    <div key={`${schedule.re_id}-${schedule.service_table}-${schedule.segment_type || schedule.rentcar_phase || 'default'}-${idx}`} className="bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full">
                                       <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
                                         <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-50 border border-gray-200">
                                           {getDisplayTypeIcon(schedule)}
                                         </div>
                                         <h5 className="font-bold text-sm flex-1 truncate text-gray-800">{getDisplayTypeName(schedule)}</h5>
                                         {schedule.segment_ribbon && (
-                                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${(schedule.segment_type === 'return' || schedule.rentcar_phase === 'return') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'} `}>
+                                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${(schedule.segment_type === 'return' || schedule.rentcar_phase === 'return') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
                                             {schedule.segment_ribbon}
                                           </span>
                                         )}
                                         <div className="flex items-center gap-2">
-                                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'} `}>
-                                            {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대' : '취소'}
+                                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                                            {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대기' : '취소'}
                                           </span>
                                           <button onClick={() => {
-                                            if (schedule?.users?.id) {
-                                              loadAllUserReservations(schedule?.users?.id);
+                                            if (schedule.users?.id) {
+                                              loadAllUserReservations(schedule.users.id);
                                             } else {
                                               setSelectedSchedule(schedule);
                                               setIsModalOpen(true);
@@ -3899,29 +3906,29 @@ export default function ManagerSchedulePage() {
                           <div key={type}>
                             <div className="flex items-center justify-between mb-3">
                               <h4 className="text-md font-semibold flex items-center gap-2">
-                                {getTypeIcon(typeFilter === 'sht' || typeFilter === 'vehicle' ? 'vehicle' : type)} {typeFilter === 'sht' ? getTypeName('sht') : typeFilter === 'vehicle' ? getTypeName('vehicle') : getTypeName(type)} <span className="text-gray-500">({list.length}건</span>
+                                {getTypeIcon(typeFilter === 'sht' || typeFilter === 'vehicle' ? 'vehicle' : type)} {typeFilter === 'sht' ? getTypeName('sht') : typeFilter === 'vehicle' ? getTypeName('vehicle') : getTypeName(type)} <span className="text-gray-500">({list.length}건)</span>
                               </h4>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                               {list.map((schedule: any, idx: number) => (
-                                <div key={`${schedule.re_id} -${schedule.service_table} -${schedule.segment_type || schedule.rentcar_phase || 'default'} -${idx} `} className="bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full">
+                                <div key={`${schedule.re_id}-${schedule.service_table}-${schedule.segment_type || schedule.rentcar_phase || 'default'}-${idx}`} className="bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full">
                                   <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
                                     <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-50 border border-gray-200">
                                       {getDisplayTypeIcon(schedule)}
                                     </div>
                                     <h5 className="font-bold text-sm flex-1 truncate text-gray-800">{getDisplayTypeName(schedule)}</h5>
                                     {schedule.segment_ribbon && (
-                                      <span className={`px-2 py-0.5 rounded text-xs font-semibold ${(schedule.segment_type === 'return' || schedule.rentcar_phase === 'return') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'} `}>
+                                      <span className={`px-2 py-0.5 rounded text-xs font-semibold ${(schedule.segment_type === 'return' || schedule.rentcar_phase === 'return') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
                                         {schedule.segment_ribbon}
                                       </span>
                                     )}
                                     <div className="flex items-center gap-2">
-                                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'} `}>
-                                        {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대' : '취소'}
+                                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                                        {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대기' : '취소'}
                                       </span>
                                       <button onClick={() => {
-                                        if (schedule?.users?.id) {
-                                          loadAllUserReservations(schedule?.users?.id);
+                                        if (schedule.users?.id) {
+                                          loadAllUserReservations(schedule.users.id);
                                         } else {
                                           setSelectedSchedule(schedule);
                                           setIsModalOpen(true);
@@ -3943,12 +3950,12 @@ export default function ManagerSchedulePage() {
             )}
           </div >
 
-          {/*  시트 데이터*/}
+          {/* 오른쪽: 시트 데이터 */}
           <div className="bg-white rounded-lg shadow-md">
             <div className="p-6 border-b bg-blue-50">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Calendar className="w-6 h-6 text-blue-600" />
-                시트 예약 일정 ({filteredGoogleSheets.length}건
+                시트 예약 일정 ({filteredGoogleSheets.length}건)
               </h3>
             </div>
 
@@ -3961,7 +3968,7 @@ export default function ManagerSchedulePage() {
               <div className="p-8 text-center">
                 <Calendar className="w-16 h-16 text-red-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-red-600 mb-2">
-                  데이터로드 실패
+                  데이터 로드 실패
                 </h3>
                 <p className="text-sm text-gray-500">{googleSheetsError}</p>
               </div>
@@ -3970,18 +3977,18 @@ export default function ManagerSchedulePage() {
                 <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-600 mb-2">
                   {googleSheetsData.length === 0
-                    ? 'DB곗씠곌 없습니다'
-                    : '예약일정없습니다'}
+                    ? 'DB에 데이터가 없습니다'
+                    : '예약된 일정이 없습니다'}
                 </h3>
                 {googleSheetsData.length === 0 && (
                   <p className="text-sm text-gray-500 mt-2">
-                    관리자 페이지에서 Google Sheets 데이터를 숆린뷀빐쇱꽭
+                    관리자 페이지에서 Google Sheets 데이터를 동기화해주세요.
                   </p>
                 )}
               </div>
             ) : (
               <div className="p-6 space-y-10">
-                {/* 일간 보기 - 서비스별 그룹*/}
+                {/* 일간 보기 - 서비스별 그룹화 */}
                 {viewMode === 'day' && (
                   <div className="space-y-6">
                     {Object.entries(groupedByService)
@@ -4000,11 +4007,11 @@ export default function ManagerSchedulePage() {
                               </div>
                               <h4 className="text-md font-semibold text-gray-800">
                                 {serviceInfo.name}
-                                <span className="ml-2 text-sm text-gray-500">({reservationArray.length}건</span>
+                                <span className="ml-2 text-sm text-gray-500">({reservationArray.length}건)</span>
                               </h4>
                             </div>
 
-                            {/* 스하차량의 경우 분류(category)꾨줈 서브그룹*/}
+                            {/* 스하차량인 경우 분류(category)별로 서브그룹화 */}
                             {serviceType === 'vehicle' ? (
                               <div className="space-y-4">
                                 {Object.entries(
@@ -4019,7 +4026,7 @@ export default function ManagerSchedulePage() {
                                       <span className="px-3 py-1 rounded bg-purple-100 text-purple-700 text-sm font-semibold">
                                         {category}
                                       </span>
-                                      <span className="text-xs text-gray-500">({categoryReservations.length}건</span>
+                                      <span className="text-xs text-gray-500">({categoryReservations.length}건)</span>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                       {categoryReservations.map((reservation, index) =>
@@ -4041,20 +4048,20 @@ export default function ManagerSchedulePage() {
                       })}
                     {Object.keys(groupedByService).length === 0 && (
                       <div className="text-center py-8 text-gray-500">
-                        예약일정없습니다.
+                        예약된 일정이 없습니다.
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* 주월간 보기 */}
+                {/* 주/월간 보기 */}
                 {(viewMode === 'week' || viewMode === 'month') && (
                   <>
                     {groupMode === 'day' && (
                       <div className="space-y-8">
                         {Object.entries(
                           filteredGoogleSheets.reduce((acc: Record<string, any[]>, reservation) => {
-                            // 쒕퉬대낅퀎 날짜 필드 확인
+                            // 각 서비스 타입별 날짜 필드 확인
                             let date: Date | null = null;
 
                             if (reservation.checkin) {
@@ -4085,7 +4092,7 @@ export default function ManagerSchedulePage() {
                             const d = new Date(dateKey + 'T00:00:00');
                             const reservationArray = Array.isArray(reservations) ? reservations : [];
 
-                            // 날짜꾨줈 서비스대낅퀎 그룹
+                            // 날짜별로 서비스 타입별 그룹화
                             const serviceGroups = reservationArray.reduce((acc: Record<string, any[]>, reservation) => {
                               const serviceType = getServiceType(reservation);
                               (acc[serviceType] ||= []).push(reservation);
@@ -4098,7 +4105,7 @@ export default function ManagerSchedulePage() {
                                   <h4 className="text-lg font-bold flex items-center gap-2">
                                     <Calendar className="w-5 h-5 text-blue-600" />
                                     {formatDateLabel(d)}
-                                    <span className="text-gray-500">({reservationArray.length}건</span>
+                                    <span className="text-gray-500">({reservationArray.length}건)</span>
                                   </h4>
                                 </div>
                                 <div className="space-y-4">
@@ -4118,11 +4125,11 @@ export default function ManagerSchedulePage() {
                                             </div>
                                             <h5 className="text-sm font-semibold text-gray-700">
                                               {serviceInfo.name}
-                                              <span className="ml-2 text-xs text-gray-500">({serviceReservationArray.length}건</span>
+                                              <span className="ml-2 text-xs text-gray-500">({serviceReservationArray.length}건)</span>
                                             </h5>
                                           </div>
 
-                                          {/* 스하차량의 경우 분류(category)꾨줈 서브그룹*/}
+                                          {/* 스하차량인 경우 분류(category)별로 서브그룹화 */}
                                           {serviceType === 'vehicle' ? (
                                             <div className="space-y-4">
                                               {Object.entries(
@@ -4137,7 +4144,7 @@ export default function ManagerSchedulePage() {
                                                     <span className="px-3 py-1 rounded bg-purple-100 text-purple-700 text-sm font-semibold">
                                                       {category}
                                                     </span>
-                                                    <span className="text-xs text-gray-500">({categoryReservations.length}건</span>
+                                                    <span className="text-xs text-gray-500">({categoryReservations.length}건)</span>
                                                   </div>
                                                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                                     {categoryReservations.map((reservation, index) =>
@@ -4182,11 +4189,11 @@ export default function ManagerSchedulePage() {
                                   </div>
                                   <h4 className="text-md font-semibold text-gray-800">
                                     {serviceInfo.name}
-                                    <span className="ml-2 text-sm text-gray-500">({reservationArray.length}건</span>
+                                    <span className="ml-2 text-sm text-gray-500">({reservationArray.length}건)</span>
                                   </h4>
                                 </div>
 
-                                {/* 스하차량의 경우 분류(category)꾨줈 서브그룹*/}
+                                {/* 스하차량인 경우 분류(category)별로 서브그룹화 */}
                                 {serviceType === 'vehicle' ? (
                                   <div className="space-y-4">
                                     {Object.entries(
@@ -4201,7 +4208,7 @@ export default function ManagerSchedulePage() {
                                           <span className="px-3 py-1 rounded bg-purple-100 text-purple-700 text-sm font-semibold">
                                             {category}
                                           </span>
-                                          <span className="text-xs text-gray-500">({categoryReservations.length}건</span>
+                                          <span className="text-xs text-gray-500">({categoryReservations.length}건)</span>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                           {categoryReservations.map((reservation, index) =>
@@ -4231,16 +4238,16 @@ export default function ManagerSchedulePage() {
         </div>
       </div >
 
-      {/* 예약 뷀뀒떖 */}
+      {/* 예약 디테일 모달 */}
       {selectedSchedule?.users?.id && (
         <UserReservationDetailModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          userId={selectedSchedule?.users?.id}
+          userId={selectedSchedule.users.id}
         />
       )}
 
-      {/* DB 예약 상세 떖 */}
+      {/* DB 예약 상세 모달 */}
       <UserReservationDetailModal
         isOpen={isDBModalOpen}
         onClose={() => setIsDBModalOpen(false)}
@@ -4249,7 +4256,7 @@ export default function ManagerSchedulePage() {
         loading={dbModalLoading}
       />
 
-      {/* Google Sheets 예약 상세 떖 */}
+      {/* Google Sheets 예약 상세 모달 */}
       <GoogleSheetsDetailModal
         isOpen={isGoogleSheetsModalOpen}
         onClose={() => setIsGoogleSheetsModalOpen(false)}
