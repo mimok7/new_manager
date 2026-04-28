@@ -2683,8 +2683,8 @@ export default function ManagerSchedulePage() {
     : getRange(selectedDate, viewMode);
 
   console.log('?뱟 ?꾪꽣 ?좎쭨 踰붿쐞:', {
-    ?쒖옉: toLocalDateString(rangeStart),
-    醫낅즺: toLocalDateString(rangeEnd),
+    start: toLocalDateString(rangeStart),
+    end: toLocalDateString(rangeEnd),
     viewMode
   });
 
@@ -2757,11 +2757,11 @@ export default function ManagerSchedulePage() {
       };
       console.log('?뵊 ?좎쭨 鍮꾧탳:', {
         orderId: reservation.orderId,
-        ?먮낯?좎쭨: dateFieldValue,
-        ?뚯떛寃곌낵: formatLocalDate(targetDate),
-        踰붿쐞?쒖옉: formatLocalDate(start),
-        踰붿쐞醫낅즺: formatLocalDate(end),
-        留ㅼ묶: result ? '??' : '??'
+        original: dateFieldValue,
+        formatted: formatLocalDate(targetDate),
+        rangeStart: formatLocalDate(start),
+        rangeEnd: formatLocalDate(end),
+        match: result ? 'yes' : 'no'
       });
     }
 
