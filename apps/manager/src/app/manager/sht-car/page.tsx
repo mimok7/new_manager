@@ -41,7 +41,13 @@ interface ShtCarReservation {
 }
 
 interface ShtCarAnomalyRow {
-    issue_type: 'PICKUP_ONLY' | 'DROPOFF_ONLY' | 'DUPLICATE_SEAT';
+    issue_type:
+        | 'PICKUP_ONLY'
+        | 'DROPOFF_ONLY'
+        | 'PAIR_COUNT'
+        | 'SEAT_MISMATCH'
+        | 'SAME_DAY'
+        | 'DUPLICATE_SEAT';
     service_date: string;
     reservation_id: string;
     user_id: string;
@@ -100,7 +106,7 @@ export default function ShtCarPage() {
     const [isAnomalyModalOpen, setIsAnomalyModalOpen] = useState(false);
     const [anomalyLoading, setAnomalyLoading] = useState(false);
     const [anomalyRows, setAnomalyRows] = useState<ShtCarAnomalyRow[]>([]);
-    const [anomalyFilter, setAnomalyFilter] = useState<'all' | 'pickup' | 'dropoff' | 'duplicate'>('all');
+    const [anomalyFilter, setAnomalyFilter] = useState<'all' | 'pickup' | 'dropoff' | 'pair' | 'mismatch' | 'sameday' | 'duplicate'>('all');
     const [groupByBooker, setGroupByBooker] = useState(false);
     const [showOnlyNonPairUsers, setShowOnlyNonPairUsers] = useState(false);
     const [creatingDropKey, setCreatingDropKey] = useState<string | null>(null);
@@ -454,45 +460,63 @@ export default function ShtCarPage() {
                 byReservation.get(r.matched_reservation_id)!.push(r);
             });
 
+            const pushIssue = (issue: ShtCarAnomalyRow['issue_type'], it: any, reservationId: string) => {
+                anomaly.push({
+                    issue_type: issue,
+                    service_date: it.service_date,
+                    reservation_id: reservationId,
+                    user_id: it.user_id,
+                    reservation_type: it.reservation_type,
+                    user_name: it.user_name,
+                    user_email: it.user_email,
+                    re_status: it.re_status,
+                    vehicle_number: it.vehicle_number || '-',
+                    seat_number: it.seat_number || '-',
+                    sht_category: it.sht_category || '-',
+                    pickup_location: it.pickup_location || '-',
+                    dropoff_location: it.dropoff_location || '-',
+                });
+            };
+
+            const normSeat = (raw?: string) => String(raw || '').trim().toLowerCase();
+
             byReservation.forEach((items, reservationId) => {
-                const hasPickup = items.some((it) => it.category_norm === 'pickup');
-                const hasDropoff = items.some((it) => it.category_norm === 'dropoff');
-                if (hasPickup && !hasDropoff) {
-                    items.forEach((it) => {
-                        anomaly.push({
-                            issue_type: 'PICKUP_ONLY',
-                            service_date: it.service_date,
-                            reservation_id: reservationId,
-                            user_id: it.user_id,
-                            reservation_type: it.reservation_type,
-                            user_name: it.user_name,
-                            user_email: it.user_email,
-                            re_status: it.re_status,
-                            vehicle_number: it.vehicle_number || '-',
-                            seat_number: it.seat_number || '-',
-                            sht_category: it.sht_category || '-',
-                            pickup_location: it.pickup_location || '-',
-                            dropoff_location: it.dropoff_location || '-',
-                        });
-                    });
-                } else if (!hasPickup && hasDropoff) {
-                    items.forEach((it) => {
-                        anomaly.push({
-                            issue_type: 'DROPOFF_ONLY',
-                            service_date: it.service_date,
-                            reservation_id: reservationId,
-                            user_id: it.user_id,
-                            reservation_type: it.reservation_type,
-                            user_name: it.user_name,
-                            user_email: it.user_email,
-                            re_status: it.re_status,
-                            vehicle_number: it.vehicle_number || '-',
-                            seat_number: it.seat_number || '-',
-                            sht_category: it.sht_category || '-',
-                            pickup_location: it.pickup_location || '-',
-                            dropoff_location: it.dropoff_location || '-',
-                        });
-                    });
+                const pickups = items.filter((it) => it.category_norm === 'pickup');
+                const dropoffs = items.filter((it) => it.category_norm === 'dropoff');
+
+                // 1) 픽업/드롭 중 한쪽만 존재
+                if (pickups.length > 0 && dropoffs.length === 0) {
+                    items.forEach((it) => pushIssue('PICKUP_ONLY', it, reservationId));
+                    return;
+                }
+                if (pickups.length === 0 && dropoffs.length > 0) {
+                    items.forEach((it) => pushIssue('DROPOFF_ONLY', it, reservationId));
+                    return;
+                }
+                if (pickups.length === 0 && dropoffs.length === 0) return;
+
+                // 2) 픽업/드롭 짝 개수 불일치 (1쌍이 아니면 모두 오류)
+                if (pickups.length !== 1 || dropoffs.length !== 1) {
+                    items.forEach((it) => pushIssue('PAIR_COUNT', it, reservationId));
+                    return;
+                }
+
+                // 3) 1픽업+1드롭 정상 짝: 좌석 일치 / 당일 왕복 검사
+                const p = pickups[0];
+                const d = dropoffs[0];
+                const pSeat = normSeat(p.seat_number);
+                const dSeat = normSeat(d.seat_number);
+                const isAllPair = pSeat === 'all' && dSeat === 'all';
+
+                if (pSeat !== dSeat) {
+                    pushIssue('SEAT_MISMATCH', p, reservationId);
+                    pushIssue('SEAT_MISMATCH', d, reservationId);
+                }
+
+                // 4) 단독(ALL)이 아니면 픽업일==드롭일이면 오류
+                if (!isAllPair && p.service_date && d.service_date && p.service_date === d.service_date) {
+                    pushIssue('SAME_DAY', p, reservationId);
+                    pushIssue('SAME_DAY', d, reservationId);
                 }
             });
 
@@ -555,6 +579,9 @@ export default function ShtCarPage() {
         if (anomalyFilter === 'all') return true;
         if (anomalyFilter === 'pickup') return row.issue_type === 'PICKUP_ONLY';
         if (anomalyFilter === 'dropoff') return row.issue_type === 'DROPOFF_ONLY';
+        if (anomalyFilter === 'pair') return row.issue_type === 'PAIR_COUNT';
+        if (anomalyFilter === 'mismatch') return row.issue_type === 'SEAT_MISMATCH';
+        if (anomalyFilter === 'sameday') return row.issue_type === 'SAME_DAY';
         return row.issue_type === 'DUPLICATE_SEAT';
     });
 
@@ -1462,6 +1489,18 @@ export default function ShtCarPage() {
                                             className={`px-3 py-1.5 rounded-full text-sm ${anomalyFilter === 'dropoff' ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-700'}`}
                                         >드롭만</button>
                                         <button
+                                            onClick={() => setAnomalyFilter('pair')}
+                                            className={`px-3 py-1.5 rounded-full text-sm ${anomalyFilter === 'pair' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-700'}`}
+                                        >짝불일치</button>
+                                        <button
+                                            onClick={() => setAnomalyFilter('mismatch')}
+                                            className={`px-3 py-1.5 rounded-full text-sm ${anomalyFilter === 'mismatch' ? 'bg-purple-600 text-white' : 'bg-purple-50 text-purple-700'}`}
+                                        >좌석상이</button>
+                                        <button
+                                            onClick={() => setAnomalyFilter('sameday')}
+                                            className={`px-3 py-1.5 rounded-full text-sm ${anomalyFilter === 'sameday' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-700'}`}
+                                        >당일왕복</button>
+                                        <button
                                             onClick={() => setAnomalyFilter('duplicate')}
                                             className={`px-3 py-1.5 rounded-full text-sm ${anomalyFilter === 'duplicate' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700'}`}
                                         >중복좌석</button>
@@ -1498,16 +1537,24 @@ export default function ShtCarPage() {
                                                             </thead>
                                                             <tbody>
                                                                 {rows.map((row, idx) => {
-                                                                    const issueBadge = row.issue_type === 'PICKUP_ONLY'
-                                                                        ? 'bg-blue-100 text-blue-800'
-                                                                        : row.issue_type === 'DROPOFF_ONLY'
-                                                                            ? 'bg-orange-100 text-orange-800'
-                                                                            : 'bg-red-100 text-red-800';
-                                                                    const issueText = row.issue_type === 'PICKUP_ONLY'
-                                                                        ? '픽업만'
-                                                                        : row.issue_type === 'DROPOFF_ONLY'
-                                                                            ? '드롭만'
-                                                                            : '좌석중복';
+                                                                    const issueBadgeMap: Record<ShtCarAnomalyRow['issue_type'], string> = {
+                                                                        PICKUP_ONLY: 'bg-blue-100 text-blue-800',
+                                                                        DROPOFF_ONLY: 'bg-orange-100 text-orange-800',
+                                                                        PAIR_COUNT: 'bg-amber-100 text-amber-800',
+                                                                        SEAT_MISMATCH: 'bg-purple-100 text-purple-800',
+                                                                        SAME_DAY: 'bg-rose-100 text-rose-800',
+                                                                        DUPLICATE_SEAT: 'bg-red-100 text-red-800',
+                                                                    };
+                                                                    const issueTextMap: Record<ShtCarAnomalyRow['issue_type'], string> = {
+                                                                        PICKUP_ONLY: '픽업만',
+                                                                        DROPOFF_ONLY: '드롭만',
+                                                                        PAIR_COUNT: '짝불일치',
+                                                                        SEAT_MISMATCH: '좌석상이',
+                                                                        SAME_DAY: '당일왕복',
+                                                                        DUPLICATE_SEAT: '좌석중복',
+                                                                    };
+                                                                    const issueBadge = issueBadgeMap[row.issue_type];
+                                                                    const issueText = issueTextMap[row.issue_type];
                                                                     return (
                                                                         <tr key={`${row.issue_type}-${row.reservation_id}-${row.seat_number}-${idx}`} className="border-t">
                                                                             <td className="px-3 py-2">
