@@ -2508,7 +2508,7 @@ export default function ManagerSchedulePage() {
       <ServiceCardBody
         serviceType={serviceType}
         data={cardData}
-        customerName={schedule.users.name}
+        customerName={schedule?.users?.name}
         showCustomer={true}
         dateText={dateText}
         timeText={timeText}
@@ -2598,8 +2598,8 @@ export default function ManagerSchedulePage() {
         schedule.re_type,
         schedule.re_status,
         schedule.location,
-        schedule.users.name,
-        schedule.users.email,
+        schedule?.users?.name,
+        schedule?.users?.email,
         row.room_price_code,
         row.car_price_code,
         row.rentcar_price_code,
@@ -3800,8 +3800,8 @@ export default function ManagerSchedulePage() {
                               </span>
                               <button
                                 onClick={() => {
-                                  if (schedule.users.id) {
-                                    loadAllUserReservations(schedule.users.id);
+                                  if (schedule?.users?.id) {
+                                    loadAllUserReservations(schedule?.users?.id);
                                   } else {
                                     setSelectedSchedule(schedule);
                                     setIsModalOpen(true);
@@ -3853,8 +3853,8 @@ export default function ManagerSchedulePage() {
                                             {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대' : '취소'}
                                           </span>
                                           <button onClick={() => {
-                                            if (schedule.users.id) {
-                                              loadAllUserReservations(schedule.users.id);
+                                            if (schedule?.users?.id) {
+                                              loadAllUserReservations(schedule?.users?.id);
                                             } else {
                                               setSelectedSchedule(schedule);
                                               setIsModalOpen(true);
@@ -3899,8 +3899,8 @@ export default function ManagerSchedulePage() {
                                         {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대' : '취소'}
                                       </span>
                                       <button onClick={() => {
-                                        if (schedule.users.id) {
-                                          loadAllUserReservations(schedule.users.id);
+                                        if (schedule?.users?.id) {
+                                          loadAllUserReservations(schedule?.users?.id);
                                         } else {
                                           setSelectedSchedule(schedule);
                                           setIsModalOpen(true);
@@ -4211,11 +4211,11 @@ export default function ManagerSchedulePage() {
       </div >
 
       {/* 예약 뷀뀒떖 */}
-      {selectedSchedule.users.id && (
+      {selectedSchedule?.users?.id && (
         <UserReservationDetailModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          userId={selectedSchedule.users.id}
+          userId={selectedSchedule?.users?.id}
         />
       )}
 
