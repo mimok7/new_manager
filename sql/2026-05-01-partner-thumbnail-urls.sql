@@ -16,6 +16,9 @@ WHERE partner_code = 'SOLCAFE-HL-001';
 UPDATE partner SET thumbnail_url = '/images/partners/taeyeong.gif', updated_at = now()
 WHERE partner_code = 'TAEYEONG-HN-WESTLAKE';
 
+UPDATE partner SET thumbnail_url = '/images/partners/taeyeong.gif', updated_at = now()
+WHERE partner_code = 'TAEYEONG-HL-DELIVERY';
+
 UPDATE partner SET thumbnail_url = '/images/partners/mon.jpg', updated_at = now()
 WHERE partner_code = 'MON-HL-NIGHTMKT';
 

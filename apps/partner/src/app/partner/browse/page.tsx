@@ -42,16 +42,18 @@ function categoryMeta(c: string) {
 }
 
 // partner_code → 이미지 경로 fallback 매핑 (DB thumbnail_url이 비어있을 때 사용)
-const PARTNER_IMAGE_MAP: Record<string, string> = {
-    'NHAMNHAM-HL-001':       '/images/partners/nhamnham.gif',
-    'SOLCAFE-HL-001':        '/images/partners/solcafe.gif',
-    'TAEYEONG-HN-WESTLAKE':  '/images/partners/taeyeong.gif',
-    'MON-HL-NIGHTMKT':       '/images/partners/mon.jpg',
-    'SERENE-HN-001':         '/images/partners/serene.jpg',
-    'CUCCHI-HL-AOZAI':       '/images/partners/cucchi.jpg',
+const PARTNER_IMAGE_MAP: Record<string, string[]> = {
+    'NHAMNHAM-HL-001':       ['/images/partners/nhamnham.gif'],
+    'SOLCAFE-HL-001':        ['/images/partners/solcafe.gif'],
+    'TAEYEONG-HN-WESTLAKE':  ['/images/partners/taeyeong.gif'],
+    'TAEYEONG-HL-DELIVERY':   ['/images/partners/taeyeong.gif'],
+    'MON-HL-NIGHTMKT':       ['/images/partners/mon.jpg'],
+    'SERENE-HN-001':         ['/images/partners/serene.jpg'],
+    'CUCCHI-HL-AOZAI':       ['/images/partners/cucchi.jpg'],
 };
 function partnerImage(p: { thumbnail_url?: string | null; partner_code?: string }): string | null {
-    return p.thumbnail_url || (p.partner_code ? PARTNER_IMAGE_MAP[p.partner_code] || null : null);
+    if (p.partner_code && PARTNER_IMAGE_MAP[p.partner_code]?.length) return PARTNER_IMAGE_MAP[p.partner_code][0];
+    return p.thumbnail_url || null;
 }
 
 export default function BrowseAllPage() {
