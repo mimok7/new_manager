@@ -106,7 +106,7 @@ export default function PartnerSidebar({ open, onClose }: Props) {
                         </div>
                         <div>
                             <div className="text-sm font-bold text-gray-900 leading-tight">제휴 시스템</div>
-                            <div className="text-[10px] text-gray-500 leading-tight">StayCruise Partner</div>
+                            <div className="text-[10px] text-gray-500 leading-tight">StayHalongTravel</div>
                         </div>
                     </div>
                     <button onClick={onClose} className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">

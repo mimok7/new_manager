@@ -50,68 +50,62 @@ export default function PartnerLoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-between bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 px-4 py-6 relative overflow-hidden">
-            {/* 배경 장식 */}
-            <div className="absolute inset-0 pointer-events-none opacity-30">
-                <div className="absolute -top-20 -left-20 w-80 h-80 bg-blue-200 rounded-full blur-3xl" />
-                <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-indigo-200 rounded-full blur-3xl" />
-            </div>
-
-            {/* 상단 로고 */}
-            <div className="relative z-10 flex flex-col items-center mt-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo-160.png" alt="스테이하롱" className="w-20 h-20 object-contain drop-shadow-md" />
-                <div className="mt-2 text-sm font-bold text-gray-700 tracking-wide">STAY HALONG</div>
-            </div>
-
-            {/* 가운데 카드 + 환영 이미지 */}
-            <div className="relative z-10 w-full max-w-sm bg-white/90 backdrop-blur border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
-                {/* 가운데 환영 이미지 */}
-                <div className="relative bg-gradient-to-br from-blue-500 to-indigo-600 px-6 py-5 flex items-center justify-center">
+        <div className="min-h-screen bg-white flex flex-col items-center px-4 py-8">
+            {/* 가운데 카드 (고객앱 스타일) */}
+            <div className="max-w-sm w-full mx-auto p-4 bg-white shadow rounded">
+                {/* 상단 로고 — 고객앱과 동일 (logo-full 가로형) */}
+                <div className="flex justify-start mb-4">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/images/welcome.png" alt="환영합니다" className="max-h-24 object-contain drop-shadow-lg" />
+                    <img src="/logo-full.png" alt="스테이하롱 전체 로고" width={320} height={80} />
                 </div>
-                <div className="p-6">
-                    <h1 className="text-base font-semibold text-gray-800 mb-1 text-center">제휴업체 시스템</h1>
-                    <p className="text-xs text-gray-500 mb-4 text-center">제휴업체 / 회원 / 매니저 공통 로그인</p>
-                    <form onSubmit={handleSubmit} className="space-y-3">
-                        <input
-                            type="email"
-                            required
-                            placeholder="이메일 (예: partner1@stayhalong.com)"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-blue-300"
-                        />
-                        <input
-                            type="password"
-                            required
-                            placeholder="비밀번호"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-blue-300"
-                        />
-                        {error && <div className="text-xs text-red-500">{error}</div>}
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full px-3 py-2 text-sm rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:opacity-90 disabled:opacity-50 shadow"
-                        >
-                            {loading ? '로그인 중...' : '로그인'}
-                        </button>
-                    </form>
-                    <p className="mt-4 text-[11px] text-gray-400 leading-relaxed text-center">
-                        제휴업체 계정 초기 비밀번호는 매니저가 별도 안내합니다.<br />
-                        로그인 후 비밀번호 변경을 권장합니다.
-                    </p>
+
+                <h2 className="text-2xl font-bold mb-2 text-left">🤝 제휴업체 로그인</h2>
+                <p className="text-sm text-gray-500 mb-6">제휴업체 / 회원 / 매니저 공통 로그인</p>
+
+                {/* 가운데 환영 이미지 */}
+                <div className="flex justify-center mb-6">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/images/welcome.png" alt="환영합니다" width={200} height={200} className="object-contain" />
                 </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <input
+                        type="email"
+                        required
+                        placeholder="이메일 (예: partner1@stayhalong.com)"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full border p-2 rounded"
+                    />
+                    <input
+                        type="password"
+                        required
+                        placeholder="비밀번호"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full border p-2 rounded"
+                    />
+                    {error && <div className="text-sm text-red-600">{error}</div>}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="bg-blue-700 text-white w-full py-2 rounded hover:bg-blue-800 transition disabled:opacity-50"
+                    >
+                        {loading ? '처리 중...' : '로그인'}
+                    </button>
+                </form>
+
+                <p className="mt-4 text-xs text-gray-500 text-center leading-relaxed">
+                    제휴업체 계정 초기 비밀번호는 매니저가 별도 안내합니다.<br />
+                    로그인 후 비밀번호 변경을 권장합니다.
+                </p>
             </div>
 
-            {/* 바닥 이미지 */}
-            <div className="relative z-10 flex flex-col items-center mt-4">
+            {/* 바닥 감사 이미지 — 고객앱 quote/processing 스타일 */}
+            <div className="flex flex-col items-center mt-8">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/images/thank-you.png" alt="감사합니다" className="max-h-16 object-contain opacity-90" />
-                <div className="mt-1 text-[10px] text-gray-400">© Stay Halong Partner Platform</div>
+                <img src="/images/thank-you.png" alt="감사합니다" width={200} height={200} className="object-contain mb-2" />
+                <div className="text-xs text-gray-400">© StayHalongTravel</div>
             </div>
         </div>
     );
