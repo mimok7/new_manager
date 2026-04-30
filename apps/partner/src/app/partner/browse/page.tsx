@@ -41,6 +41,19 @@ function categoryMeta(c: string) {
     return CATEGORY_META[c] || { label: c, icon: Tag, color: 'from-gray-500 to-gray-600' };
 }
 
+// partner_code → 이미지 경로 fallback 매핑 (DB thumbnail_url이 비어있을 때 사용)
+const PARTNER_IMAGE_MAP: Record<string, string> = {
+    'NHAMNHAM-HL-001':       '/images/partners/nhamnham.gif',
+    'SOLCAFE-HL-001':        '/images/partners/solcafe.gif',
+    'TAEYEONG-HN-WESTLAKE':  '/images/partners/taeyeong.gif',
+    'MON-HL-NIGHTMKT':       '/images/partners/mon.jpg',
+    'SERENE-HN-001':         '/images/partners/serene.jpg',
+    'CUCCHI-HL-AOZAI':       '/images/partners/cucchi.jpg',
+};
+function partnerImage(p: { thumbnail_url?: string | null; partner_code?: string }): string | null {
+    return p.thumbnail_url || (p.partner_code ? PARTNER_IMAGE_MAP[p.partner_code] || null : null);
+}
+
 export default function BrowseAllPage() {
     const [partners, setPartners] = useState<Partner[]>([]);
     const [loading, setLoading] = useState(true);
@@ -207,15 +220,16 @@ function CategoryChip({
 function PartnerCard({ p }: { p: Partner }) {
     const m = categoryMeta(p.category);
     const Icon = m.icon;
+    const img = partnerImage(p);
     return (
         <Link
             href={`/partner/booking/${p.partner_id}`}
             className="group block bg-white/90 backdrop-blur-sm border border-gray-200/70 rounded-2xl overflow-hidden hover:shadow-lg hover:shadow-gray-300/30 hover:-translate-y-0.5 hover:border-blue-300 transition-all duration-200"
         >
             <div className="relative w-full aspect-[16/9] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-                {p.thumbnail_url ? (
+                {img ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.thumbnail_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <img src={img} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 ) : (
                     <div className={`w-full h-full bg-gradient-to-br ${m.color} flex items-center justify-center`}>
                         <Icon className="w-12 h-12 text-white/50" />

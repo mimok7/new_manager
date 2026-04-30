@@ -52,7 +52,7 @@ interface Promotion {
     note?: string | null;
 }
 interface Partner {
-    partner_id: string; name: string; branch_name?: string | null;
+    partner_id: string; partner_code?: string | null; name: string; branch_name?: string | null;
     category: string; subcategory?: string | null;
     region?: string | null; address?: string | null; description?: string | null;
     thumbnail_url?: string | null; open_hours?: string | null; map_url?: string | null;
@@ -68,6 +68,19 @@ function modeOf(category: string): 'stay' | 'schedule' | 'order' {
 const CATEGORY_LABEL: Record<string, string> = {
     hotel: '🏨 호텔', spa: '💆 스파', restaurant: '🍴 식당', costume: '👘 의상대여', tour: '🚌 투어', rentcar: '🚗 렌터카',
 };
+
+// partner_code → 이미지 fallback 매핑 (DB thumbnail_url이 비어있을 때)
+const PARTNER_IMAGE_MAP: Record<string, string> = {
+    'NHAMNHAM-HL-001':       '/images/partners/nhamnham.gif',
+    'SOLCAFE-HL-001':        '/images/partners/solcafe.gif',
+    'TAEYEONG-HN-WESTLAKE':  '/images/partners/taeyeong.gif',
+    'MON-HL-NIGHTMKT':       '/images/partners/mon.jpg',
+    'SERENE-HN-001':         '/images/partners/serene.jpg',
+    'CUCCHI-HL-AOZAI':       '/images/partners/cucchi.jpg',
+};
+function partnerImage(p: { thumbnail_url?: string | null; partner_code?: string | null }): string | null {
+    return p.thumbnail_url || (p.partner_code ? PARTNER_IMAGE_MAP[p.partner_code] || null : null);
+}
 
 export default function BookingDetailPage() {
     const params = useParams();
@@ -312,12 +325,15 @@ export default function BookingDetailPage() {
     return (
         <PartnerLayout title={`${CATEGORY_LABEL[partner.category] || partner.category} ${partner.name}${partner.branch_name ? ` (${partner.branch_name})` : ''}`} requiredRoles={['member', 'partner', 'manager', 'admin']}>
             <SectionBox title="업체 정보">
-                {partner.thumbnail_url && (
-                    <div className="w-full aspect-[16/9] rounded overflow-hidden bg-gray-100 mb-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={partner.thumbnail_url} alt={partner.name} className="w-full h-full object-cover" />
-                    </div>
-                )}
+                {(() => {
+                    const img = partnerImage(partner);
+                    return img ? (
+                        <div className="w-full aspect-[16/9] rounded overflow-hidden bg-gray-100 mb-3">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={img} alt={partner.name} className="w-full h-full object-cover" />
+                        </div>
+                    ) : null;
+                })()}
                 <div className="text-sm text-gray-700 space-y-0.5">
                     <div>지역: {partner.region || '-'}</div>
                     <div>주소: {partner.address || '-'}</div>
