@@ -221,7 +221,7 @@ export default function ServiceCardBody({
         const noteRoomText = extractBracketValue(requestNote, '객실');
         const parsedRoomInfo = extractCruiseInfo(noteRoomText || row?.accommodation_info);
         const cruise = cruiseInfo?.cruise || row?.cruise_name || row?.cruise || parsedRoomInfo.cruise || '-';
-        const roomName = cruiseInfo?.room_name || row?.room_name || cruiseInfo?.room_type || row?.room_type || row?.room_category || parsedRoomInfo.room || '-';
+        const roomName = cruiseInfo?.room_type || row?.room_type || row?.room_name || cruiseInfo?.room_name || row?.room_category || parsedRoomInfo.room || '-';
         const roomCategory = row?.room_category || row?.category || '';
         const adult = Number(row?.adult_count ?? row?.guest_count ?? 0);
         const child = Number(row?.child_count ?? 0);

@@ -18,7 +18,9 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
-  Search
+  Search,
+  LayoutGrid,
+  Table as TableIcon
 } from 'lucide-react';
 
 interface SHCReservation {
@@ -185,6 +187,8 @@ export default function ManagerSchedulePage() {
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
   // 주/월간 보기에서 일별 그룹화 추가 (기본: 일별)
   const [groupMode, setGroupMode] = useState<'type' | 'day'>('day');
+  // 카드/테이블 보기 모드 (기본: 카드)
+  const [displayMode, setDisplayMode] = useState<'card' | 'table'>('card');
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState(''); // 입력 중인 검색어
   const [activeSearchQuery, setActiveSearchQuery] = useState(''); // 실제 검색에 사용되는 검색어
@@ -2529,6 +2533,195 @@ export default function ManagerSchedulePage() {
     );
   };
 
+  const renderDbScheduleCard = (schedule: any, idx: number) => (
+    <div key={`${schedule.re_id}-${schedule.service_table}-${schedule.segment_type || schedule.rentcar_phase || 'default'}-${idx}`} className="bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full">
+      <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
+        <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-50 border border-gray-200">
+          {getDisplayTypeIcon(schedule)}
+        </div>
+        <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
+          {getDisplayTypeName(schedule)}
+        </h5>
+        {schedule.segment_ribbon && (
+          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${(schedule.segment_type === 'return' || schedule.rentcar_phase === 'return') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
+            {schedule.segment_ribbon}
+          </span>
+        )}
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+            {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대기' : '취소'}
+          </span>
+          <button
+            onClick={() => {
+              if (schedule.users?.id) {
+                loadAllUserReservations(schedule.users.id);
+              } else {
+                setSelectedSchedule(schedule);
+                setIsModalOpen(true);
+              }
+            }}
+            className="bg-blue-500 text-white py-0.5 px-2 rounded text-xs hover:bg-blue-600 transition-colors"
+          >상세</button>
+        </div>
+      </div>
+      {renderDbCardBody(schedule)}
+    </div>
+  );
+
+  // DB 행에서 카드에 표시되는 모든 항목을 다중 라인 텍스트로 추출
+  const getDbRowDetails = (schedule: any): string => {
+    const row = schedule?.service_row || {};
+    const table = schedule?.service_table || schedule?.re_type || '';
+    const lines: string[] = [];
+
+    if (schedule?.location) lines.push(`장소: ${schedule.location}`);
+
+    if (table === 'reservation_cruise' || table === 'cruise') {
+      const ci = schedule?.cruise_info || row?._cruise_info || row?.cruise_info || {};
+      const cruiseName = ci?.cruise_name || ci?.cruise || row?.cruise_name;
+      if (cruiseName) lines.push(`크루즈: ${cruiseName}`);
+      const roomType = row?.room_type || ci?.room_type || ci?.room_name || row?.room_name;
+      if (roomType) lines.push(`객실: ${roomType}`);
+      if (row.guest_count) lines.push(`인원: ${row.guest_count}명`);
+      if (row.room_total_price) lines.push(`금액: ${Number(row.room_total_price).toLocaleString()}동`);
+      if (row.checkin) lines.push(`체크인: ${row.checkin}`);
+      if (row.request_note) lines.push(`요청: ${row.request_note}`);
+    } else if (table === 'reservation_airport' || table === 'airport') {
+      if (row.ra_flight_number) lines.push(`항공편: ${row.ra_flight_number}`);
+      if (row.ra_airport_location) lines.push(`공항: ${row.ra_airport_location}`);
+      if (row.accommodation_info) lines.push(`숙소: ${row.accommodation_info}`);
+      if (row.ra_passenger_count) lines.push(`👥 ${row.ra_passenger_count}명`);
+      if (row.ra_car_count) lines.push(`🚗 ${row.ra_car_count}대`);
+      if (row.ra_luggage_count) lines.push(`🧳 ${row.ra_luggage_count}개`);
+      if (row.request_note) lines.push(`요청: ${row.request_note}`);
+    } else if (table === 'reservation_hotel' || table === 'hotel') {
+      if (row.checkin_date) lines.push(`체크인: ${row.checkin_date}`);
+      if (row.nights) lines.push(`기간: ${row.nights}박`);
+      if (row.guest_count) lines.push(`인원: ${row.guest_count}명`);
+      if (row.room_count) lines.push(`객실: ${row.room_count}개`);
+      if (row.request_note) lines.push(`요청: ${row.request_note}`);
+    } else if (table === 'reservation_rentcar' || table === 'rentcar') {
+      const ri = (row as any)._rentcar_info || {};
+      if (ri.vehicle_type || row.vehicle_type) lines.push(`차종: ${ri.vehicle_type || row.vehicle_type}`);
+      if (ri.route || row.route) lines.push(`경로: ${ri.route || row.route}`);
+      if (row.way_type) lines.push(`구분: ${row.way_type}`);
+      if (row.pickup_datetime) lines.push(`픽업: ${row.pickup_datetime}`);
+      if (row.return_datetime) lines.push(`리턴: ${row.return_datetime}`);
+      if (row.driver_count) lines.push(`👥 운전자 ${row.driver_count}명`);
+      if (row.request_note) lines.push(`요청: ${row.request_note}`);
+    } else if (table === 'reservation_tour' || table === 'tour') {
+      const ti = (row as any)._tour_info || {};
+      if (ti.tour_name) lines.push(`투어: ${ti.tour_name}`);
+      if (row.tour_capacity) lines.push(`인원: ${row.tour_capacity}명`);
+      if (row.pickup_location) lines.push(`픽업: ${row.pickup_location}`);
+      if (row.dropoff_location) lines.push(`하차: ${row.dropoff_location}`);
+      if (row.usage_date) lines.push(`이용일: ${row.usage_date}`);
+      if (row.request_note) lines.push(`요청: ${row.request_note}`);
+    } else if (table === 'reservation_car_sht') {
+      if (row.vehicle_number) lines.push(`차량: ${row.vehicle_number}`);
+      if (row.seat_number) lines.push(`좌석: ${row.seat_number}`);
+      if (row.sht_category) lines.push(`분류: ${row.sht_category}`);
+      if (row.color_label) lines.push(`색상: ${row.color_label}`);
+      if (row.request_note) lines.push(`요청: ${row.request_note}`);
+    } else if (table === 'reservation_cruise_car') {
+      const ri = (row as any)._rentcar_info || {};
+      if (ri.vehicle_type || row.vehicle_type) lines.push(`차종: ${ri.vehicle_type || row.vehicle_type}`);
+      if (row.way_type) lines.push(`구분: ${row.way_type}`);
+      if (row.pickup_location) lines.push(`승차: ${row.pickup_location}`);
+      if (row.dropoff_location) lines.push(`하차: ${row.dropoff_location}`);
+      if (row.request_note) lines.push(`요청: ${row.request_note}`);
+    }
+
+    // 중복 라인 제거
+    const seen = new Set<string>();
+    const dedup = lines.filter(l => (seen.has(l) ? false : (seen.add(l), true)));
+    return dedup.join('\n') || '-';
+  };
+
+  // DB 테이블 렌더 (가독성 좋은 컴팩트 테이블)
+  const renderDbTable = (list: any[]) => (
+    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <table className="min-w-full text-sm">
+        <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
+          <tr>
+            <th className="px-3 py-2.5 text-left font-semibold">상태</th>
+            <th className="px-3 py-2.5 text-left font-semibold">타입</th>
+            <th className="px-3 py-2.5 text-left font-semibold">고객명</th>
+            <th className="px-3 py-2.5 text-left font-semibold">일자</th>
+            <th className="px-3 py-2.5 text-left font-semibold">시간</th>
+            <th className="px-3 py-2.5 text-left font-semibold">서비스 정보</th>
+            <th className="px-3 py-2.5 text-left font-semibold">구분</th>
+            <th className="px-3 py-2.5 text-right font-semibold">액션</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100 bg-white">
+          {list.map((schedule: any, idx: number) => {
+            const dateText = schedule?.schedule_date
+              ? new Date(schedule.schedule_date).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', weekday: 'short' })
+              : '-';
+            const serviceType = schedule?.service_table || schedule?.re_type || '';
+            const shouldShowTime = serviceType === 'reservation_airport' || serviceType === 'reservation_rentcar' || serviceType === 'airport' || serviceType === 'rentcar' || serviceType === 'reservation_car_sht' || serviceType === 'reservation_cruise_car';
+            const timeText = shouldShowTime ? (schedule?.schedule_time || '-') : '-';
+            const customerName = schedule?.users?.name || '-';
+            const details = getDbRowDetails(schedule);
+            return (
+              <tr
+                key={`${schedule.re_id}-${schedule.service_table}-${schedule.segment_type || schedule.rentcar_phase || 'd'}-${idx}`}
+                className="hover:bg-blue-50/40 transition-colors"
+              >
+                <td className="px-3 py-2 align-top whitespace-nowrap">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                    {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대기' : '취소'}
+                  </span>
+                </td>
+                <td className="px-3 py-2 align-top whitespace-nowrap">
+                  <div className="flex items-center gap-1.5">
+                    {getDisplayTypeIcon(schedule)}
+                    <span className="text-gray-700 font-medium">{getDisplayTypeName(schedule)}</span>
+                  </div>
+                </td>
+                <td className="px-3 py-2 align-top font-semibold text-gray-800 whitespace-nowrap">{customerName}</td>
+                <td className="px-3 py-2 align-top text-gray-700 whitespace-nowrap">{dateText}</td>
+                <td className="px-3 py-2 align-top text-gray-700 whitespace-nowrap tabular-nums">{timeText}</td>
+                <td className="px-3 py-2 align-top text-gray-700 whitespace-pre-line text-xs leading-5 max-w-[420px] break-words">{details}</td>
+                <td className="px-3 py-2 align-top whitespace-nowrap">
+                  {schedule.segment_ribbon ? (
+                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${(schedule.segment_type === 'return' || schedule.rentcar_phase === 'return') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                      {schedule.segment_ribbon}
+                    </span>
+                  ) : <span className="text-gray-300">-</span>}
+                </td>
+                <td className="px-3 py-2 align-top text-right whitespace-nowrap">
+                  <button
+                    onClick={() => {
+                      if (schedule.users?.id) {
+                        loadAllUserReservations(schedule.users.id);
+                      } else {
+                        setSelectedSchedule(schedule);
+                        setIsModalOpen(true);
+                      }
+                    }}
+                    className="bg-blue-500 text-white py-1 px-2.5 rounded text-xs hover:bg-blue-600 transition-colors"
+                  >상세</button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  // DB 목록 렌더 (보기 모드에 따라 카드/테이블 자동 전환)
+  const renderDbList = (list: any[]) => {
+    if (displayMode === 'table') return renderDbTable(list);
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {list.map((schedule: any, idx: number) => renderDbScheduleCard(schedule, idx))}
+      </div>
+    );
+  };
+
   const getDisplayTypeIcon = (schedule: any) => {
     const type = getScheduleServiceType(schedule);
     return getTypeIcon(type === 'sht' ? 'vehicle' : type);
@@ -2662,6 +2855,16 @@ export default function ManagerSchedulePage() {
     },
     {}
   );
+  const dbServiceOrder = ['cruise', 'vehicle', 'sht', 'airport', 'hotel', 'tour', 'rentcar', 'car', 'other'];
+  const sortDbServiceEntries = <T,>(entries: [string, T][]) =>
+    [...entries].sort(([typeA], [typeB]) => {
+      const idxA = dbServiceOrder.indexOf(typeA);
+      const idxB = dbServiceOrder.indexOf(typeB);
+      const rankA = idxA === -1 ? 999 : idxA;
+      const rankB = idxB === -1 ? 999 : idxB;
+      return rankA - rankB;
+    });
+  const groupedByTypeEntries = sortDbServiceEntries(Object.entries(groupedByType));
 
   // 날짜(YYYY-MM-DD) 기준 그룹 (주/월간 일별 그룹화용)
   const toKey = (d: Date) => {
@@ -3608,6 +3811,225 @@ export default function ManagerSchedulePage() {
     return null;
   };
 
+  // 시트 예약 한 행 요약 (테이블 표시용)
+  const getSheetRowSummary = (r: any): { dateText: string; timeText: string; info: string; people: string; isPast: boolean; phaseLabel: string; phaseColor: string } => {
+    const type = getServiceType(r);
+    const fmtDate = (d: Date | null) => d ? d.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', weekday: 'short' }) : '-';
+    let dateText = '-';
+    let timeText = '-';
+    const infoLines: string[] = [];
+    const peopleLines: string[] = [];
+    let isPast = false;
+    let phaseLabel = '';
+    let phaseColor = '';
+
+    const filterRequestNote = (note: any): string => {
+      if (note === undefined || note === null) return '';
+      const s = String(note).trim();
+      if (!s || s === '0' || s === '-' || s.toLowerCase() === 'updating') return '';
+      return s;
+    };
+
+    if (type === 'cruise') {
+      dateText = fmtDate(parseDate(r.checkin));
+      isPast = isPastDate(r.checkin);
+      if (r.cruise) infoLines.push(`크루즈: ${r.cruise}`);
+      const room = `${r.roomType || ''}${r.category ? ` (${r.category})` : ''}`.trim();
+      if (room) infoLines.push(`객실: ${room}`);
+      if (r.discount) infoLines.push(`할인: ${r.discount}`);
+      const note = filterRequestNote(r.requestNote);
+      if (note) infoLines.push(`요청: ${note}`);
+      const parts: string[] = [];
+      if (r.adult > 0) parts.push(`성인 ${r.adult}`);
+      if (r.child > 0) parts.push(`아동 ${r.child}`);
+      if (r.toddler > 0) parts.push(`유아 ${r.toddler}`);
+      if (parts.length) peopleLines.push(parts.join(' / '));
+      peopleLines.push(`객실 ${r.roomCount || 0}개`);
+    } else if (type === 'vehicle') {
+      dateText = fmtDate(parseDate(r.boardingDate));
+      isPast = isPastDate(r.boardingDate);
+      if (r.vehicleNumber) infoLines.push(`차량: ${r.vehicleNumber}`);
+      if (r.seatNumber) infoLines.push(`좌석: ${r.seatNumber}`);
+      if (r.category) infoLines.push(`분류: ${r.category}`);
+      if (r.passengerCount) peopleLines.push(`👥 ${r.passengerCount}명`);
+    } else if (type === 'airport') {
+      dateText = fmtDate(parseDate(r.date));
+      timeText = r.time || '-';
+      isPast = isPastDate(r.date);
+      const tag = `${r.tripType || ''} ${r.category || ''}`.trim();
+      if (tag) infoLines.push(`구분: ${tag}`);
+      if (r.route) infoLines.push(`경로: ${r.route}`);
+      if (r.airportName || r.flightNumber) infoLines.push(`공항/편명: ${r.airportName || ''} / ${r.flightNumber || ''}`);
+      const rawStopover = String(r.stopover || '').trim();
+      const locLabel = rawStopover === '경유지' ? '숙박지' : (rawStopover || '위치');
+      const rawPlace = String(r.placeName || '').trim();
+      const locVal = /^updating$/i.test(rawPlace) ? '' : rawPlace;
+      if (locVal) infoLines.push(`${locLabel}: ${locVal}`);
+      peopleLines.push(`👥 ${r.passengerCount || 0} / 🚗 ${r.carCount || 0}`);
+      if (r.carrierCount > 0) peopleLines.push(`🧳 캐리어 ${r.carrierCount}개`);
+    } else if (type === 'hotel') {
+      dateText = fmtDate(parseDate(r.checkinDate));
+      isPast = isPastDate(r.checkinDate);
+      if (r.hotelName) infoLines.push(`호텔: ${r.hotelName}`);
+      if (r.roomName || r.roomType) infoLines.push(`객실: ${r.roomName || ''}${r.roomType ? ` (${r.roomType})` : ''}`);
+      if (r.days > 0) infoLines.push(`기간: ${r.days}박`);
+      if (r.breakfastService) infoLines.push('🍳 조식 포함');
+      const parts: string[] = [];
+      if (r.adult > 0) parts.push(`성인 ${r.adult}`);
+      if (r.child > 0) parts.push(`아동 ${r.child}`);
+      if (r.toddler > 0) parts.push(`유아 ${r.toddler}`);
+      if (parts.length) peopleLines.push(parts.join(' / '));
+      peopleLines.push(`객실 ${r.roomCount || 0}개`);
+    } else if (type === 'tour') {
+      dateText = fmtDate(parseDate(r.startDate));
+      isPast = isPastDate(r.startDate);
+      if (r.tourName) infoLines.push(`투어: ${r.tourName}`);
+      if (r.tourType) infoLines.push(`종류: ${r.tourType}`);
+      if (r.pickupLocation) infoLines.push(`픽업: ${r.pickupLocation}`);
+      if (r.memo) infoLines.push(`메모: ${r.memo}`);
+      if (r.participants) peopleLines.push(`👥 ${r.participants}명`);
+    } else if (type === 'rentcar') {
+      dateText = fmtDate(parseDate(r.pickupDate));
+      timeText = r.pickupTime || '-';
+      isPast = isPastDate(r.pickupDate);
+      if (r.carType) infoLines.push(`차량: ${r.carType}`);
+      const route = [r.route, r.tripType ? `(${r.tripType})` : ''].filter(Boolean).join(' ');
+      if (route) infoLines.push(`경로: ${route}`);
+      const loc = [r.pickupLocation, r.destination].filter(Boolean).join(' → ');
+      if (loc) infoLines.push(`위치: ${loc}`);
+      if (r.usagePeriod) infoLines.push(`사용기간: ${r.usagePeriod}`);
+      peopleLines.push(`👥 ${r.passengerCount || 0} / 🚗 ${r.carCount || 0}`);
+    } else if (type === 'car') {
+      const pd = parseDate(r.pickupDatetime);
+      dateText = fmtDate(pd);
+      timeText = pd ? pd.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }) : '-';
+      isPast = isPastDate(r.pickupDatetime);
+      if (r.carType) infoLines.push(`차량: ${r.carType}`);
+      if (r.segmentType !== 'return' && r.pickupLocation) infoLines.push(`승차: ${r.pickupLocation}`);
+      if (r.segmentType === 'return' && r.dropoffLocation) infoLines.push(`하차: ${r.dropoffLocation}`);
+      peopleLines.push(`👥 ${r.passengerCount || 0} / 🚗 ${r.carCount || 0}`);
+      phaseLabel = r.segmentRibbon || (r.segmentType === 'return' ? '리턴' : '픽업');
+      phaseColor = r.segmentType === 'return' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700';
+    }
+
+    return {
+      dateText,
+      timeText,
+      info: infoLines.join('\n') || '-',
+      people: peopleLines.join('\n') || '-',
+      isPast,
+      phaseLabel,
+      phaseColor,
+    };
+  };
+
+  // 시트 테이블 렌더 (가독성 좋은 컴팩트 테이블)
+  const renderSheetTable = (list: any[]) => (
+    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <table className="min-w-full text-sm">
+        <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
+          <tr>
+            <th className="px-3 py-2.5 text-left font-semibold">상태</th>
+            <th className="px-3 py-2.5 text-left font-semibold">타입</th>
+            <th className="px-3 py-2.5 text-left font-semibold">고객명</th>
+            <th className="px-3 py-2.5 text-left font-semibold">일자</th>
+            <th className="px-3 py-2.5 text-left font-semibold">시간</th>
+            <th className="px-3 py-2.5 text-left font-semibold">서비스 정보</th>
+            <th className="px-3 py-2.5 text-left font-semibold">인원</th>
+            <th className="px-3 py-2.5 text-left font-semibold">구분</th>
+            <th className="px-3 py-2.5 text-right font-semibold">액션</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100 bg-white">
+          {list.map((reservation: any, index: number) => {
+            const type = getServiceType(reservation);
+            const info = getServiceInfo(type);
+            const sum = getSheetRowSummary(reservation);
+            return (
+              <tr
+                key={`${reservation.orderId}-${index}`}
+                className={`hover:bg-blue-50/40 transition-colors ${sum.isPast ? 'opacity-60' : ''}`}
+              >
+                <td className="px-3 py-2 align-top whitespace-nowrap">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${sum.isPast ? 'bg-gray-200 text-gray-700' : 'bg-blue-100 text-blue-800'}`}>
+                    {sum.isPast ? '완료' : '예정'}
+                  </span>
+                </td>
+                <td className="px-3 py-2 align-top whitespace-nowrap">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-${info.color}-600`}>{info.icon}</span>
+                    <span className="text-gray-700 font-medium">{info.name}</span>
+                  </div>
+                </td>
+                <td className="px-3 py-2 align-top font-semibold text-gray-800 whitespace-nowrap">
+                  {reservation.customerName || '-'}
+                  {reservation.customerEnglishName && (
+                    <span className="ml-1 text-xs text-gray-400 font-normal">({reservation.customerEnglishName})</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 align-top text-gray-700 whitespace-nowrap">{sum.dateText}</td>
+                <td className="px-3 py-2 align-top text-gray-700 whitespace-nowrap tabular-nums">{sum.timeText}</td>
+                <td className="px-3 py-2 align-top text-gray-700 whitespace-pre-line text-xs leading-5 max-w-[360px] break-words">{sum.info}</td>
+                <td className="px-3 py-2 align-top text-gray-700 whitespace-pre-line text-xs leading-5">{sum.people}</td>
+                <td className="px-3 py-2 align-top whitespace-nowrap">
+                  {sum.phaseLabel ? (
+                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${sum.phaseColor}`}>{sum.phaseLabel}</span>
+                  ) : <span className="text-gray-300">-</span>}
+                </td>
+                <td className="px-3 py-2 align-top text-right whitespace-nowrap">
+                  <button
+                    onClick={() => handleOpenGoogleSheetsDetail(reservation)}
+                    className="bg-blue-500 text-white py-1 px-2.5 rounded text-xs hover:bg-blue-600 transition-colors"
+                  >상세</button>
+                  {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
+                    <button
+                      onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
+                      className="ml-1 bg-red-500 text-white py-1 px-2 rounded text-xs hover:bg-red-600 transition-colors"
+                      title="삭제"
+                    >🗑️</button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  // 시트 그룹 렌더 (보기 모드 + vehicle 카테고리 서브그룹화 처리)
+  const renderSheetGroup = (serviceType: string, reservationArray: any[]) => {
+    if (displayMode === 'table') return renderSheetTable(reservationArray);
+    if (serviceType === 'vehicle') {
+      return (
+        <div className="space-y-4">
+          {Object.entries(
+            reservationArray.reduce((acc: Record<string, any[]>, reservation) => {
+              const category = reservation.category || '미분류';
+              (acc[category] ||= []).push(reservation);
+              return acc;
+            }, {})
+          ).map(([category, categoryReservations]) => (
+            <div key={category}>
+              <div className="flex items-center gap-2 mb-2 ml-4">
+                <span className="px-3 py-1 rounded bg-purple-100 text-purple-700 text-sm font-semibold">{category}</span>
+                <span className="text-xs text-gray-500">({categoryReservations.length}건)</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {categoryReservations.map((reservation, index) => renderGoogleSheetsCard(reservation, index))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {reservationArray.map((reservation, index) => renderGoogleSheetsCard(reservation, index))}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <ManagerLayout title="예약 일정 (신/구 구분)" activeTab="schedule-new">
@@ -3777,6 +4199,29 @@ export default function ManagerSchedulePage() {
               </div>
             )}
 
+            {/* 보기 모드 (카드 / 테이블) */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600">보기:</span>
+              <div className="inline-flex rounded overflow-hidden border border-gray-200">
+                <button
+                  onClick={() => setDisplayMode('card')}
+                  className={`px-2 py-1 text-xs flex items-center gap-1 ${displayMode === 'card' ? 'bg-blue-500 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
+                  title="카드 보기"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  카드
+                </button>
+                <button
+                  onClick={() => setDisplayMode('table')}
+                  className={`px-2 py-1 text-xs flex items-center gap-1 ${displayMode === 'table' ? 'bg-blue-500 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
+                  title="테이블 보기"
+                >
+                  <TableIcon className="w-3.5 h-3.5" />
+                  테이블
+                </button>
+              </div>
+            </div>
+
             {/* 검색 결과 표시 */}
             {activeSearchQuery && (
               <div className="text-xs text-blue-600 ml-auto">
@@ -3786,8 +4231,8 @@ export default function ManagerSchedulePage() {
           </div>
         </div>
 
-        {/* 일정 목록 - 2열 구조 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 일정 목록 - 카드: 2열 / 테이블: 1열(DB 위, 시트 아래) */}
+        <div className={displayMode === 'table' ? 'space-y-6' : 'grid grid-cols-1 lg:grid-cols-2 gap-6'}>
           {/* 왼쪽: Supabase 데이터 */}
           <div className="bg-white rounded-lg shadow-md">
             <div className="p-6 border-b bg-green-50">
@@ -3806,45 +4251,21 @@ export default function ManagerSchedulePage() {
               </div>
             ) : (
               <div className="p-6 space-y-10">
-                {/* 일간 보기: 기존 타입별 구분 없이 전체 리스트 */}
+                {/* 일간 보기: 서비스별 그룹화 (시트 예약일정과 동일) */}
                 {viewMode === 'day' && (
-                  <div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {uniqueSchedules.map((schedule: any, idx: number) => (
-                        <div key={`${schedule.re_id}-${schedule.service_table}-${schedule.segment_type || schedule.rentcar_phase || 'default'}-${idx}`} className="bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full">
-                          <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
-                            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-50 border border-gray-200">
-                              {getDisplayTypeIcon(schedule)}
-                            </div>
-                            <h5 className="font-bold text-sm flex-1 truncate text-gray-800">
-                              {getDisplayTypeName(schedule)}
-                            </h5>
-                            {schedule.segment_ribbon && (
-                              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${(schedule.segment_type === 'return' || schedule.rentcar_phase === 'return') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                {schedule.segment_ribbon}
-                              </span>
-                            )}
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
-                                {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대기' : '취소'}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  if (schedule.users?.id) {
-                                    loadAllUserReservations(schedule.users.id);
-                                  } else {
-                                    setSelectedSchedule(schedule);
-                                    setIsModalOpen(true);
-                                  }
-                                }}
-                                className="bg-blue-500 text-white py-0.5 px-2 rounded text-xs hover:bg-blue-600 transition-colors"
-                              >상세</button>
-                            </div>
-                          </div>
-                          {renderDbCardBody(schedule)}
+                  <div className="space-y-6">
+                    {groupedByTypeEntries.map(([serviceType, list]) => (
+                      <div key={serviceType}>
+                        <div className="flex items-center gap-2 mb-3 pb-2 border-b">
+                          <div>{getTypeIcon(serviceType === 'sht' ? 'vehicle' : serviceType)}</div>
+                          <h4 className="text-md font-semibold text-gray-800">
+                            {getTypeName(serviceType)}
+                            <span className="ml-2 text-sm text-gray-500">({list.length}건)</span>
+                          </h4>
                         </div>
-                      ))}
-                    </div>
+                        {renderDbList(list as any[])}
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -3858,6 +4279,12 @@ export default function ManagerSchedulePage() {
                           .map(key => {
                             const list = groupedByDate[key];
                             const d = new Date(key + 'T00:00:00');
+                            const serviceGroups = (list as any[]).reduce((acc: Record<string, any[]>, schedule: any) => {
+                              const serviceType = getScheduleServiceType(schedule) || 'other';
+                              (acc[serviceType] ||= []).push(schedule);
+                              return acc;
+                            }, {});
+                            const serviceEntries = sortDbServiceEntries(Object.entries(serviceGroups));
                             return (
                               <div key={key}>
                                 <div className="flex items-center justify-between mb-3">
@@ -3865,34 +4292,17 @@ export default function ManagerSchedulePage() {
                                     <Calendar className="w-5 h-5 text-green-600" /> {formatDateLabel(d)} <span className="text-gray-500">({list.length}건)</span>
                                   </h4>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                  {list.map((schedule: any, idx: number) => (
-                                    <div key={`${schedule.re_id}-${schedule.service_table}-${schedule.segment_type || schedule.rentcar_phase || 'default'}-${idx}`} className="bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full">
-                                      <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
-                                        <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-50 border border-gray-200">
-                                          {getDisplayTypeIcon(schedule)}
-                                        </div>
-                                        <h5 className="font-bold text-sm flex-1 truncate text-gray-800">{getDisplayTypeName(schedule)}</h5>
-                                        {schedule.segment_ribbon && (
-                                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${(schedule.segment_type === 'return' || schedule.rentcar_phase === 'return') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                            {schedule.segment_ribbon}
-                                          </span>
-                                        )}
-                                        <div className="flex items-center gap-2">
-                                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
-                                            {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대기' : '취소'}
-                                          </span>
-                                          <button onClick={() => {
-                                            if (schedule.users?.id) {
-                                              loadAllUserReservations(schedule.users.id);
-                                            } else {
-                                              setSelectedSchedule(schedule);
-                                              setIsModalOpen(true);
-                                            }
-                                          }} className="bg-blue-500 text-white py-0.5 px-2 rounded text-xs hover:bg-blue-600 transition-colors">상세</button>
-                                        </div>
+                                <div className="space-y-4">
+                                  {serviceEntries.map(([serviceType, serviceSchedules]) => (
+                                    <div key={serviceType}>
+                                      <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-200">
+                                        <div>{getTypeIcon(serviceType === 'sht' ? 'vehicle' : serviceType)}</div>
+                                        <h5 className="text-sm font-semibold text-gray-700">
+                                          {getTypeName(serviceType)}
+                                          <span className="ml-2 text-xs text-gray-500">({(serviceSchedules as any[]).length}건)</span>
+                                        </h5>
                                       </div>
-                                      {renderDbCardBody(schedule)}
+                                      {renderDbList(serviceSchedules as any[])}
                                     </div>
                                   ))}
                                 </div>
@@ -3904,44 +4314,14 @@ export default function ManagerSchedulePage() {
 
                     {groupMode === 'type' && (
                       <div className="space-y-10">
-                        {Object.entries(groupedByType).map(([type, list]) => (
+                        {groupedByTypeEntries.map(([type, list]) => (
                           <div key={type}>
                             <div className="flex items-center justify-between mb-3">
                               <h4 className="text-md font-semibold flex items-center gap-2">
                                 {getTypeIcon(typeFilter === 'sht' || typeFilter === 'vehicle' ? 'vehicle' : type)} {typeFilter === 'sht' ? getTypeName('sht') : typeFilter === 'vehicle' ? getTypeName('vehicle') : getTypeName(type)} <span className="text-gray-500">({list.length}건)</span>
                               </h4>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                              {list.map((schedule: any, idx: number) => (
-                                <div key={`${schedule.re_id}-${schedule.service_table}-${schedule.segment_type || schedule.rentcar_phase || 'default'}-${idx}`} className="bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all p-3 flex flex-col h-full">
-                                  <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
-                                    <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-50 border border-gray-200">
-                                      {getDisplayTypeIcon(schedule)}
-                                    </div>
-                                    <h5 className="font-bold text-sm flex-1 truncate text-gray-800">{getDisplayTypeName(schedule)}</h5>
-                                    {schedule.segment_ribbon && (
-                                      <span className={`px-2 py-0.5 rounded text-xs font-semibold ${(schedule.segment_type === 'return' || schedule.rentcar_phase === 'return') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                        {schedule.segment_ribbon}
-                                      </span>
-                                    )}
-                                    <div className="flex items-center gap-2">
-                                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${schedule.re_status === 'confirmed' ? 'bg-green-100 text-green-800' : schedule.re_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
-                                        {schedule.re_status === 'confirmed' ? '확정' : schedule.re_status === 'pending' ? '대기' : '취소'}
-                                      </span>
-                                      <button onClick={() => {
-                                        if (schedule.users?.id) {
-                                          loadAllUserReservations(schedule.users.id);
-                                        } else {
-                                          setSelectedSchedule(schedule);
-                                          setIsModalOpen(true);
-                                        }
-                                      }} className="bg-blue-500 text-white py-0.5 px-2 rounded text-xs hover:bg-blue-600 transition-colors">상세</button>
-                                    </div>
-                                  </div>
-                                  {renderDbCardBody(schedule)}
-                                </div>
-                              ))}
-                            </div>
+                            {renderDbList(list as any[])}
                           </div>
                         ))}
                       </div>
@@ -4013,38 +4393,7 @@ export default function ManagerSchedulePage() {
                               </h4>
                             </div>
 
-                            {/* 스하차량인 경우 분류(category)별로 서브그룹화 */}
-                            {serviceType === 'vehicle' ? (
-                              <div className="space-y-4">
-                                {Object.entries(
-                                  reservationArray.reduce((acc: Record<string, any[]>, reservation) => {
-                                    const category = reservation.category || '미분류';
-                                    (acc[category] ||= []).push(reservation);
-                                    return acc;
-                                  }, {})
-                                ).map(([category, categoryReservations]) => (
-                                  <div key={category}>
-                                    <div className="flex items-center gap-2 mb-2 ml-4">
-                                      <span className="px-3 py-1 rounded bg-purple-100 text-purple-700 text-sm font-semibold">
-                                        {category}
-                                      </span>
-                                      <span className="text-xs text-gray-500">({categoryReservations.length}건)</span>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                      {categoryReservations.map((reservation, index) =>
-                                        renderGoogleSheetsCard(reservation, index)
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                {reservationArray.map((reservation, index) =>
-                                  renderGoogleSheetsCard(reservation, index)
-                                )}
-                              </div>
-                            )}
+                            {renderSheetGroup(serviceType, reservationArray)}
                           </div>
                         );
                       })}
@@ -4131,38 +4480,7 @@ export default function ManagerSchedulePage() {
                                             </h5>
                                           </div>
 
-                                          {/* 스하차량인 경우 분류(category)별로 서브그룹화 */}
-                                          {serviceType === 'vehicle' ? (
-                                            <div className="space-y-4">
-                                              {Object.entries(
-                                                serviceReservationArray.reduce((acc: Record<string, any[]>, reservation) => {
-                                                  const category = reservation.category || '미분류';
-                                                  (acc[category] ||= []).push(reservation);
-                                                  return acc;
-                                                }, {})
-                                              ).map(([category, categoryReservations]) => (
-                                                <div key={category}>
-                                                  <div className="flex items-center gap-2 mb-2 ml-4">
-                                                    <span className="px-3 py-1 rounded bg-purple-100 text-purple-700 text-sm font-semibold">
-                                                      {category}
-                                                    </span>
-                                                    <span className="text-xs text-gray-500">({categoryReservations.length}건)</span>
-                                                  </div>
-                                                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                                    {categoryReservations.map((reservation, index) =>
-                                                      renderGoogleSheetsCard(reservation, index)
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          ) : (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                              {serviceReservationArray.map((reservation, index) =>
-                                                renderGoogleSheetsCard(reservation, index)
-                                              )}
-                                            </div>
-                                          )}
+                                          {renderSheetGroup(serviceType, serviceReservationArray)}
                                         </div>
                                       );
                                     })}
@@ -4195,38 +4513,7 @@ export default function ManagerSchedulePage() {
                                   </h4>
                                 </div>
 
-                                {/* 스하차량인 경우 분류(category)별로 서브그룹화 */}
-                                {serviceType === 'vehicle' ? (
-                                  <div className="space-y-4">
-                                    {Object.entries(
-                                      reservationArray.reduce((acc: Record<string, any[]>, reservation) => {
-                                        const category = reservation.category || '미분류';
-                                        (acc[category] ||= []).push(reservation);
-                                        return acc;
-                                      }, {})
-                                    ).map(([category, categoryReservations]) => (
-                                      <div key={category}>
-                                        <div className="flex items-center gap-2 mb-2 ml-4">
-                                          <span className="px-3 py-1 rounded bg-purple-100 text-purple-700 text-sm font-semibold">
-                                            {category}
-                                          </span>
-                                          <span className="text-xs text-gray-500">({categoryReservations.length}건)</span>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                          {categoryReservations.map((reservation, index) =>
-                                            renderGoogleSheetsCard(reservation, index)
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                    {reservationArray.map((reservation, index) =>
-                                      renderGoogleSheetsCard(reservation, index)
-                                    )}
-                                  </div>
-                                )}
+                                {renderSheetGroup(serviceType, reservationArray)}
                               </div>
                             );
                           })}
