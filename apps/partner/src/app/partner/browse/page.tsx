@@ -212,7 +212,7 @@ function PartnerCard({ p }: { p: Partner }) {
             href={`/partner/booking/${p.partner_id}`}
             className="group block bg-white/90 backdrop-blur-sm border border-gray-200/70 rounded-2xl overflow-hidden hover:shadow-lg hover:shadow-gray-300/30 hover:-translate-y-0.5 hover:border-blue-300 transition-all duration-200"
         >
-            <div className="relative h-36 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+            <div className="relative w-full aspect-[16/9] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
                 {p.thumbnail_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.thumbnail_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />

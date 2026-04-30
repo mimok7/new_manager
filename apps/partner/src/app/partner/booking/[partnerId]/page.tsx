@@ -312,7 +312,12 @@ export default function BookingDetailPage() {
     return (
         <PartnerLayout title={`${CATEGORY_LABEL[partner.category] || partner.category} ${partner.name}${partner.branch_name ? ` (${partner.branch_name})` : ''}`} requiredRoles={['member', 'partner', 'manager', 'admin']}>
             <SectionBox title="업체 정보">
-                {partner.thumbnail_url && <img src={partner.thumbnail_url} alt={partner.name} className="w-full max-h-48 object-cover rounded mb-3" />}
+                {partner.thumbnail_url && (
+                    <div className="w-full aspect-[16/9] rounded overflow-hidden bg-gray-100 mb-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={partner.thumbnail_url} alt={partner.name} className="w-full h-full object-cover" />
+                    </div>
+                )}
                 <div className="text-sm text-gray-700 space-y-0.5">
                     <div>지역: {partner.region || '-'}</div>
                     <div>주소: {partner.address || '-'}</div>
@@ -368,7 +373,12 @@ export default function BookingDetailPage() {
                                 <div key={s.service_id}
                                     onClick={() => toggleItem(s.service_id)}
                                     className={`p-3 rounded border-2 cursor-pointer transition ${active ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-300'}`}>
-                                    {s.thumbnail_url && <img src={s.thumbnail_url} alt={s.service_name} className="w-full h-20 object-cover rounded mb-2" />}
+                                    {s.thumbnail_url && (
+                                        <div className="w-full aspect-[16/9] rounded overflow-hidden bg-gray-100 mb-2">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={s.thumbnail_url} alt={s.service_name} className="w-full h-full object-cover" />
+                                        </div>
+                                    )}
                                     <div className="flex justify-between items-start gap-2">
                                         <div className="text-sm font-medium text-gray-800">{s.service_name}</div>
                                         <div className="text-sm font-semibold text-blue-600 whitespace-nowrap">{Number(s.default_price).toLocaleString()}</div>
