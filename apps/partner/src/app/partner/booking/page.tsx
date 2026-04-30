@@ -1,87 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import PartnerLayout from '@/components/PartnerLayout';
 import SectionBox from '@/components/SectionBox';
-import Spinner from '@/components/Spinner';
-import { supabase } from '@/lib/supabase';
 
-interface Partner {
-    partner_id: string;
-    partner_code: string;
-    name: string;
-    region?: string | null;
-    description?: string | null;
-}
-
+// 호텔 카테고리는 별도 시스템(스테이하롱 호텔/크루즈)에서 관리되므로
+// 제휴업체 호텔 전용 리스트 페이지는 운영 중단. 자동으로 전체 카테고리로 리다이렉트.
 export default function BookingListPage() {
-    const [partners, setPartners] = useState<Partner[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [region, setRegion] = useState<string>('');
-
+    const router = useRouter();
     useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            try {
-                const { data } = await supabase
-                    .from('partner')
-                    .select('partner_id, partner_code, name, region, description')
-                    .eq('is_active', true)
-                    .eq('category', 'hotel')
-                    .order('name');
-                if (cancelled) return;
-                setPartners((data as Partner[]) || []);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        })();
-        return () => { cancelled = true; };
-    }, []);
-
-    const filtered = region ? partners.filter(p => (p.region || '').includes(region)) : partners;
-    const regions = Array.from(new Set(partners.map(p => p.region).filter(Boolean))) as string[];
+        const t = setTimeout(() => router.replace('/partner/browse'), 1500);
+        return () => clearTimeout(t);
+    }, [router]);
 
     return (
-        <PartnerLayout title="🏨 제휴 호텔 둘러보기" requiredRoles={['member', 'partner', 'manager', 'admin']}>
-            <SectionBox title="지역 필터">
-                <div className="flex gap-2 flex-wrap">
-                    <button
-                        onClick={() => setRegion('')}
-                        className={`text-xs px-3 py-1 rounded border ${region === '' ? 'bg-blue-50 border-blue-300 text-blue-600' : 'bg-white border-gray-200 text-gray-600'}`}
-                    >전체</button>
-                    {regions.map(r => (
-                        <button
-                            key={r}
-                            onClick={() => setRegion(r)}
-                            className={`text-xs px-3 py-1 rounded border ${region === r ? 'bg-blue-50 border-blue-300 text-blue-600' : 'bg-white border-gray-200 text-gray-600'}`}
-                        >{r}</button>
-                    ))}
+        <PartnerLayout title="안내" requiredRoles={['member', 'partner', 'manager', 'admin']}>
+            <SectionBox title="페이지가 이동되었습니다">
+                <div className="py-6 text-center text-sm text-gray-600">
+                    호텔은 별도 예약 시스템에서 관리됩니다.<br />
+                    제휴업체 전체 카테고리 둘러보기로 이동합니다…
                 </div>
-            </SectionBox>
-
-            <SectionBox title={`호텔 ${filtered.length}개`}>
-                {loading ? (
-                    <Spinner label="불러오는 중..." />
-                ) : filtered.length === 0 ? (
-                    <div className="text-sm text-gray-500 text-center py-8">등록된 호텔이 없습니다.</div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {filtered.map(p => (
-                            <Link
-                                key={p.partner_id}
-                                href={`/partner/booking/${p.partner_id}`}
-                                className="block p-4 bg-white border border-gray-200 rounded hover:border-blue-300 hover:shadow-sm transition"
-                            >
-                                <div className="text-sm font-medium text-gray-800">{p.name}</div>
-                                <div className="text-xs text-gray-500 mt-1">{p.region || '-'}</div>
-                                {p.description && (
-                                    <div className="text-xs text-gray-600 mt-2 line-clamp-2">{p.description}</div>
-                                )}
-                            </Link>
-                        ))}
-                    </div>
-                )}
             </SectionBox>
         </PartnerLayout>
     );

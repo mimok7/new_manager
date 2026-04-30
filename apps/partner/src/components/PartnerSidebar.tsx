@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import {
-    Search, Hotel, CalendarCheck, LayoutDashboard, CalendarRange,
+    Search, CalendarCheck, LayoutDashboard, CalendarRange,
     Building2, ListTree, Wallet, Sparkles, ClipboardList,
     LogOut, X
 } from 'lucide-react';
@@ -19,7 +19,7 @@ const MEMBER_MENU: Section[] = [
         section: '제휴업체 둘러보기',
         items: [
             { href: '/partner/browse', label: '전체 카테고리', icon: Search },
-            { href: '/partner/booking', label: '호텔만 보기', icon: Hotel },
+            // 호텔 카테고리는 별도 시스템에서 관리되므로 제휴업체 메뉴에서 숨김 처리
         ],
     },
     {

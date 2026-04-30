@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-    Hotel, Sparkles, Utensils, Shirt, Bus, Car,
+    Sparkles, Utensils, Shirt, Bus, Car,
     MapPin, Clock, Search, Tag, ChevronRight, Filter
 } from 'lucide-react';
 import PartnerLayout from '@/components/PartnerLayout';
@@ -26,8 +26,10 @@ interface Partner {
     default_discount_rate?: number | null;
 }
 
+// 호텔 카테고리는 별도 시스템(스테이하롱 호텔/크루즈)에서 관리되므로 제휴업체 화면에서 숨김
+const HIDDEN_CATEGORIES = new Set<string>(['hotel']);
+
 const CATEGORY_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; color: string; }> = {
-    hotel: { label: '호텔', icon: Hotel, color: 'from-blue-500 to-cyan-500' },
     spa: { label: '스파', icon: Sparkles, color: 'from-pink-500 to-rose-500' },
     restaurant: { label: '식당', icon: Utensils, color: 'from-orange-500 to-amber-500' },
     costume: { label: '의상대여', icon: Shirt, color: 'from-purple-500 to-fuchsia-500' },
@@ -55,10 +57,11 @@ export default function BrowseAllPage() {
                     .from('partner')
                     .select('partner_id, partner_code, name, branch_name, category, subcategory, region, address, description, thumbnail_url, open_hours, default_discount_rate')
                     .eq('is_active', true)
+                    .not('category', 'in', `(${Array.from(HIDDEN_CATEGORIES).map(c => `"${c}"`).join(',')})`)
                     .order('category')
                     .order('name');
                 if (cancelled) return;
-                setPartners((data as Partner[]) || []);
+                setPartners(((data as Partner[]) || []).filter(p => !HIDDEN_CATEGORIES.has(p.category)));
             } finally {
                 if (!cancelled) setLoading(false);
             }

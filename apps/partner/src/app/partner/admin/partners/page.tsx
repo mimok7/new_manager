@@ -18,7 +18,8 @@ interface Partner {
     is_active: boolean;
 }
 
-const emptyForm: Partial<Partner> = { partner_code: '', name: '', category: 'hotel', region: '', is_active: true };
+// 호텔 카테고리는 별도 시스템에서 관리되므로 제휴업체 등록 기본값에서 제외
+const emptyForm: Partial<Partner> = { partner_code: '', name: '', category: 'restaurant', region: '', is_active: true };
 
 export default function AdminPartnersPage() {
     const [rows, setRows] = useState<Partner[]>([]);
@@ -45,7 +46,7 @@ export default function AdminPartnersPage() {
             const { error } = await supabase.from('partner').insert({
                 partner_code: form.partner_code,
                 name: form.name,
-                category: form.category || 'hotel',
+                category: form.category || 'restaurant',
                 region: form.region || null,
                 contact_name: form.contact_name || null,
                 contact_phone: form.contact_phone || null,
@@ -73,15 +74,18 @@ export default function AdminPartnersPage() {
             {showForm && (
                 <SectionBox title="신규 제휴업체">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                        <input placeholder="코드 (예: HOTEL_LOTTE)" value={form.partner_code || ''} onChange={(e) => setForm({ ...form, partner_code: e.target.value })}
+                        <input placeholder="코드 (예: SOLCAFE-HL-001)" value={form.partner_code || ''} onChange={(e) => setForm({ ...form, partner_code: e.target.value })}
                             className="px-2 py-1 rounded border border-gray-200 bg-white" />
                         <input placeholder="업체명" value={form.name || ''} onChange={(e) => setForm({ ...form, name: e.target.value })}
                             className="px-2 py-1 rounded border border-gray-200 bg-white" />
-                        <select value={form.category || 'hotel'} onChange={(e) => setForm({ ...form, category: e.target.value })}
+                        <select value={form.category || 'restaurant'} onChange={(e) => setForm({ ...form, category: e.target.value })}
                             className="px-2 py-1 rounded border border-gray-200 bg-white">
-                            <option value="hotel">호텔</option>
+                            <option value="restaurant">식당</option>
+                            <option value="spa">스파</option>
+                            <option value="costume">의상대여</option>
                             <option value="tour">투어</option>
                             <option value="rentcar">렌터카</option>
+                            {/* 호텔은 별도 시스템에서 관리 */}
                         </select>
                         <input placeholder="지역" value={form.region || ''} onChange={(e) => setForm({ ...form, region: e.target.value })}
                             className="px-2 py-1 rounded border border-gray-200 bg-white" />
