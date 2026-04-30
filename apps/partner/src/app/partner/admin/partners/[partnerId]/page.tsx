@@ -38,14 +38,44 @@ interface Price {
 }
 interface PartnerUser { pu_id: string; pu_user_id: string; role: string; }
 
+interface Reservation {
+    pr_id: string;
+    pr_service_id: string;
+    checkin_date?: string | null;
+    checkout_date?: string | null;
+    scheduled_at?: string | null;
+    nights?: number | null;
+    room_count?: number | null;
+    guest_count: number;
+    quantity?: number | null;
+    total_price: number;
+    status: string;
+    payment_status?: string | null;
+    confirmation_code?: string | null;
+    contact_name?: string | null;
+    contact_phone?: string | null;
+    service_label?: string | null;
+    request_note?: string | null;
+    created_at: string;
+}
+const STATUS_LABEL: Record<string, string> = { pending: '대기', confirmed: '확정', cancelled: '취소', completed: '완료' };
+const STATUS_COLOR: Record<string, string> = {
+    pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    confirmed: 'bg-green-50 text-green-700 border-green-200',
+    cancelled: 'bg-gray-100 text-gray-500 border-gray-200',
+    completed: 'bg-blue-50 text-blue-700 border-blue-200',
+};
+
 export default function PartnerDetailAdminPage() {
     const params = useParams();
     const partnerId = String(params?.partnerId || '');
-    const [tab, setTab] = useState<'info' | 'services' | 'prices' | 'users'>('info');
+    const [tab, setTab] = useState<'info' | 'services' | 'prices' | 'users' | 'reservations'>('info');
     const [partner, setPartner] = useState<Partner | null>(null);
     const [services, setServices] = useState<Service[]>([]);
     const [prices, setPrices] = useState<Price[]>([]);
     const [users, setUsers] = useState<PartnerUser[]>([]);
+    const [reservations, setReservations] = useState<Reservation[]>([]);
+    const [resvFilter, setResvFilter] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState<string | null>(null);
 
@@ -56,15 +86,17 @@ export default function PartnerDetailAdminPage() {
 
     const load = async () => {
         setLoading(true);
-        const [pRes, sRes, uRes] = await Promise.all([
+        const [pRes, sRes, uRes, rRes] = await Promise.all([
             supabase.from('partner').select('*').eq('partner_id', partnerId).maybeSingle(),
             supabase.from('partner_service').select('*').eq('partner_id', partnerId).order('service_name'),
             supabase.from('partner_user').select('*').eq('pu_partner_id', partnerId),
+            supabase.from('partner_reservation').select('*').eq('pr_partner_id', partnerId).order('created_at', { ascending: false }),
         ]);
         setPartner((pRes.data as Partner) || null);
         const ss = (sRes.data as Service[]) || [];
         setServices(ss);
         setUsers((uRes.data as PartnerUser[]) || []);
+        setReservations((rRes.data as Reservation[]) || []);
         if (ss.length > 0) {
             const ids = ss.map(s => s.service_id);
             const { data } = await supabase.from('partner_price').select('*').in('service_id', ids);
@@ -130,13 +162,28 @@ export default function PartnerDetailAdminPage() {
         load();
     };
 
+    const updateResvStatus = async (pr_id: string, next: string) => {
+        if (!confirm(`상태를 "${STATUS_LABEL[next] || next}"로 변경할까요?`)) return;
+        const patch: any = { status: next, updated_at: new Date().toISOString() };
+        if (next === 'confirmed' && !reservations.find(r => r.pr_id === pr_id)?.confirmation_code) {
+            patch.confirmation_code = `C${Date.now().toString().slice(-8)}`;
+        }
+        const { error } = await supabase.from('partner_reservation').update(patch).eq('pr_id', pr_id);
+        if (error) { alert('변경 실패: ' + error.message); return; }
+        setReservations(prev => prev.map(r => r.pr_id === pr_id
+            ? { ...r, status: next, ...(patch.confirmation_code ? { confirmation_code: patch.confirmation_code } : {}) }
+            : r));
+    };
+
+    const filteredResv = resvFilter ? reservations.filter(r => r.status === resvFilter) : reservations;
+
     if (loading) return <PartnerLayout requiredRoles={['manager', 'admin']}><Spinner /></PartnerLayout>;
     if (!partner) return <PartnerLayout requiredRoles={['manager', 'admin']}><div className="text-sm text-gray-500">업체를 찾을 수 없습니다.</div></PartnerLayout>;
 
     return (
         <PartnerLayout title={`🛠️ ${partner.name}`} requiredRoles={['manager', 'admin']}>
             <div className="flex gap-2 mb-3 text-xs">
-                {[['info', '기본정보'], ['services', '서비스'], ['prices', '가격'], ['users', '담당자']].map(([k, label]) => (
+                {[['info', '기본정보'], ['services', '서비스'], ['prices', '가격'], ['users', '담당자'], ['reservations', `예약 (${reservations.length})`]].map(([k, label]) => (
                     <button key={k} onClick={() => setTab(k as any)}
                         className={`px-3 py-1.5 rounded border ${tab === k ? 'bg-blue-50 border-blue-300 text-blue-600' : 'bg-white border-gray-200 text-gray-600'}`}>
                         {label}
@@ -267,6 +314,87 @@ export default function PartnerDetailAdminPage() {
                                     ))}
                                 </tbody>
                             </table>
+                        )}
+                    </SectionBox>
+                </>
+            )}
+
+            {tab === 'reservations' && (
+                <>
+                    <SectionBox title="필터">
+                        <div className="flex gap-2 flex-wrap text-xs">
+                            {['', 'pending', 'confirmed', 'completed', 'cancelled'].map(s => (
+                                <button key={s} onClick={() => setResvFilter(s)}
+                                    className={`px-3 py-1.5 rounded-full border ${resvFilter === s ? 'bg-gray-800 text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'}`}>
+                                    {s === '' ? '전체' : STATUS_LABEL[s]}
+                                </button>
+                            ))}
+                        </div>
+                    </SectionBox>
+                    <SectionBox title={`예약 ${filteredResv.length}건`}>
+                        {filteredResv.length === 0 ? (
+                            <div className="text-sm text-gray-500 text-center py-8">조건에 맞는 예약이 없습니다.</div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-xs">
+                                    <thead className="bg-gray-50 text-gray-600">
+                                        <tr>
+                                            <th className="px-2 py-2 text-left">일자</th>
+                                            <th className="px-2 py-2 text-left">서비스/메뉴</th>
+                                            <th className="px-2 py-2 text-right">수량/인원</th>
+                                            <th className="px-2 py-2 text-left">예약자</th>
+                                            <th className="px-2 py-2 text-left">연락처</th>
+                                            <th className="px-2 py-2 text-right">금액</th>
+                                            <th className="px-2 py-2 text-center">상태</th>
+                                            <th className="px-2 py-2 text-center">변경</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredResv.map(r => (
+                                            <tr key={r.pr_id} className="border-t border-gray-100 hover:bg-gray-50 align-top">
+                                                <td className="px-2 py-2 whitespace-nowrap">
+                                                    {r.checkin_date ? (
+                                                        <>{r.checkin_date}{r.checkout_date && r.checkout_date !== r.checkin_date && <><br /><span className="text-gray-400">~ {r.checkout_date}</span></>}</>
+                                                    ) : r.scheduled_at ? (
+                                                        <>{r.scheduled_at.slice(0, 10)}<br /><span className="text-gray-500">{r.scheduled_at.slice(11, 16)}</span></>
+                                                    ) : '-'}
+                                                </td>
+                                                <td className="px-2 py-2">
+                                                    <div className="font-medium text-gray-800">{r.service_label || '-'}</div>
+                                                    {r.confirmation_code && <div className="text-[11px] text-blue-600 font-mono">#{r.confirmation_code}</div>}
+                                                </td>
+                                                <td className="px-2 py-2 text-right">
+                                                    {r.nights ? `${r.nights}박/${r.room_count}/` : (r.quantity ? `${r.quantity}/` : '')}
+                                                    {r.guest_count}명
+                                                </td>
+                                                <td className="px-2 py-2">{r.contact_name || '-'}</td>
+                                                <td className="px-2 py-2">{r.contact_phone || '-'}</td>
+                                                <td className="px-2 py-2 text-right font-semibold text-red-600 whitespace-nowrap">
+                                                    {Number(r.total_price) > 0 ? `${Number(r.total_price).toLocaleString()}` : <span className="text-gray-400 text-[11px]">현장결제</span>}
+                                                </td>
+                                                <td className="px-2 py-2 text-center">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[11px] border ${STATUS_COLOR[r.status] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                                                        {STATUS_LABEL[r.status] || r.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-2 py-2 text-center whitespace-nowrap">
+                                                    <div className="flex gap-1 justify-center flex-wrap">
+                                                        {r.status !== 'confirmed' && r.status !== 'completed' && (
+                                                            <button onClick={() => updateResvStatus(r.pr_id, 'confirmed')} className="px-2 py-0.5 text-[11px] rounded bg-green-500 text-white hover:bg-green-600">확정</button>
+                                                        )}
+                                                        {r.status !== 'completed' && r.status !== 'cancelled' && (
+                                                            <button onClick={() => updateResvStatus(r.pr_id, 'completed')} className="px-2 py-0.5 text-[11px] rounded bg-blue-500 text-white hover:bg-blue-600">완료</button>
+                                                        )}
+                                                        {r.status !== 'cancelled' && (
+                                                            <button onClick={() => updateResvStatus(r.pr_id, 'cancelled')} className="px-2 py-0.5 text-[11px] rounded bg-gray-200 text-gray-700 hover:bg-gray-300">취소</button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         )}
                     </SectionBox>
                 </>

@@ -205,3 +205,94 @@ Type: CNAME  Name: <서브명>  Value: cname.vercel-dns.com  TTL: 3600
 - 저장소 전략: [docs/GITHUB-VERCEL-STRATEGY.md](docs/GITHUB-VERCEL-STRATEGY.md)
 - 공통 코딩 규칙: [.github/copilot-instructions.md](.github/copilot-instructions.md)
 - DB 스키마 마이그레이션: [sql/2026-04-30-partner-system-v2-multi-category.sql](sql/2026-04-30-partner-system-v2-multi-category.sql)
+
+---
+
+## 5. 제휴업체 계정 일괄 생성 + 카테고리 적응 대시보드 (2026-04-30 추가)
+
+### 5.1 계정 일괄 생성 SQL
+파일: [sql/2026-04-30-partner-accounts-bulk-create.sql](sql/2026-04-30-partner-accounts-bulk-create.sql)
+
+**목적**: 활성 제휴업체(호텔 제외)에 대해 `partner1@stayhalong.com` 부터 순차로 로그인 계정 자동 생성.
+
+**적용 순서 (반드시 이 순서)**:
+1. `sql/2026-04-30-partner-system-v2-multi-category.sql` (테이블)
+2. `sql/supabase-auth-integration.sql` (handle_new_user 트리거)
+3. 업체 데이터 SQL들 (MON RESTAURANT / Cuc Chi / SOL CAFE 등)
+4. **`sql/2026-04-30-partner-accounts-bulk-create.sql`** ← 본 SQL
+
+**동작 4단계** (각 업체 1회 트랜잭션):
+1. `auth.users` (bcrypt 패스워드 + `email_confirmed_at=now()`)
+2. `auth.identities` (provider='email', identity_data sub/email/email_verified)
+3. `public.users` UPSERT — **`role='partner'` 강제** (`ON CONFLICT (id) DO UPDATE`)
+4. `partner_user` UPSERT — `pu_user_id` UNIQUE, `role='manager'`
+
+**핵심 제약**:
+- `is_active=true AND COALESCE(category,'')<>'hotel'` 만 대상 (호텔은 별도 시스템)
+- 정렬: `ORDER BY created_at NULLS LAST, partner_code`
+- 100% idempotent (이메일 존재 시 auth는 스킵, 매핑은 갱신)
+- handle_new_user 트리거가 role='guest'로 만들 수 있음 → ON CONFLICT 갱신으로 'partner' 강제
+
+**초기 비밀번호**: `partner1234!`  
+⚠️ 운영 적용 후 각 업체에 안내 → 비밀번호 변경 유도 필수
+
+**필수 검증 쿼리** (적용 직후):
+```sql
+SELECT u.email, u.role, p.partner_code, p.name, p.category, pu.role AS partner_role
+  FROM public.users u
+  JOIN partner_user pu ON pu.pu_user_id = u.id
+  JOIN partner p       ON p.partner_id  = pu.pu_partner_id
+ WHERE u.email LIKE 'partner%@stayhalong.com'
+ ORDER BY u.email;
+```
+
+**롤백** (4단계 역순): `partner_user → public.users → auth.identities → auth.users` 순으로 `DELETE WHERE email LIKE 'partner%@stayhalong.com'` (전체 쿼리는 SQL 파일 하단 주석 참조)
+
+### 5.2 로그인 역할별 분기
+파일: [apps/partner/src/app/partner/login/page.tsx](apps/partner/src/app/partner/login/page.tsx)
+
+로그인 성공 후 `users.role` 조회 → `landingFor(role)`:
+
+| role | 진입 페이지 |
+|------|-------------|
+| `partner` | `/partner/dashboard` (자기 업체 적응 대시보드) |
+| `manager` / `admin` | `/partner/admin/partners` |
+| `member` / 기본 | `/partner/browse` |
+
+⚠️ **role 분기 로직을 페이지 곳곳에 흩지 말 것** — 로그인 페이지 1곳에서만 처리.
+
+### 5.3 카테고리 적응 대시보드 (필수 패턴)
+파일: [apps/partner/src/app/partner/dashboard/page.tsx](apps/partner/src/app/partner/dashboard/page.tsx)
+
+**원칙**: `profile.partner_id` 로 `partner` 1건 조회 → `category` 에 따라 헤더/컬럼/지표/수량 표기가 자동 적응.
+
+**CATEGORY_META 매핑** (수정 시 `qtyText()` 와 동시 갱신 필수):
+
+| category | 헤더 색 | 날짜 라벨 | 서비스 라벨 | 수량 라벨 | 오늘 지표 | 수량 표기 |
+|----------|---------|-----------|-------------|-----------|-----------|-----------|
+| restaurant | orange→amber | 방문일 | 주문 메뉴 | 방문 인원 | 오늘 방문 예정 | `N명` |
+| spa | pink→rose | 시술일 | 시술 코스 | 시술 인원 | 오늘 시술 예정 | `N명` |
+| costume | purple→fuchsia | 픽업일 | 대여 의상 | 인원 | 오늘 픽업/반납 | `N명 · K일` |
+| tour | emerald→teal | 투어일 | 투어 상품 | 참여 인원 | 오늘 출발 | `N명` |
+| rentcar | indigo→violet | 픽업일 | 차량 | 대수/인원 | 오늘 픽업/반납 | `K대 · N명 · D일` |
+| (기타) | gray | 이용일 | 서비스 | 인원 | 오늘 이용 예정 | fallback |
+
+**KPI 4종 고정**: 오늘 예정(건) · 오늘 인원(명) · 승인 대기(건, `pending>0` 시 amber 강조) · 향후 7일(건)
+
+**데이터 필터**:
+- `role='partner'` → `partner_reservation.eq('pr_partner_id', profile.partner_id)` 강제
+- `role='manager'/'admin'` → 필터 없이 전체 (RLS가 차단)
+- 기간 필터: `today / week (+7d) / month (+30d) / all`
+
+**액션 버튼**:
+- `pending` → **승인** (`confirmed` + `confirmation_code = 'C' + Date.now().slice(-8)` 자동 발급) / **취소**
+- `confirmed` → **완료** / **취소**
+
+⚠️ **새 카테고리 업체 추가 시 반드시 `CATEGORY_META` 와 `qtyText()` 동시 갱신**
+
+### 5.4 신규 페이지 작성 시 체크리스트
+- [ ] `PartnerLayout` + `requiredRoles` 사용 (자체 useAuth 호출 금지)
+- [ ] `role='partner'` 사용자는 `profile.partner_id` 로만 데이터 필터
+- [ ] 새 카테고리 업체면 `CATEGORY_META` 에 항목 추가
+- [ ] 일괄 계정 SQL은 `ON CONFLICT` idempotent 패턴 유지
+- [ ] 로그인 후 진입 경로는 `landingFor(role)` 1곳에서만 결정

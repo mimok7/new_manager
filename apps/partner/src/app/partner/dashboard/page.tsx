@@ -334,18 +334,15 @@ export default function PartnerDashboardPage() {
                                             </span>
                                         </td>
                                         <td className="px-2 py-2 text-center whitespace-nowrap">
-                                            <div className="flex gap-1 justify-center">
-                                                {r.status === 'pending' && (
-                                                    <>
-                                                        <button onClick={() => updateStatus(r.pr_id, 'confirmed')} className="px-2 py-0.5 text-[11px] rounded bg-green-500 text-white hover:bg-green-600">승인</button>
-                                                        <button onClick={() => updateStatus(r.pr_id, 'cancelled')} className="px-2 py-0.5 text-[11px] rounded bg-gray-200 text-gray-700 hover:bg-gray-300">취소</button>
-                                                    </>
+                                            <div className="flex gap-1 justify-center flex-wrap">
+                                                {r.status !== 'confirmed' && r.status !== 'completed' && (
+                                                    <button onClick={() => updateStatus(r.pr_id, 'confirmed')} className="px-2 py-0.5 text-[11px] rounded bg-green-500 text-white hover:bg-green-600">확정</button>
                                                 )}
-                                                {r.status === 'confirmed' && (
-                                                    <>
-                                                        <button onClick={() => updateStatus(r.pr_id, 'completed')} className="px-2 py-0.5 text-[11px] rounded bg-blue-500 text-white hover:bg-blue-600">완료</button>
-                                                        <button onClick={() => updateStatus(r.pr_id, 'cancelled')} className="px-2 py-0.5 text-[11px] rounded bg-gray-200 text-gray-700 hover:bg-gray-300">취소</button>
-                                                    </>
+                                                {r.status !== 'completed' && r.status !== 'cancelled' && (
+                                                    <button onClick={() => updateStatus(r.pr_id, 'completed')} className="px-2 py-0.5 text-[11px] rounded bg-blue-500 text-white hover:bg-blue-600">완료</button>
+                                                )}
+                                                {r.status !== 'cancelled' && (
+                                                    <button onClick={() => updateStatus(r.pr_id, 'cancelled')} className="px-2 py-0.5 text-[11px] rounded bg-gray-200 text-gray-700 hover:bg-gray-300">취소</button>
                                                 )}
                                             </div>
                                         </td>
