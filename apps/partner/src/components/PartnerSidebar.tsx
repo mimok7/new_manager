@@ -7,43 +7,55 @@ import { supabase } from '@/lib/supabase';
 
 interface MenuItem { href: string; label: string; icon?: string; }
 
+const MEMBER_MENU = [
+    {
+        section: '🛍️ 제휴업체 둘러보기',
+        items: [
+            { href: '/partner/browse', label: '전체 카테고리' },
+            { href: '/partner/booking', label: '🏨 호텔만 보기' },
+        ],
+    },
+    {
+        section: '📅 내 예약',
+        items: [
+            { href: '/partner/my-reservations', label: '내 예약 내역' },
+        ],
+    },
+];
+
+const PARTNER_MENU = [
+    {
+        section: '📊 우리 업체 예약',
+        items: [
+            { href: '/partner/dashboard', label: '예약 목록' },
+            { href: '/partner/calendar', label: '월별 캘린더' },
+        ],
+    },
+];
+
+const ADMIN_MENU = [
+    {
+        section: '🛠️ 제휴업체 관리',
+        items: [
+            { href: '/partner/admin/partners', label: '업체 목록/등록' },
+            { href: '/partner/admin/services', label: '서비스/메뉴 관리' },
+            { href: '/partner/admin/prices', label: '가격 관리' },
+            { href: '/partner/admin/promotions', label: '프로모션/혜택' },
+        ],
+    },
+    {
+        section: '📋 예약 운영',
+        items: [
+            { href: '/partner/admin/reservations', label: '전체 예약 조회' },
+        ],
+    },
+];
+
 const MENU_BY_ROLE: Record<string, { section: string; items: MenuItem[] }[]> = {
-    member: [
-        {
-            section: '🏨 호텔 예약',
-            items: [
-                { href: '/partner/booking', label: '제휴 호텔 둘러보기' },
-                { href: '/partner/my-reservations', label: '내 예약 내역' },
-            ],
-        },
-    ],
-    partner: [
-        {
-            section: '📊 우리 업체 예약',
-            items: [
-                { href: '/partner/dashboard', label: '예약 목록' },
-                { href: '/partner/calendar', label: '월별 캘린더' },
-            ],
-        },
-    ],
-    manager: [
-        {
-            section: '🛠️ 제휴업체 관리',
-            items: [
-                { href: '/partner/admin/partners', label: '제휴업체 목록' },
-                { href: '/partner/admin/reservations', label: '전체 예약 조회' },
-            ],
-        },
-    ],
-    admin: [
-        {
-            section: '🛠️ 제휴업체 관리',
-            items: [
-                { href: '/partner/admin/partners', label: '제휴업체 목록' },
-                { href: '/partner/admin/reservations', label: '전체 예약 조회' },
-            ],
-        },
-    ],
+    member: MEMBER_MENU,
+    partner: PARTNER_MENU,
+    manager: ADMIN_MENU,
+    admin: ADMIN_MENU,
 };
 
 export default function PartnerSidebar() {
