@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import { getSupabase } from '@/lib/supabase';
+import supabase from '@/lib/supabase';
 
 type Artifact = {
   id: string;
@@ -58,7 +58,6 @@ SELECT * FROM dblink(
 ) AS t(id uuid, email text, role text, created_at timestamptz);`;
 
 export default function BackupMigratePage() {
-  const supabase = getSupabase();
   const [tab, setTab] = useState<Tab>('guide');
   const [copied, setCopied] = useState<string>('');
 

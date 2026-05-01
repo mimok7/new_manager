@@ -25,7 +25,6 @@ const nextConfig = {
     ],
     formats: ['image/avif', 'image/webp'],
   },
-  output: 'standalone',
   poweredByHeader: false,
   compress: true,
   productionBrowserSourceMaps: false,
