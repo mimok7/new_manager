@@ -1,12 +1,12 @@
 'use client';
 import React from 'react';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import QuoteForm from '@/components/QuoteForm'; // 재사용 가능한 입력 폼 컴포넌트
 
-export default function QuoteEditPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function QuoteEditPage() {
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [quoteData, setQuoteData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
