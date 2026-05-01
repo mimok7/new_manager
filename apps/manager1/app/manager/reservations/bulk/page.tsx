@@ -25,6 +25,7 @@ import {
     Plane,
     Building,
     MapPin,
+    Ticket,
     Car,
     Bus,
     Package
@@ -149,6 +150,7 @@ export default function BulkReservationPage() {
                 airport: ['airport'],
                 hotel: ['hotel'],
                 tour: ['tour'],
+                ticket: ['ticket'],
                 rentcar: ['rentcar'],
                 vehicle: ['car'],
                 sht: ['sht', 'car_sht', 'reservation_car_sht'],
@@ -471,6 +473,7 @@ export default function BulkReservationPage() {
             const hotelIds = freshServices.filter(s => s.re_type === 'hotel').map(s => s.re_id);
             const rentcarIds = freshServices.filter(s => s.re_type === 'rentcar').map(s => s.re_id);
             const tourIds = freshServices.filter(s => s.re_type === 'tour').map(s => s.re_id);
+            const ticketIds = freshServices.filter(s => s.re_type === 'ticket').map(s => s.re_id);
             const shtIds = freshServices.filter(s => ['sht', 'car_sht', 'reservation_car_sht'].includes(s.re_type)).map(s => s.re_id);
             const packageIds = freshServices.filter(s => s.re_type === 'package').map(s => s.re_id);
             // 크루즈 차량 조회 대상: cruise reservation_id + car reservation_id
@@ -483,6 +486,7 @@ export default function BulkReservationPage() {
                 hotelRes,
                 rentcarRes,
                 tourRes,
+                ticketRes,
                 shtRes,
                 // 패키지 예약은 package_id로 연결된 모든 서비스를 가져옴
                 packageMainRes
@@ -493,6 +497,7 @@ export default function BulkReservationPage() {
                 hotelIds.length > 0 ? supabase.from('reservation_hotel').select('*').in('reservation_id', hotelIds) : Promise.resolve({ data: [] }),
                 rentcarIds.length > 0 ? supabase.from('reservation_rentcar').select('*').in('reservation_id', rentcarIds) : Promise.resolve({ data: [] }),
                 tourIds.length > 0 ? supabase.from('reservation_tour').select('*').in('reservation_id', tourIds) : Promise.resolve({ data: [] }),
+                ticketIds.length > 0 ? supabase.from('reservation_ticket').select('*').in('reservation_id', ticketIds) : Promise.resolve({ data: [] }),
                 shtIds.length > 0 ? supabase.from('reservation_car_sht').select('*').in('reservation_id', shtIds) : Promise.resolve({ data: [] }),
                 packageIds.length > 0 ? supabase.from('reservation').select('*, package_master:package_id(id, package_code, name, description)').in('re_id', packageIds) : Promise.resolve({ data: [] })
             ]);
@@ -528,6 +533,7 @@ export default function BulkReservationPage() {
             // 2. 가격/코드 정보 조회 (필요 시)
             const cruiseData = cruiseRes.data || [];
             const tourData = tourRes.data || [];
+            const ticketData = ticketRes.data || [];
             const hotelData = hotelRes.data || [];
             const rentCarData = rentcarRes.data || [];
             const airportData = airportRes.data || [];
@@ -692,6 +698,14 @@ export default function BulkReservationPage() {
                         tourPriceInfo: priceInfo
                     };
                 });
+            }
+
+            // Ticket
+            if (ticketData.length > 0) {
+                allDetails['ticket'] = ticketData.map((r: any) => ({
+                    service: getServiceBase(r.reservation_id),
+                    ...r,
+                }));
             }
 
             // SHT (스하차량)
@@ -1223,6 +1237,7 @@ export default function BulkReservationPage() {
             case 'airport': return <Plane className="w-3.5 h-3.5 text-green-600" />;
             case 'hotel': return <Building className="w-3.5 h-3.5 text-purple-600" />;
             case 'tour': return <MapPin className="w-3.5 h-3.5 text-orange-600" />;
+            case 'ticket': return <Ticket className="w-3.5 h-3.5 text-teal-600" />;
             case 'rentcar': return <Car className="w-3.5 h-3.5 text-red-600" />;
             case 'car':
             case 'vehicle': return <Car className="w-3.5 h-3.5 text-blue-600" />;
@@ -1241,6 +1256,7 @@ export default function BulkReservationPage() {
             case 'airport': return '공항';
             case 'hotel': return '호텔';
             case 'tour': return '투어';
+            case 'ticket': return '티켓';
             case 'rentcar': return '렌터카';
             case 'car':
             case 'vehicle': return '크루즈 차량';
@@ -1259,6 +1275,7 @@ export default function BulkReservationPage() {
             case 'airport': return 'bg-green-100 text-green-800';
             case 'hotel': return 'bg-purple-100 text-purple-800';
             case 'tour': return 'bg-orange-100 text-orange-800';
+            case 'ticket': return 'bg-teal-100 text-teal-800';
             case 'rentcar': return 'bg-red-100 text-red-800';
             case 'car':
             case 'vehicle': return 'bg-cyan-100 text-cyan-800';
@@ -1396,6 +1413,18 @@ export default function BulkReservationPage() {
                     mapped.adult = item.adult_count || 0;
                     mapped.child = item.child_count || 0;
                     mapped.infant = item.infant_count || 0;
+                } else if (normalizedType === 'ticket') {
+                    mapped.ticketName = item.ticket_name || item.program_selection || item.ticket_type || '-';
+                    mapped.program_selection = item.program_selection;
+                    mapped.ticketType = item.ticket_type;
+                    mapped.ticketQuantity = item.ticket_quantity || 0;
+                    mapped.usageDate = item.usage_date;
+                    mapped.shuttle_required = Boolean(item.shuttle_required);
+                    mapped.pickupLocation = item.pickup_location;
+                    mapped.dropoffLocation = item.dropoff_location;
+                    mapped.unitPrice = item.unit_price || 0;
+                    mapped.totalPrice = item.total_price || 0;
+                    mapped.note = item.request_note || item.special_requests || item.ticket_details || item.note;
                 } else if (normalizedType === 'rentcar') {
                     mapped.carType = item.rentcarPriceInfo?.vehicle_type || item.vehicle_type || item.rentcar_price_code;
                     mapped.route = item.rentcarPriceInfo?.route || item.route || '';
@@ -1603,6 +1632,7 @@ export default function BulkReservationPage() {
                                     <option value="airport">공항</option>
                                     <option value="hotel">호텔</option>
                                     <option value="tour">투어</option>
+                                    <option value="ticket">티켓</option>
                                     <option value="rentcar">렌터카</option>
                                     <option value="vehicle">크루즈 차량</option>
                                     <option value="sht">스하차량</option>

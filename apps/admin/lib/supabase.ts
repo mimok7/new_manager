@@ -57,6 +57,7 @@ const fallbackStub: any = {
       return { data: { user: null }, error: null };
     },
     // preserve common auth methods used in the app
+    signInWithPassword: async () => ({ data: { user: null, session: null }, error: new Error('Supabase not configured') }),
     signIn: async () => ({ data: null, error: new Error('Supabase not configured') }),
     signOut: async () => ({ data: null, error: new Error('Supabase not configured') })
   },

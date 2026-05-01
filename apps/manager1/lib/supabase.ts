@@ -58,6 +58,8 @@ const fallbackStub: any = {
   auth: {
     async getUser() { return { data: { user: null }, error: null }; },
     async getSession() { return { data: { session: null }, error: null }; },
+    signInWithPassword: async () => ({ data: { user: null, session: null }, error: new Error('Supabase not configured') }),
+    signIn: async () => ({ data: null, error: new Error('Supabase not configured') }),
     async signOut() { return { error: null }; },
     onAuthStateChange() { return { data: { subscription: { unsubscribe() {} } } }; },
   },

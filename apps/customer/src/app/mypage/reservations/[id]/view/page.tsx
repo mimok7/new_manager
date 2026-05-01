@@ -76,7 +76,7 @@ const customerFriendlyFields: Record<string, string[]> = {
   hotel: ['hotel_name', 'room_name', 'checkin_date', 'guest_count', 'schedule', 'breakfast_service', 'hotel_category', 'assignment_code', 'request_note'],
   rentcar: ['way_type', 'route', 'vehicle_type', 'pickup_datetime', 'pickup_location', 'destination', 'via_location', 'via_waiting', 'car_count', 'passenger_count', 'luggage_count', 'dispatch_code', 'request_note'],
   tour: ['tour_name', 'tour_vehicle', 'tour_type', 'usage_date', 'tour_capacity', 'pickup_location', 'dropoff_location'],
-  ticket: ['ticket_type', 'ticket_name', 'program_selection', 'usage_date', 'ticket_quantity', 'shuttle_required', 'pickup_location', 'dropoff_location', 'ticket_details', 'request_note'],
+  ticket: ['ticket_type', 'ticket_name', 'program_selection', 'usage_date', 'ticket_quantity', 'shuttle_required', 'pickup_location', 'dropoff_location', 'ticket_details', 'special_requests', 'request_note'],
   cruise_car: ['way_type', 'route', 'vehicle_type', 'car_passenger_capacity', 'pickup_datetime', 'pickup_location', 'dropoff_location', 'car_count', 'passenger_count', 'dispatch_code', 'request_note'],
   car: ['way_type', 'route', 'vehicle_type', 'car_passenger_capacity', 'pickup_datetime', 'pickup_location', 'dropoff_location', 'car_count', 'passenger_count', 'dispatch_code', 'request_note'],
   sht_car: ['vehicle_number', 'seat_number', 'car_type', 'usage_date', 'pickup_location', 'dropoff_location', 'passenger_count', 'request_note'],
@@ -152,6 +152,7 @@ const labelMap: Record<string, Record<string, string>> = {
     pickup_location: '📍 픽업 장소',
     dropoff_location: '🎯 하차 장소',
     ticket_details: '🧾 상세 내용',
+    special_requests: '📝 추가 요청사항',
     request_note: '📝 요청사항'
   },
   cruise_car: {
@@ -288,6 +289,46 @@ function sanitizeRequestNote(value: any): string {
     .trim();
 
   return filtered;
+}
+
+function parseTicketLine(note: string, label: string): string | null {
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = note.match(new RegExp(`\\[${escaped}\\]\\s*([^\\r\\n]+)`));
+  return match?.[1]?.trim() || null;
+}
+
+function normalizeTicketDetail(raw: any) {
+  const requestNote = String(raw?.request_note || '');
+
+  const parsedProgram = parseTicketLine(requestNote, '프로그램');
+  const parsedTicketName = parseTicketLine(requestNote, '티켓명');
+  const parsedDetail = parseTicketLine(requestNote, '상세내용');
+  const parsedSpecial = parseTicketLine(requestNote, '요청사항');
+  const parsedQty = (() => {
+    const qtyRaw = parseTicketLine(requestNote, '수량');
+    if (!qtyRaw) return null;
+    const n = Number(String(qtyRaw).replace(/[^\d]/g, ''));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  })();
+
+  const ticketType = raw?.ticket_type
+    || (requestNote.includes('[프로그램]') ? 'other' : 'dragon');
+
+  return {
+    ...raw,
+    ticket_type: ticketType,
+    ticket_name: raw?.ticket_name || raw?.tour_name || parsedTicketName || null,
+    program_selection: raw?.program_selection || parsedProgram || null,
+    usage_date: raw?.usage_date || raw?.tour_date || raw?.ticket_date || null,
+    ticket_quantity: raw?.ticket_quantity || raw?.tour_capacity || parsedQty || 1,
+    shuttle_required: typeof raw?.shuttle_required === 'boolean'
+      ? raw.shuttle_required
+      : requestNote.includes('[셔틀] 신청함'),
+    pickup_location: raw?.pickup_location || null,
+    dropoff_location: raw?.dropoff_location || null,
+    ticket_details: raw?.ticket_details || parsedDetail || null,
+    special_requests: raw?.special_requests || parsedSpecial || null,
+  };
 }
 
 function renderCustomerFriendlyInfo(obj: any, type: keyof typeof labelMap) {
@@ -477,6 +518,10 @@ function ReservationViewInner() {
 
           enrichedSvc = Array.isArray(svc) ? svc : (svc ? [svc] : []);
 
+          if (row.re_type === 'ticket' && enrichedSvc.length > 0) {
+            enrichedSvc = enrichedSvc.map((item: any) => normalizeTicketDetail(item));
+          }
+
           if (row.re_type === 'ticket' && enrichedSvc.length === 0) {
             const { data: legacyTicketSvc } = await supabase
               .from('reservation_tour')
@@ -484,12 +529,8 @@ function ReservationViewInner() {
               .eq('reservation_id', reservationId)
               .order('created_at', { ascending: false });
 
-            enrichedSvc = (Array.isArray(legacyTicketSvc) ? legacyTicketSvc : (legacyTicketSvc ? [legacyTicketSvc] : [])).map((item: any) => ({
-              ...item,
-              ticket_type: String(item.request_note || '').includes('[프로그램]') ? 'other' : 'dragon',
-              ticket_quantity: item.tour_capacity,
-              program_selection: String(item.request_note || '').match(/\[프로그램\]\s*([^\r\n]+)/)?.[1]?.trim() || null,
-            }));
+            enrichedSvc = (Array.isArray(legacyTicketSvc) ? legacyTicketSvc : (legacyTicketSvc ? [legacyTicketSvc] : []))
+              .map((item: any) => normalizeTicketDetail(item));
           }
         }
 
