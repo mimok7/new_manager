@@ -1,5 +1,6 @@
 {
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- apps/partner packages pnpm-lock.yaml pnpm-workspace.yaml turbo.json package.json tsconfig.base.json",
   "buildCommand": "cd ../.. && pnpm --filter @sht/partner build",
   "outputDirectory": ".next",
   "framework": "nextjs"
