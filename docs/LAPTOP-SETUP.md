@@ -60,3 +60,22 @@ Files added by this guide:
 - `docs/LAPTOP-SETUP.md` (this file)
 
 If you want, I can also create a desktop shortcut (.lnk) that runs `setup-laptop.cmd`.
+
+## 바로가기(.lnk) 생성
+
+레포 루트에서 제공 스크립트를 실행하면 현재 사용자 바탕화면에 실행 바로가기를 생성합니다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/create-shortcuts.ps1
+
+# SkipPull 바로가기도 함께 생성
+powershell -ExecutionPolicy Bypass -File scripts/create-shortcuts.ps1 -CreateSkipPull
+
+# 자동 pull 활성화 바로가기 생성
+powershell -ExecutionPolicy Bypass -File scripts/create-shortcuts.ps1 -CreateEnableAutoPull
+```
+
+생성되는 바로가기 예시:
+- `SHT Platform Setup.lnk` — 기본 실행
+- `SHT Platform Setup (SkipPull).lnk` — pull 생략
+- `SHT Platform Setup (EnableAutoPullOnBoot).lnk` — 부팅 자동 pull 활성화
