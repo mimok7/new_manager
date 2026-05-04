@@ -151,6 +151,12 @@ function CruiseCarReservationEditContent() {
 
     const updateVehicleForm = (index: number, patch: Partial<VehicleFormData>) => {
         setVehicleForms(prev =>
+            prev.map((item, idx) => (idx === index ? { ...item, ...patch } : item))
+        );
+    };
+
+    const updateVehicleFormWithAutoTotal = (index: number, patch: Partial<VehicleFormData>) => {
+        setVehicleForms(prev =>
             prev.map((item, idx) => {
                 if (idx !== index) return item;
                 const next = { ...item, ...patch };
@@ -447,7 +453,10 @@ function CruiseCarReservationEditContent() {
                     dispatch_memo: row.dispatch_memo || ''
                 };
 
-                return { ...form, car_total_price: getAutoTotal(form) };
+                return {
+                    ...form,
+                    car_total_price: row.car_total_price ?? getAutoTotal(form)
+                };
             }));
 
             setVehicleForms(forms);
@@ -482,7 +491,7 @@ function CruiseCarReservationEditContent() {
             setSaving(true);
 
             const normalizedForms = vehicleForms
-                .map(item => ({ ...item, car_total_price: getAutoTotal(item) }))
+                .map(item => ({ ...item }))
                 .filter(item =>
                     item.rentcar_price_code
                     || item.way_type
@@ -710,7 +719,7 @@ function CruiseCarReservationEditContent() {
                                                         value={item.way_type}
                                                         onChange={async (e) => {
                                                             const nextWayType = e.target.value;
-                                                            updateVehicleForm(index, {
+                                                            updateVehicleFormWithAutoTotal(index, {
                                                                 way_type: nextWayType,
                                                                 route: '',
                                                                 vehicle_type: '',
@@ -736,7 +745,7 @@ function CruiseCarReservationEditContent() {
                                                         value={item.route}
                                                         onChange={async (e) => {
                                                             const nextRoute = e.target.value;
-                                                            updateVehicleForm(index, {
+                                                            updateVehicleFormWithAutoTotal(index, {
                                                                 route: nextRoute,
                                                                 vehicle_type: '',
                                                                 rentcar_price_code: '',
@@ -764,14 +773,14 @@ function CruiseCarReservationEditContent() {
                                                         value={item.vehicle_type}
                                                         onChange={async (e) => {
                                                             const nextType = e.target.value;
-                                                            updateVehicleForm(index, {
+                                                            updateVehicleFormWithAutoTotal(index, {
                                                                 vehicle_type: nextType,
                                                                 rentcar_price_code: ''
                                                             });
 
                                                             const priceInfo = await findRentcarPrice(item.way_type, item.route, nextType);
                                                             if (priceInfo) {
-                                                                updateVehicleForm(index, {
+                                                                updateVehicleFormWithAutoTotal(index, {
                                                                     rentcar_price_code: priceInfo.rent_code || '',
                                                                     way_type: priceInfo.way_type || item.way_type,
                                                                     route: priceInfo.route || item.route,
@@ -810,7 +819,7 @@ function CruiseCarReservationEditContent() {
                                                     <input
                                                         type="number"
                                                         value={item.car_count}
-                                                        onChange={(e) => updateVehicleForm(index, { car_count: parseInt(e.target.value) || 0 })}
+                                                        onChange={(e) => updateVehicleFormWithAutoTotal(index, { car_count: parseInt(e.target.value, 10) || 0 })}
                                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                         min="0"
                                                     />
@@ -824,7 +833,7 @@ function CruiseCarReservationEditContent() {
                                                     <input
                                                         type="number"
                                                         value={item.passenger_count}
-                                                        onChange={(e) => updateVehicleForm(index, { passenger_count: parseInt(e.target.value) || 0 })}
+                                                        onChange={(e) => updateVehicleFormWithAutoTotal(index, { passenger_count: parseInt(e.target.value, 10) || 0 })}
                                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                         min="0"
                                                     />
@@ -929,7 +938,7 @@ function CruiseCarReservationEditContent() {
                                                     <input
                                                         type="number"
                                                         value={item.unit_price}
-                                                        onChange={(e) => updateVehicleForm(index, { unit_price: parseInt(e.target.value) || 0 })}
+                                                        onChange={(e) => updateVehicleFormWithAutoTotal(index, { unit_price: parseInt(e.target.value, 10) || 0 })}
                                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                         min="0"
                                                     />
@@ -940,8 +949,8 @@ function CruiseCarReservationEditContent() {
                                                     <input
                                                         type="number"
                                                         value={item.car_total_price}
-                                                        readOnly
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                                                        onChange={(e) => updateVehicleForm(index, { car_total_price: parseInt(e.target.value, 10) || 0 })}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-bold text-green-600"
                                                         min="0"
                                                     />
                                                 </div>
