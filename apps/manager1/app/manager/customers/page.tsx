@@ -24,6 +24,7 @@ export default function CustomerManagement() {
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [resettingPasswordId, setResettingPasswordId] = useState<string | null>(null);
 
   // 실제 표시되는 고객: roleFilter에 따라 클라이언트에서도 필터링 (정규화된 비교)
   const normalizedRoleFilter = String(roleFilter ?? 'all').trim().toLowerCase();
@@ -247,6 +248,48 @@ export default function CustomerManagement() {
     }
   };
 
+  const resetCustomerPassword = async (customerId: string, customerEmail?: string) => {
+    const confirmed = window.confirm(
+      `${customerEmail || '해당 고객'}의 비밀번호를 sht123! 로 초기화하시겠습니까?\n\n보안을 위해 초기화 후 고객에게 즉시 변경 안내가 필요합니다.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setResettingPasswordId(customerId);
+
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      if (sessionError || !accessToken) {
+        alert('로그인 세션을 확인할 수 없습니다. 다시 로그인 후 시도해주세요.');
+        return;
+      }
+
+      const response = await fetch('/api/auth/reset-customer-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ targetUserId: customerId })
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        alert(result?.error || '비밀번호 초기화에 실패했습니다.');
+        return;
+      }
+
+      alert('비밀번호가 sht123! 로 초기화되었습니다.');
+    } catch (error) {
+      console.error('비밀번호 초기화 실패:', error);
+      alert('비밀번호 초기화 중 오류가 발생했습니다.');
+    } finally {
+      setResettingPasswordId(null);
+    }
+  };
+
   const handleSaveCustomer = async () => {
     if (!selectedCustomer?.id) return;
 
@@ -451,11 +494,16 @@ export default function CustomerManagement() {
                           );
                         })}
                     </div>
-                    <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center justify-between mt-2 gap-2">
                       <button
                         onClick={() => deleteCustomer(customer.id)}
                         className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs md:text-sm"
                       >🗑️ 삭제</button>
+                      <button
+                        onClick={() => resetCustomerPassword(customer.id, customer.email)}
+                        className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-xs md:text-sm disabled:opacity-60"
+                        disabled={resettingPasswordId === customer.id}
+                      >{resettingPasswordId === customer.id ? '초기화 중...' : '🔑 비번초기화'}</button>
                       <button
                         onClick={() => viewCustomerDetail(customer.id)}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs md:text-sm"

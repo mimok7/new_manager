@@ -303,6 +303,15 @@ export default function PackageReservationDetailModal({
         [filteredServices]
     );
 
+    const packageRootRows = useMemo(() => {
+        const map = new Map<string, any>();
+        packageRoots.forEach((pkg, idx) => {
+            const key = String(pkg?.re_id || pkg?.reservation_id || `pkg-${idx}`);
+            if (!map.has(key)) map.set(key, pkg);
+        });
+        return Array.from(map.values());
+    }, [packageRoots]);
+
     const packageServices = useMemo(() => {
         const nonPackage = filteredServices.filter((s) => s?.serviceType !== 'package' && !isUnknownTourService(s));
 
@@ -346,8 +355,8 @@ export default function PackageReservationDetailModal({
     }, [filteredServices]);
 
     const totalAmount = useMemo(
-        () => packageRoots.reduce((sum, p) => sum + Number(p?.total_amount || p?.totalPrice || 0), 0),
-        [packageRoots]
+        () => packageRootRows.reduce((sum, p) => sum + Number(p?.total_amount || p?.totalPrice || 0), 0),
+        [packageRootRows]
     );
 
     if (!isOpen) return null;
@@ -391,22 +400,22 @@ export default function PackageReservationDetailModal({
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
                                     <div className="text-xs text-indigo-700">패키지 예약 건수</div>
-                                    <div className="text-xl font-bold text-indigo-900">{packageRoots.length}건</div>
+                                    <div className="text-xl font-bold text-indigo-900">{packageRootRows.length}건</div>
                                 </div>
                                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
                                     <div className="text-xs text-blue-700">포함 서비스 건수</div>
                                     <div className="text-xl font-bold text-blue-900">{packageServices.length}건</div>
                                 </div>
                                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                                    <div className="text-xs text-emerald-700">패키지 총액 합계</div>
+                                    <div className="text-xs text-emerald-700">패키지 총액 합계 (예약 단위 단일요금)</div>
                                     <div className="text-xl font-bold text-emerald-900">{Number(totalAmount || 0).toLocaleString()}동</div>
                                 </div>
                             </div>
 
-                            {packageRoots.length > 0 && (
+                            {packageRootRows.length > 0 && (
                                 <div className="space-y-3">
                                     <h3 className="text-sm font-semibold text-gray-800">패키지 예약 목록</h3>
-                                    {packageRoots.map((pkg, idx) => (
+                                    {packageRootRows.map((pkg, idx) => (
                                         <div key={`${pkg.re_id || pkg.reservation_id || idx}`} className="border border-indigo-100 rounded-lg p-3 bg-indigo-50/40">
                                             <div className="flex flex-wrap items-center justify-between gap-2">
                                                 <div className="font-semibold text-indigo-800">
@@ -417,7 +426,7 @@ export default function PackageReservationDetailModal({
                                             <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
                                                 <div>예약일: {formatKst(pkg.re_created_at || pkg.service?.re_created_at)}</div>
                                                 <div>인원: 성인 {pkg.re_adult_count || 0}, 아동 {pkg.re_child_count || 0}, 유아 {pkg.re_infant_count || 0}</div>
-                                                <div className="font-semibold text-emerald-700">총액: {formatAmount(pkg.total_amount)}</div>
+                                                <div className="font-semibold text-emerald-700">총액 (단일요금): {formatAmount(pkg.total_amount || pkg.totalPrice)}</div>
                                             </div>
                                             {(pkg.child_extra_bed != null || pkg.child_no_extra_bed != null || pkg.infant_free != null || pkg.infant_tour != null || pkg.infant_extra_bed != null || pkg.infant_seat != null) && (
                                                 <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700 bg-white border border-indigo-100 rounded p-2">
@@ -455,6 +464,7 @@ export default function PackageReservationDetailModal({
                                     const roomTypeValue = cruiseFromNote.roomType || service.roomType;
                                     const airportLocations = type === 'airport' ? getAirportDisplayLocations(service) : null;
                                     const tourNameValue = type === 'tour' ? getTourDisplayName(service) : '';
+                                    const hasTourNameSource = type === 'tour' || !!(service.tourName || service.tour_name || service.tour?.tour_name);
                                     return (
                                         <div key={`${service.reservation_id || service.re_id || type}-${idx}`} className="border border-gray-200 rounded-lg p-3 bg-white">
                                             <div className="flex items-center justify-between gap-2">
@@ -474,7 +484,7 @@ export default function PackageReservationDetailModal({
                                                 )}
                                                 {cruiseNameValue && <div>크루즈: {humanizeServiceName(cruiseNameValue, '크루즈 프로그램')}</div>}
                                                 {roomTypeValue && <div>객실타입: {humanizeServiceName(roomTypeValue, '객실 타입 확정 예정')}</div>}
-                                                {type === 'tour' && <div>투어명: {tourNameValue}</div>}
+                                                {hasTourNameSource && <div>투어명: {getTourDisplayName(service)}</div>}
                                                 {service.hotelName && <div>호텔명: {humanizeServiceName(service.hotelName, '호텔')}</div>}
                                                 {(service.category || service.way_type) && <div>구분: {humanizeWayType(service.category || service.way_type)}</div>}
                                                 {service.route && <div>경로: {humanizeText(service.route)}</div>}
@@ -508,10 +518,8 @@ export default function PackageReservationDetailModal({
                                             <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center text-sm">
                                                 <span className="text-gray-500">금액</span>
                                                 <div className="text-right">
-                                                    {service.unitPrice != null && Number(service.unitPrice || 0) > 0 && (
-                                                        <div className="text-xs text-gray-500">단가 {formatAmount(service.unitPrice)}</div>
-                                                    )}
-                                                    <span className="font-bold text-blue-700">{formatAmount(service.totalPrice || service.total_amount)}</span>
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">패키지 포함</span>
+                                                    <div className="text-xs text-gray-500 mt-1">단일 패키지 요금(인원수 반영)에 포함</div>
                                                 </div>
                                             </div>
 

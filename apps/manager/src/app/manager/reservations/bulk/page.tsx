@@ -5,8 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import ManagerLayout from '@/components/ManagerLayout';
-import UserReservationDetailModal from '@/components/UserReservationDetailModal';
-import PackageReservationDetailModal from '@/components/PackageReservationDetailModal';
+import ReservationDetailModalSwitch from '@/components/ReservationDetailModalSwitch';
 import {
     CheckSquare,
     Square,
@@ -1492,11 +1491,6 @@ export default function BulkReservationPage() {
         });
     }, [reservationDetails]);
 
-    const hasPackageDetails = useMemo(
-        () => flattenedServices.some((s: any) => s?.serviceType === 'package' || s?.isPackageService),
-        [flattenedServices]
-    );
-
     const groupedReservations = useMemo(() => {
         const STATUS_ORDER = ['pending', 'approved', 'confirmed', 'completed', 'cancelled'];
         const STATUS_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
@@ -1912,25 +1906,14 @@ export default function BulkReservationPage() {
 
                 {/* 상세보기 모달 */}
                 {isModalOpen && modalUserInfo && (
-                    hasPackageDetails ? (
-                        <PackageReservationDetailModal
-                            key={modalKey}
-                            isOpen={isModalOpen}
-                            onClose={closeDetailsModal}
-                            userInfo={modalUserInfo}
-                            allUserServices={flattenedServices}
-                            loading={modalLoading}
-                        />
-                    ) : (
-                        <UserReservationDetailModal
-                            key={modalKey}
-                            isOpen={isModalOpen}
-                            onClose={closeDetailsModal}
-                            userInfo={modalUserInfo}
-                            allUserServices={flattenedServices}
-                            loading={modalLoading}
-                        />
-                    )
+                    <ReservationDetailModalSwitch
+                        key={modalKey}
+                        isOpen={isModalOpen}
+                        onClose={closeDetailsModal}
+                        userInfo={modalUserInfo}
+                        allUserServices={flattenedServices}
+                        loading={modalLoading}
+                    />
                 )}
             </div >
         </ManagerLayout >
