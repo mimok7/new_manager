@@ -42,7 +42,18 @@ git push origin main
 
 ---
 
-## 🚫 manager1 사이드바 구조 보호 (필수)
+## � manager ↔ manager1 기능 동기화 원칙 (필수)
+- **`apps/manager`와 `apps/manager1`은 기능 페이지를 항상 동일하게 수정해야 함**
+- 한 앱에만 수정이 적용되면 반드시 다른 앱에도 동일하게 반영
+- 경로 대응 예시:
+  - `apps/manager/src/app/manager/reservation-edit/cruise/page.tsx`
+  - `apps/manager1/app/manager/reservation-edit/cruise/page.tsx`
+- 단, **사이드바 구조는 예외** — manager1의 사이드바는 별도 규칙을 따름 (아래 참조)
+- 신규 기능·버그 수정 시 두 앱 모두 변경 완료 후 커밋
+
+---
+
+## �🚫 manager1 사이드바 구조 보호 (필수)
 - **`apps/manager1/components/ManagerSidebar.tsx`는 항상 고정 구조 유지**
 - 사이드바 섹션: **"⭐ 즐겨찾기"** + **"📂 관리 기타"** 2개만 존재
 - `apps/manager`의 6그룹 사이드바 구조를 manager1에 복사/미러링 절대 금지

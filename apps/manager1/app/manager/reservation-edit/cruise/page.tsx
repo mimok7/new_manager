@@ -25,6 +25,7 @@ interface CruiseReservation {
     room_price_code: string;
     room_count?: number;
     guest_count: number;
+    unit_price?: number;
     checkin: string;
     room_total_price: number;
     request_note: string;
@@ -69,6 +70,8 @@ interface CruiseReservation {
 interface CruiseRoomForm {
     room_count: number;
     guest_count: number;
+    unit_price: number;
+    unit_price_manual: boolean;
     adult_count: number;
     child_count: number;
     child_older_count: number;
@@ -84,6 +87,8 @@ interface CruiseRoomForm {
 const createEmptyRoomForm = (overrides: Partial<CruiseRoomForm> = {}): CruiseRoomForm => ({
     room_count: 1,
     guest_count: 0,
+    unit_price: 0,
+    unit_price_manual: false,
     adult_count: 0,
     child_count: 0,
     child_older_count: 0,
@@ -151,6 +156,16 @@ function CruiseReservationEditContent() {
     );
 
     const calculateRoomTotalPrice = (detail: any, data: CruiseRoomForm) => {
+        const guestCount = getRoomGuestCount(data);
+        const manualOrStoredUnitPrice = Number(data.unit_price || 0);
+        const effectiveUnitPrice = data.unit_price_manual
+            ? manualOrStoredUnitPrice
+            : Number(detail?.price_adult || detail?.price || manualOrStoredUnitPrice || 0);
+
+        if (effectiveUnitPrice > 0) {
+            return guestCount * effectiveUnitPrice;
+        }
+
         const priceAdult = detail?.price_adult || detail?.price || 0;
         const priceChild = detail?.price_child || 0;
         const priceChildOlder = detail?.price_child_older || priceChild;
@@ -203,10 +218,23 @@ function CruiseReservationEditContent() {
 
     const syncRoomForm = (room: CruiseRoomForm, detail?: any) => {
         const guestCount = getRoomGuestCount(room);
-        return {
+        const nextUnitPrice = detail
+            ? (room.unit_price_manual
+                ? Number(room.unit_price || 0)
+                : Number(detail?.price_adult || detail?.price || room.unit_price || 0))
+            : Number(room.unit_price || 0);
+
+        const syncedRoom: CruiseRoomForm = {
             ...room,
             guest_count: guestCount,
-            room_total_price: detail ? calculateRoomTotalPrice(detail, { ...room, guest_count: guestCount }) : room.room_total_price || 0,
+            unit_price: nextUnitPrice,
+        };
+
+        return {
+            ...syncedRoom,
+            room_total_price: detail
+                ? calculateRoomTotalPrice(detail, { ...syncedRoom, guest_count: guestCount })
+                : room.room_total_price || guestCount * nextUnitPrice || 0,
         };
     };
 
@@ -417,6 +445,10 @@ function CruiseReservationEditContent() {
     };
 
     const formatRoomPriceFormula = (room: CruiseRoomForm, detail: any) => {
+        if ((room.unit_price || 0) > 0) {
+            return `기준단가 ${Number(room.unit_price || 0).toLocaleString()}동 × 총인원 ${room.guest_count || 0}명`;
+        }
+
         const parts: string[] = [];
 
         if (room.adult_count > 0) parts.push(`성인 ${room.adult_count}×${(detail?.price_adult || detail?.price || 0).toLocaleString()}`);
@@ -1020,6 +1052,13 @@ function CruiseReservationEditContent() {
                 cruiseRows.map((cruiseRow, rowIndex) => syncRoomForm(createEmptyRoomForm({
                     room_count: cruiseRow.room_count ?? 1,
                     guest_count: cruiseRow.guest_count || 0,
+                    unit_price: Number(
+                        cruiseRow.unit_price
+                        || roomPriceInfoList[rowIndex]?.price_adult
+                        || roomPriceInfoList[rowIndex]?.price
+                        || 0
+                    ),
+                    unit_price_manual: Number(cruiseRow.unit_price || 0) > 0,
                     adult_count: cruiseRow.adult_count ?? 0,
                     child_count: cruiseRow.child_count ?? 0,
                     child_older_count: parsedChildOlderCounts[rowIndex] ?? 0,
@@ -1110,6 +1149,7 @@ function CruiseReservationEditContent() {
                 room_price_code: room.room_price_code,
                 room_count: isCatherineHorizonCruise ? null : room.room_count,
                 guest_count: room.guest_count,
+                unit_price: room.unit_price || 0,
                 adult_count: room.adult_count,
                 child_count: (room.child_count || 0) + (room.child_older_count || 0),
                 child_extra_bed_count: room.child_extra_bed_count,
@@ -1220,12 +1260,13 @@ function CruiseReservationEditContent() {
                     room_index: index + 1,
                     room_price_code: room.room_price_code,
                     room_count: isCatherineHorizonCruise ? null : room.room_count,
+                    unit_price: room.unit_price || 0,
                     checkin: room.checkin,
                     guest_count: room.guest_count,
                     cruise: detail?.cruise || null,
                     schedule: detail?.schedule || null,
                     room_type: detail?.room_type || null,
-                    adult: { unit_price: priceAdult, count: room.adult_count || 0, total: adultTotal },
+                    adult: { unit_price: room.unit_price || priceAdult, count: room.adult_count || 0, total: adultTotal },
                     child: { unit_price: priceChild, count: room.child_count || 0, total: childTotal },
                     child_older: { unit_price: priceChildOlder, count: room.child_older_count || 0, total: childOlderTotal },
                     infant: { unit_price: priceInfant, count: room.infant_count || 0, total: infantTotal },
@@ -1591,6 +1632,21 @@ function CruiseReservationEditContent() {
                                                     <p className="text-xs text-gray-500 mt-1">
                                                         합계: {room.guest_count}명 (성인 {room.adult_count} + 아동(5~7) {room.child_count} + 아동(8~11) {room.child_older_count} + 유아 {room.infant_count} + 아동엑스트라 {room.child_extra_bed_count} + 엑스트라 {room.extra_bed_count} + 싱글 {room.single_count})
                                                     </p>
+                                                </div>
+
+                                                <div className="md:col-span-2">
+                                                    <label className="block text-xs font-medium text-gray-700 mb-1">객실 단가 (1인 기준, 동) *</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={room.unit_price}
+                                                        onChange={(e) => updateRoomAt(roomIndex, (r) => syncRoomForm({
+                                                            ...r,
+                                                            unit_price: parseInt(e.target.value) || 0,
+                                                            unit_price_manual: true,
+                                                        }, roomDetail))}
+                                                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                                    />
                                                 </div>
 
                                                 <div className="md:col-span-2">
