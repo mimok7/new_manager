@@ -35,7 +35,8 @@ function LoginForm() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
-        alert('❌ 로그인 실패: ' + error.message);
+        const code = (error as any).code || error.status || '';
+        alert(`❌ 로그인 실패: ${error.message}${code ? ' (' + code + ')' : ''}\n\n매니저 계정 이메일과 비밀번호를 확인해주세요.`);
         setLoading(false);
         return;
       }
@@ -104,7 +105,7 @@ function LoginForm() {
   return (
     <div className="max-w-sm mx-auto mt-12 p-4 bg-white shadow rounded">
       <div className="flex justify-center mb-4">
-        <Image src="/logo-full.png" alt="스테이하롱 전체 로고" width={320} height={80} loading="eager" style={{ width: "auto", height: "auto" }} unoptimized />
+        <Image src="/logo-full.png" alt="스테이하롱 전체 로고" width={320} height={80} priority style={{ width: "auto", height: "auto" }} unoptimized />
       </div>
       <h2 className="text-2xl font-bold mb-6 text-center">🔐 로그인</h2>
       <form onSubmit={handleLogin} className="space-y-4">
@@ -117,7 +118,7 @@ function LoginForm() {
           required
         />
         <p className="text-sm text-gray-500 mt-1">
-          견적 신청시 입력하신 이메일과 비밀번호를 입력해주세요.
+          매니저 계정 이메일을 입력해주세요.
         </p>
         <input
           type="password"
@@ -127,7 +128,7 @@ function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <p className="text-sm text-gray-500 mt-1">비밀번호는 6자 이상 입력해주세요.</p>
+        <p className="text-sm text-gray-500 mt-1">매니저 계정 비밀번호를 입력해주세요.</p>
         <button
           type="submit"
           className="bg-blue-500 text-white w-full py-2 rounded hover:bg-blue-600 transition disabled:opacity-50"

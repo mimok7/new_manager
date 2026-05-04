@@ -72,6 +72,14 @@ interface CruiseRoomForm {
     guest_count: number;
     unit_price: number;
     unit_price_manual: boolean;
+    category_prices_manual: boolean;
+    price_adult: number;
+    price_child: number;
+    price_child_older: number;
+    price_child_extra_bed: number;
+    price_infant: number;
+    price_extra_bed: number;
+    price_single: number;
     adult_count: number;
     child_count: number;
     child_older_count: number;
@@ -89,6 +97,14 @@ const createEmptyRoomForm = (overrides: Partial<CruiseRoomForm> = {}): CruiseRoo
     guest_count: 0,
     unit_price: 0,
     unit_price_manual: false,
+    category_prices_manual: false,
+    price_adult: 0,
+    price_child: 0,
+    price_child_older: 0,
+    price_child_extra_bed: 0,
+    price_infant: 0,
+    price_extra_bed: 0,
+    price_single: 0,
     adult_count: 0,
     child_count: 0,
     child_older_count: 0,
@@ -158,31 +174,46 @@ function CruiseReservationEditContent() {
     const calculateRoomTotalPrice = (detail: any, data: CruiseRoomForm) => {
         const guestCount = getRoomGuestCount(data);
         const manualOrStoredUnitPrice = Number(data.unit_price || 0);
-        const effectiveUnitPrice = data.unit_price_manual
-            ? manualOrStoredUnitPrice
-            : Number(detail?.price_adult || detail?.price || manualOrStoredUnitPrice || 0);
-
-        if (effectiveUnitPrice > 0) {
-            return guestCount * effectiveUnitPrice;
+        if (data.unit_price_manual && manualOrStoredUnitPrice > 0) {
+            return guestCount * manualOrStoredUnitPrice;
         }
 
-        const priceAdult = detail?.price_adult || detail?.price || 0;
-        const priceChild = detail?.price_child || 0;
-        const priceChildOlder = detail?.price_child_older || priceChild;
-        const priceChildExtraBed = detail?.price_child_extra_bed || 0;
-        const priceInfant = detail?.price_infant || 0;
-        const priceExtraBed = detail?.price_extra_bed || 0;
-        const priceSingle = detail?.price_single || 0;
+        const prices = getRoomCategoryPrices(data, detail);
 
         return (
-            (data.adult_count || 0) * priceAdult +
-            (data.child_count || 0) * priceChild +
-            (data.child_older_count || 0) * priceChildOlder +
-            (data.child_extra_bed_count || 0) * priceChildExtraBed +
-            (data.infant_count || 0) * priceInfant +
-            (data.extra_bed_count || 0) * priceExtraBed +
-            (data.single_count || 0) * priceSingle
+            (data.adult_count || 0) * prices.price_adult +
+            (data.child_count || 0) * prices.price_child +
+            (data.child_older_count || 0) * prices.price_child_older +
+            (data.child_extra_bed_count || 0) * prices.price_child_extra_bed +
+            (data.infant_count || 0) * prices.price_infant +
+            (data.extra_bed_count || 0) * prices.price_extra_bed +
+            (data.single_count || 0) * prices.price_single
         );
+    };
+
+    const getRoomCategoryPrices = (room: CruiseRoomForm, detail: any) => {
+        if (room.category_prices_manual) {
+            return {
+                price_adult: Number(room.price_adult || 0),
+                price_child: Number(room.price_child || 0),
+                price_child_older: Number(room.price_child_older || 0),
+                price_child_extra_bed: Number(room.price_child_extra_bed || 0),
+                price_infant: Number(room.price_infant || 0),
+                price_extra_bed: Number(room.price_extra_bed || 0),
+                price_single: Number(room.price_single || 0),
+            };
+        }
+
+        const priceChild = Number(detail?.price_child || 0);
+        return {
+            price_adult: Number(detail?.price_adult || detail?.price || 0),
+            price_child: priceChild,
+            price_child_older: Number(detail?.price_child_older || priceChild),
+            price_child_extra_bed: Number(detail?.price_child_extra_bed || 0),
+            price_infant: Number(detail?.price_infant || 0),
+            price_extra_bed: Number(detail?.price_extra_bed || 0),
+            price_single: Number(detail?.price_single || 0),
+        };
     };
 
     const getFilteredRoomPriceOptions = (room: CruiseRoomForm) => {
@@ -218,16 +249,18 @@ function CruiseReservationEditContent() {
 
     const syncRoomForm = (room: CruiseRoomForm, detail?: any) => {
         const guestCount = getRoomGuestCount(room);
+        const prices = getRoomCategoryPrices(room, detail);
         const nextUnitPrice = detail
             ? (room.unit_price_manual
                 ? Number(room.unit_price || 0)
-                : Number(detail?.price_adult || detail?.price || room.unit_price || 0))
+                : prices.price_adult)
             : Number(room.unit_price || 0);
 
         const syncedRoom: CruiseRoomForm = {
             ...room,
             guest_count: guestCount,
             unit_price: nextUnitPrice,
+            ...prices,
         };
 
         return {
@@ -425,6 +458,17 @@ function CruiseReservationEditContent() {
         updateRoomAt(index, (room) => ({ ...room, room_count: Math.max(1, value || 1) }));
     };
 
+    const handleRoomCategoryPriceChange = (index: number, field: keyof Pick<CruiseRoomForm, 'price_adult' | 'price_child' | 'price_child_older' | 'price_child_extra_bed' | 'price_infant' | 'price_extra_bed' | 'price_single'>, value: number) => {
+        const currentDetail = getRoomDetail(index);
+        updateRoomAt(index, (room) => syncRoomForm({
+            ...room,
+            ...getRoomCategoryPrices(room, currentDetail),
+            [field]: Math.max(0, value || 0),
+            category_prices_manual: true,
+            unit_price_manual: false,
+        }, currentDetail));
+    };
+
     const handleAddRoom = () => {
         const templateRoom = roomForms[roomForms.length - 1] || createEmptyRoomForm();
         const templateDetail = roomPriceDetails[roomPriceDetails.length - 1] || getRoomDetail(roomForms.length - 1) || null;
@@ -445,19 +489,20 @@ function CruiseReservationEditContent() {
     };
 
     const formatRoomPriceFormula = (room: CruiseRoomForm, detail: any) => {
-        if ((room.unit_price || 0) > 0) {
+        if (room.unit_price_manual && (room.unit_price || 0) > 0) {
             return `기준단가 ${Number(room.unit_price || 0).toLocaleString()}동 × 총인원 ${room.guest_count || 0}명`;
         }
 
         const parts: string[] = [];
+        const prices = getRoomCategoryPrices(room, detail);
 
-        if (room.adult_count > 0) parts.push(`성인 ${room.adult_count}×${(detail?.price_adult || detail?.price || 0).toLocaleString()}`);
-        if (room.child_count > 0) parts.push(`아동(5~7세) ${room.child_count}×${(detail?.price_child || 0).toLocaleString()}`);
-        if (room.child_older_count > 0) parts.push(`아동(8~11세) ${room.child_older_count}×${(detail?.price_child_older || detail?.price_child || 0).toLocaleString()}`);
-        if (room.child_extra_bed_count > 0) parts.push(`아동엑스트라 ${room.child_extra_bed_count}×${(detail?.price_child_extra_bed || 0).toLocaleString()}`);
-        if (room.infant_count > 0) parts.push(`유아 ${room.infant_count}×${(detail?.price_infant || 0).toLocaleString()}`);
-        if (room.extra_bed_count > 0) parts.push(`엑스트라 ${room.extra_bed_count}×${(detail?.price_extra_bed || 0).toLocaleString()}`);
-        if (room.single_count > 0) parts.push(`싱글 ${room.single_count}×${(detail?.price_single || 0).toLocaleString()}`);
+        if (room.adult_count > 0) parts.push(`성인 ${room.adult_count}×${prices.price_adult.toLocaleString()}`);
+        if (room.child_count > 0) parts.push(`아동(5~7세) ${room.child_count}×${prices.price_child.toLocaleString()}`);
+        if (room.child_older_count > 0) parts.push(`아동(8~11세) ${room.child_older_count}×${prices.price_child_older.toLocaleString()}`);
+        if (room.child_extra_bed_count > 0) parts.push(`아동엑스트라 ${room.child_extra_bed_count}×${prices.price_child_extra_bed.toLocaleString()}`);
+        if (room.infant_count > 0) parts.push(`유아 ${room.infant_count}×${prices.price_infant.toLocaleString()}`);
+        if (room.extra_bed_count > 0) parts.push(`엑스트라 ${room.extra_bed_count}×${prices.price_extra_bed.toLocaleString()}`);
+        if (room.single_count > 0) parts.push(`싱글 ${room.single_count}×${prices.price_single.toLocaleString()}`);
 
         return parts.length > 0 ? parts.join(' + ') : '인원수를 입력하면 자동 계산됩니다.';
     };
@@ -1047,29 +1092,45 @@ function CruiseReservationEditContent() {
                 .replace(/\[CHILD_OLDER_COUNTS:[^\]]*\]\s*/g, '')
                 .trim();
 
+            const savedRoomBreakdowns = Array.isArray(resRow.price_breakdown?.rooms)
+                ? resRow.price_breakdown.rooms
+                : [];
+
             setRequestNote(cleanRequestNote);
             setRoomForms(
-                cruiseRows.map((cruiseRow, rowIndex) => syncRoomForm(createEmptyRoomForm({
-                    room_count: cruiseRow.room_count ?? 1,
-                    guest_count: cruiseRow.guest_count || 0,
-                    unit_price: Number(
-                        cruiseRow.unit_price
-                        || roomPriceInfoList[rowIndex]?.price_adult
-                        || roomPriceInfoList[rowIndex]?.price
-                        || 0
-                    ),
-                    unit_price_manual: Number(cruiseRow.unit_price || 0) > 0,
-                    adult_count: cruiseRow.adult_count ?? 0,
-                    child_count: cruiseRow.child_count ?? 0,
-                    child_older_count: parsedChildOlderCounts[rowIndex] ?? 0,
-                    child_extra_bed_count: cruiseRow.child_extra_bed_count ?? 0,
-                    infant_count: cruiseRow.infant_count ?? 0,
-                    extra_bed_count: cruiseRow.extra_bed_count ?? 0,
-                    single_count: cruiseRow.single_count ?? 0,
-                    checkin: cruiseRow.checkin || '',
-                    room_total_price: cruiseRow.room_total_price || 0,
-                    room_price_code: cruiseRow.room_price_code || ''
-                })))
+                cruiseRows.map((cruiseRow, rowIndex) => {
+                    const savedRoom = savedRoomBreakdowns[rowIndex] || {};
+                    const categoryPricesManual = Boolean(savedRoom.category_prices_manual);
+                    return syncRoomForm(createEmptyRoomForm({
+                        room_count: cruiseRow.room_count ?? 1,
+                        guest_count: cruiseRow.guest_count || 0,
+                        unit_price: Number(
+                            cruiseRow.unit_price
+                            || roomPriceInfoList[rowIndex]?.price_adult
+                            || roomPriceInfoList[rowIndex]?.price
+                            || 0
+                        ),
+                        unit_price_manual: Number(cruiseRow.unit_price || 0) > 0,
+                        category_prices_manual: categoryPricesManual,
+                        price_adult: categoryPricesManual ? Number(savedRoom.adult?.unit_price || 0) : 0,
+                        price_child: categoryPricesManual ? Number(savedRoom.child?.unit_price || 0) : 0,
+                        price_child_older: categoryPricesManual ? Number(savedRoom.child_older?.unit_price || 0) : 0,
+                        price_child_extra_bed: categoryPricesManual ? Number(savedRoom.child_extra_bed?.unit_price || 0) : 0,
+                        price_infant: categoryPricesManual ? Number(savedRoom.infant?.unit_price || 0) : 0,
+                        price_extra_bed: categoryPricesManual ? Number(savedRoom.extra_bed?.unit_price || 0) : 0,
+                        price_single: categoryPricesManual ? Number(savedRoom.single?.unit_price || 0) : 0,
+                        adult_count: cruiseRow.adult_count ?? 0,
+                        child_count: cruiseRow.child_count ?? 0,
+                        child_older_count: parsedChildOlderCounts[rowIndex] ?? 0,
+                        child_extra_bed_count: cruiseRow.child_extra_bed_count ?? 0,
+                        infant_count: cruiseRow.infant_count ?? 0,
+                        extra_bed_count: cruiseRow.extra_bed_count ?? 0,
+                        single_count: cruiseRow.single_count ?? 0,
+                        checkin: cruiseRow.checkin || '',
+                        room_total_price: cruiseRow.room_total_price || 0,
+                        room_price_code: cruiseRow.room_price_code || ''
+                    }));
+                })
                 // detail 없이 초기화 → DB 저장값(room_total_price) 그대로 유지
                 // 인원수 변경 시에는 handleRoomGuestFieldChange에서 재계산됨
             );
@@ -1149,7 +1210,7 @@ function CruiseReservationEditContent() {
                 room_price_code: room.room_price_code,
                 room_count: isCatherineHorizonCruise ? null : room.room_count,
                 guest_count: room.guest_count,
-                unit_price: room.unit_price || 0,
+                unit_price: room.unit_price_manual ? (room.unit_price || 0) : 0,
                 adult_count: room.adult_count,
                 child_count: (room.child_count || 0) + (room.child_older_count || 0),
                 child_extra_bed_count: room.child_extra_bed_count,
@@ -1240,39 +1301,34 @@ function CruiseReservationEditContent() {
 
             const roomBreakdowns = roomForms.map((room, index) => {
                 const detail = getRoomDetail(index);
-                const priceAdult = detail?.price_adult || detail?.price || 0;
-                const priceChild = detail?.price_child || 0;
-                const priceChildOlder = detail?.price_child_older || priceChild;
-                const priceInfant = detail?.price_infant || 0;
-                const priceExtraBed = detail?.price_extra_bed || 0;
-                const priceSingle = detail?.price_single || 0;
-                const priceChildExtraBed = detail?.price_child_extra_bed || 0;
+                const prices = getRoomCategoryPrices(room, detail);
 
-                const adultTotal = priceAdult * (room.adult_count || 0);
-                const childTotal = priceChild * (room.child_count || 0);
-                const childOlderTotal = priceChildOlder * (room.child_older_count || 0);
-                const infantTotal = priceInfant * (room.infant_count || 0);
-                const extraBedTotal = priceExtraBed * (room.extra_bed_count || 0);
-                const singleTotal = priceSingle * (room.single_count || 0);
-                const childExtraBedTotal = priceChildExtraBed * (room.child_extra_bed_count || 0);
+                const adultTotal = prices.price_adult * (room.adult_count || 0);
+                const childTotal = prices.price_child * (room.child_count || 0);
+                const childOlderTotal = prices.price_child_older * (room.child_older_count || 0);
+                const infantTotal = prices.price_infant * (room.infant_count || 0);
+                const extraBedTotal = prices.price_extra_bed * (room.extra_bed_count || 0);
+                const singleTotal = prices.price_single * (room.single_count || 0);
+                const childExtraBedTotal = prices.price_child_extra_bed * (room.child_extra_bed_count || 0);
 
                 return {
                     room_index: index + 1,
                     room_price_code: room.room_price_code,
                     room_count: isCatherineHorizonCruise ? null : room.room_count,
-                    unit_price: room.unit_price || 0,
+                    unit_price: room.unit_price_manual ? (room.unit_price || 0) : null,
+                    category_prices_manual: room.category_prices_manual,
                     checkin: room.checkin,
                     guest_count: room.guest_count,
                     cruise: detail?.cruise || null,
                     schedule: detail?.schedule || null,
                     room_type: detail?.room_type || null,
-                    adult: { unit_price: room.unit_price || priceAdult, count: room.adult_count || 0, total: adultTotal },
-                    child: { unit_price: priceChild, count: room.child_count || 0, total: childTotal },
-                    child_older: { unit_price: priceChildOlder, count: room.child_older_count || 0, total: childOlderTotal },
-                    infant: { unit_price: priceInfant, count: room.infant_count || 0, total: infantTotal },
-                    extra_bed: { unit_price: priceExtraBed, count: room.extra_bed_count || 0, total: extraBedTotal },
-                    single: { unit_price: priceSingle, count: room.single_count || 0, total: singleTotal },
-                    child_extra_bed: { unit_price: priceChildExtraBed, count: room.child_extra_bed_count || 0, total: childExtraBedTotal },
+                    adult: { unit_price: room.unit_price_manual ? (room.unit_price || 0) : prices.price_adult, count: room.adult_count || 0, total: adultTotal },
+                    child: { unit_price: prices.price_child, count: room.child_count || 0, total: childTotal },
+                    child_older: { unit_price: prices.price_child_older, count: room.child_older_count || 0, total: childOlderTotal },
+                    infant: { unit_price: prices.price_infant, count: room.infant_count || 0, total: infantTotal },
+                    extra_bed: { unit_price: prices.price_extra_bed, count: room.extra_bed_count || 0, total: extraBedTotal },
+                    single: { unit_price: prices.price_single, count: room.single_count || 0, total: singleTotal },
+                    child_extra_bed: { unit_price: prices.price_child_extra_bed, count: room.child_extra_bed_count || 0, total: childExtraBedTotal },
                     total: room.room_total_price || 0,
                 };
             });
@@ -1653,17 +1709,24 @@ function CruiseReservationEditContent() {
                                                     <label className="block text-xs font-medium text-gray-700 mb-1">객실 단가 (카테고리별)</label>
                                                     <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-xs">
                                                         {[
-                                                            { label: '성인', value: roomDetail?.price_adult || roomDetail?.price || 0 },
-                                                            { label: '아동(5~7)', value: roomDetail?.price_child || 0 },
-                                                            { label: '아동(8~11)', value: roomDetail?.price_child_older || roomDetail?.price_child || 0 },
-                                                            { label: '아동엑스트라', value: roomDetail?.price_child_extra_bed || 0 },
-                                                            { label: '유아', value: roomDetail?.price_infant || 0 },
-                                                            { label: '엑스트라', value: roomDetail?.price_extra_bed || 0 },
-                                                            { label: '싱글', value: roomDetail?.price_single || 0 },
-                                                        ].map(({ label, value }) => (
-                                                            <div key={label} className="bg-gray-100 px-2 py-1 rounded text-center">
-                                                                <div className="text-gray-500">{label}</div>
-                                                                <div className="font-semibold text-gray-900">{Number(value).toLocaleString()}동</div>
+                                                            { label: '성인', field: 'price_adult' },
+                                                            { label: '아동(5~7)', field: 'price_child' },
+                                                            { label: '아동(8~11)', field: 'price_child_older' },
+                                                            { label: '아동엑스트라', field: 'price_child_extra_bed' },
+                                                            { label: '유아', field: 'price_infant' },
+                                                            { label: '엑스트라', field: 'price_extra_bed' },
+                                                            { label: '싱글', field: 'price_single' },
+                                                        ].map(({ label, field }) => (
+                                                            <div key={label} className="bg-gray-100 px-2 py-1 rounded">
+                                                                <label className="block text-gray-500 text-center mb-1">{label}</label>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    value={Number((getRoomCategoryPrices(room, roomDetail) as any)[field] || 0)}
+                                                                    onChange={(e) => handleRoomCategoryPriceChange(roomIndex, field as any, parseInt(e.target.value) || 0)}
+                                                                    className="w-full rounded border border-gray-300 px-1 py-1 text-right text-xs font-semibold text-gray-900"
+                                                                />
+                                                                <div className="mt-1 text-right text-[11px] text-gray-500">동</div>
                                                             </div>
                                                         ))}
                                                     </div>

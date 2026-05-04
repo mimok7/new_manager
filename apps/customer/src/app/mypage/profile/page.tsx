@@ -62,6 +62,10 @@ export default function ProfilePage() {
     useLoadingTimeout(loading, setLoading, 12000);
 
     const handleGoHome = () => {
+        if (!isFormValid()) {
+            alert('모든 필수 필드를 정확히 입력해주세요.');
+            return;
+        }
         router.push('/mypage');
     };
 
@@ -384,8 +388,26 @@ export default function ProfilePage() {
         }
     };
 
+    // 필수 필드 모두 입력되었는지 확인
+    const isFormValid = (): boolean => {
+        if (!profile) return false;
+        if (!profile.email || profile.email.trim() === '') return false;
+        if (!profile.name || profile.name.trim() === '') return false;
+        if (!profile.english_name || profile.english_name.trim() === '') return false;
+        if (!profile.phone_number || profile.phone_number.trim() === '') return false;
+        // 휴대폰 번호 형식 검증 (- 제외한 숫자만, 10-11자리)
+        const phoneDigits = (profile.phone_number || '').replace(/\D/g, '');
+        if (phoneDigits.length < 10 || phoneDigits.length > 11) return false;
+        return true;
+    };
+
     const handleSave = async () => {
         if (!authUser || !profile) return;
+        if (!isFormValid()) {
+            alert('모든 필수 필드를 정확히 입력해주세요.');
+            return;
+        }
+
         setSaving(true);
         try {
             // users 레코드가 없을 수도 있으므로 upsert 사용 (id pk)
@@ -467,7 +489,12 @@ export default function ProfilePage() {
                 <button
                     type="button"
                     onClick={handleGoHome}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                    disabled={!isFormValid()}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                        !isFormValid()
+                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                            : 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
+                    }`}
                 >
                     <Home className="w-4 h-4" />
                     홈
@@ -486,22 +513,28 @@ export default function ProfilePage() {
                 <SectionBox title="👤 기본 정보">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">이메일</label>
+                            <label className="block text-sm text-gray-600 mb-1">
+                                이메일 <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="email"
                                 value={profile.email ?? ''}
                                 readOnly
+                                required
                                 className="w-full px-3 py-2 border border-gray-200 rounded bg-gray-50 text-gray-700 cursor-not-allowed"
                                 placeholder="email@example.com"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">이름</label>
+                            <label className="block text-sm text-gray-600 mb-1">
+                                이름 <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 value={profile.name ?? ''}
                                 onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-200 rounded"
+                                required
+                                className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="홍길동"
                                 lang="ko-KR"
                                 inputMode="text"
@@ -509,12 +542,15 @@ export default function ProfilePage() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">영문 이름</label>
+                            <label className="block text-sm text-gray-600 mb-1">
+                                영문 이름 <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 value={profile.english_name ?? ''}
                                 onChange={(e) => setProfile({ ...profile, english_name: sanitizeEnglishName(e.target.value) })}
-                                className="w-full px-3 py-2 border border-gray-200 rounded"
+                                required
+                                className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="HONG GILDONG"
                                 inputMode="text"
                             />
@@ -529,12 +565,15 @@ export default function ProfilePage() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">휴대폰 번호</label>
+                            <label className="block text-sm text-gray-600 mb-1">
+                                휴대폰 번호 <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="tel"
                                 value={profile.phone_number ?? ''}
                                 onChange={(e) => setProfile({ ...profile, phone_number: formatPhoneNumber(e.target.value) })}
-                                className="w-full px-3 py-2 border border-gray-200 rounded"
+                                required
+                                className="w-full px-3 py-2 border border-gray-200 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="- 없이 숫자만 입력하세요"
                                 inputMode="numeric"
                             />
@@ -740,15 +779,27 @@ export default function ProfilePage() {
                     </div>
                 </SectionBox>
 
-                <div className="flex justify-end">
-                    <button
-                        type="button"
-                        onClick={handleSave}
-                        disabled={saving}
-                        className={`px-6 py-2 rounded text-white ${saving ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'}`}
-                    >
-                        {saving ? '저장 중...' : '저장하기'}
-                    </button>
+                <div className="flex flex-col gap-3">
+                    {!isFormValid() && (
+                        <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+                            ⚠️ <strong>필수 입력 필드:</strong> 이메일, 이름, 영문이름, 휴대폰 번호를 모두 입력해주세요.
+                        </div>
+                    )}
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            onClick={handleSave}
+                            disabled={saving || !isFormValid()}
+                            className={`px-6 py-2 rounded text-white transition-colors ${
+                                saving || !isFormValid()
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-blue-500 hover:bg-blue-600 cursor-pointer'
+                            }`}
+                            title={!isFormValid() ? '모든 필수 필드를 입력한 후 저장하세요' : ''}
+                        >
+                            {saving ? '저장 중...' : '저장하기'}
+                        </button>
+                    </div>
                 </div>
             </div>
             {previewImage && (

@@ -582,57 +582,7 @@ function ReservationEditContent() {
         }
     };
 
-    // 견적 그룹 전체 삭제 (모든 서비스 + 견적까지)
-    const handleDeleteAllInGroup = async (group: ReservationSummary) => {
-        const reIds = group.services.map(s => s.re_id).filter(Boolean) as string[];
-        const quoteId = group.re_quote_id;
-        const label = group.users?.name || group.quote?.title || '이 견적 그룹';
-        if (reIds.length === 0 && !quoteId) return;
 
-        const confirmed = window.confirm(
-            `【전체 삭제】\n${label}\n견적ID: ${quoteId || '-'}\n\n총 ${reIds.length}건의 예약과 모든 서비스 자식 테이블, 연결된 견적까지 모두 삭제됩니다.\n되돌릴 수 없습니다. 진행할까요?`
-        );
-        if (!confirmed) return;
-
-        const lockKey = 'group:' + (quoteId || reIds[0]);
-        setDeleting(lockKey);
-        try {
-            const childTables = [
-                'reservation_cruise',
-                'reservation_cruise_car',
-                'reservation_car_sht',
-                'reservation_airport',
-                'reservation_hotel',
-                'reservation_tour',
-                'reservation_rentcar',
-                'reservation_package',
-            ];
-            if (reIds.length > 0) {
-                await Promise.all(
-                    childTables.map(t =>
-                        supabase.from(t).delete().in('reservation_id', reIds)
-                            .then(({ error: e }) => { if (e) console.warn(`자식 ${t} 삭제 경고:`, e.message); })
-                    )
-                );
-                const { error } = await supabase.from('reservation').delete().in('re_id', reIds);
-                if (error) throw error;
-            }
-
-            if (quoteId) {
-                await supabase.from('quote_item').delete().eq('quote_id', quoteId);
-                const { error: qErr } = await supabase.from('quote').delete().eq('id', quoteId);
-                if (qErr) console.warn('견적 삭제 실패:', qErr.message);
-            }
-
-            alert('견적 그룹 전체가 삭제되었습니다.');
-            await loadReservations(searchTerm);
-        } catch (error: any) {
-            console.error('전체 삭제 실패:', error);
-            alert('전체 삭제 실패: ' + (error.message || '알 수 없는 오류'));
-        } finally {
-            setDeleting(null);
-        }
-    };
 
     const filteredReservations = reservations;
 
@@ -1008,15 +958,6 @@ function ReservationEditContent() {
                                                     >
                                                         <Plus className="w-3 h-3" />
                                                         새 예약 추가
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteAllInGroup(reservation)}
-                                                        disabled={deleting === ('group:' + (reservation.re_quote_id || reservation.services[0]?.re_id))}
-                                                        className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
-                                                        title="이 견적 그룹의 모든 예약/서비스/견적을 삭제"
-                                                    >
-                                                        <Trash2 className="w-3 h-3" />
-                                                        전체 삭제
                                                     </button>
                                                 </div>
                                                 {[...reservation.services]
