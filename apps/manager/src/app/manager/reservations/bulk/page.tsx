@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import ManagerLayout from '@/components/ManagerLayout';
 import ReservationDetailModalSwitch from '@/components/ReservationDetailModalSwitch';
+import PackageDetailModalContainer from '@/components/PackageDetailModalContainer';
 import {
     CheckSquare,
     Square,
@@ -101,6 +102,8 @@ export default function BulkReservationPage() {
     const [searchTrigger, setSearchTrigger] = useState<number>(0); // 검색 버튼 클릭용
     const [showBulkActionPanel, setShowBulkActionPanel] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
+    const [packageModalUserId, setPackageModalUserId] = useState<string | null>(null);
     const [modalUserInfo, setModalUserInfo] = useState<any>(null);
     const [modalUserServices, setModalUserServices] = useState<any[]>([]);
     const [modalLoading, setModalLoading] = useState(false);
@@ -416,6 +419,15 @@ export default function BulkReservationPage() {
     };
 
     const handleViewDetails = async (reservation: ReservationItem) => {
+        // 패키지 예약이면 PackageDetailModalContainer 사용
+        if (reservation.services?.some((s: ServiceReservation) => s.re_type === 'package')) {
+            const userId = reservation.users?.id;
+            if (userId) {
+                setPackageModalUserId(userId);
+                setIsPackageModalOpen(true);
+                return;
+            }
+        }
         // 🔧 이전 모달 데이터 초기화 (stale 데이터 표시 방지)
         setReservationDetails(null);
         setModalUserServices([]);
@@ -1905,6 +1917,12 @@ export default function BulkReservationPage() {
                 </div>
 
                 {/* 상세보기 모달 */}
+                <PackageDetailModalContainer
+                    userId={packageModalUserId}
+                    isOpen={isPackageModalOpen}
+                    onClose={() => { setIsPackageModalOpen(false); setPackageModalUserId(null); }}
+                />
+
                 {isModalOpen && modalUserInfo && (
                     <ReservationDetailModalSwitch
                         key={modalKey}

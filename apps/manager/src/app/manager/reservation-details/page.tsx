@@ -6,7 +6,7 @@ import ManagerLayout from '../../../components/ManagerLayout';
 import supabase from '../../../lib/supabase';
 import { fetchServiceByReservationIds } from '../../../lib/fetchInBatches';
 import { buildServiceMap, buildCruiseMap } from '../../../lib/serviceMaps';
-import UserReservationDetailModal from '../../../components/UserReservationDetailModal';
+import ReservationDetailModalSwitch from '../../../components/ReservationDetailModalSwitch';
 import {
     Calendar,
     Ship,
@@ -467,7 +467,7 @@ export default function ManagerReservationDetailsPage() {
             // 2. 사용자의 모든 예약 ID 조회
             const { data: reservations, error: resError } = await supabase
                 .from('reservation')
-                .select('re_id, re_type, re_status, re_created_at')
+                .select('re_id, re_type, re_status, re_created_at, total_amount, price_breakdown, re_adult_count, re_child_count, re_infant_count, package_id')
                 .eq('re_user_id', userId)
                 .order('re_created_at', { ascending: false });
 
@@ -513,6 +513,16 @@ export default function ManagerReservationDetailsPage() {
             const reservationMap = new Map(reservations.map((r: any) => [r.re_id, r]));
 
             const allServices = [
+                ...reservations.filter((r: any) => r.re_type === 'package').map((r: any) => ({
+                    ...r,
+                    serviceType: 'package',
+                    reservation_id: r.re_id,
+                    status: r.re_status,
+                    totalPrice: r.total_amount,
+                    adult: r.re_adult_count || 0,
+                    child: r.re_child_count || 0,
+                    infant: r.re_infant_count || 0,
+                })),
                 ...(cruiseRes.data || cruiseRes || []).map((r: any) => {
                     const info = roomPriceMap.get(r.room_price_code);
                     return {
@@ -1238,7 +1248,7 @@ export default function ManagerReservationDetailsPage() {
                 </div>
 
                 {/* DB 예약 상세 모달 */}
-                <UserReservationDetailModal
+                <ReservationDetailModalSwitch
                     isOpen={isDBModalOpen}
                     onClose={() => setIsDBModalOpen(false)}
                     userInfo={dbUserInfo}

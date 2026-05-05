@@ -28,7 +28,8 @@ import {
   ChevronRight,
   ChevronLeft
 } from 'lucide-react';
-import UserReservationDetailModal from '../../../components/UserReservationDetailModal';
+import ReservationDetailModalSwitch from '../../../components/ReservationDetailModalSwitch';
+import PackageDetailModalContainer from '../../../components/PackageDetailModalContainer';
 
 interface ReservationData {
   re_id: string;
@@ -103,6 +104,10 @@ export default function ManagerReservationsPage() {
   const [dbUserInfo, setDbUserInfo] = useState<any>(null);
   const [dbUserServices, setDbUserServices] = useState<any[]>([]);
   const [dbModalLoading, setDbModalLoading] = useState(false);
+
+  // 패키지 고객 전용 모달 상태
+  const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
+  const [packageModalUserId, setPackageModalUserId] = useState<string | null>(null);
 
   // ✅ 검색 기능
   const [searchName, setSearchName] = useState('');
@@ -593,7 +598,13 @@ export default function ManagerReservationsPage() {
   const openUserModal = (userGroup: any) => {
     // ✅ 고객 카드 클릭 시 모든 예약 조회
     if (userGroup.userInfo?.id) {
-      loadAllUserReservations(userGroup.userInfo.id);
+      const hasPackage = userGroup.reservations.some((r: any) => r.re_type === 'package');
+      if (hasPackage) {
+        setPackageModalUserId(userGroup.userInfo.id);
+        setIsPackageModalOpen(true);
+      } else {
+        loadAllUserReservations(userGroup.userInfo.id);
+      }
     }
   };
 
@@ -693,6 +704,16 @@ export default function ManagerReservationsPage() {
       const reservationMap = new Map(reservations.map((r: any) => [r.re_id, r]));
 
       const allServices = [
+        ...reservations.filter((r: any) => r.re_type === 'package').map((r: any) => ({
+          ...r,
+          serviceType: 'package',
+          reservation_id: r.re_id,
+          status: r.re_status,
+          totalPrice: r.total_amount,
+          adult: r.re_adult_count || 0,
+          child: r.re_child_count || 0,
+          infant: r.re_infant_count || 0,
+        })),
         ...(cruiseRes as any[] || []).map((r: any) => {
           const info: any = roomPriceMap.get(r.room_price_code);
           const reservationInfo: any = reservationMap.get(r.reservation_id) || {};
@@ -1274,12 +1295,19 @@ export default function ManagerReservationsPage() {
         )}
 
         {/* DB 예약 상세 모달 */}
-        <UserReservationDetailModal
+        <ReservationDetailModalSwitch
           isOpen={isDBModalOpen}
           onClose={() => setIsDBModalOpen(false)}
           userInfo={dbUserInfo}
           allUserServices={dbUserServices}
           loading={dbModalLoading}
+        />
+
+        {/* 패키지 고객 전용 모달 */}
+        <PackageDetailModalContainer
+          userId={packageModalUserId}
+          isOpen={isPackageModalOpen}
+          onClose={() => { setIsPackageModalOpen(false); setPackageModalUserId(null); }}
         />
 
 

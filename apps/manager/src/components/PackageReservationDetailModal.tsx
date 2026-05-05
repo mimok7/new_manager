@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     X,
     Users,
@@ -16,6 +16,7 @@ import {
     Car,
     Clock,
 } from 'lucide-react';
+import supabase from '@/lib/supabase';
 
 interface PackageReservationDetailModalProps {
     isOpen: boolean;
@@ -112,8 +113,26 @@ function isUnknownTourService(service: any): boolean {
 
 function formatAmount(value: any): string {
     const amount = Number(value || 0);
-    if (!amount) return '금액 확인 중';
-    return `${amount.toLocaleString()}동`;
+    const safeAmount = Number.isFinite(amount) ? amount : 0;
+    return `${safeAmount.toLocaleString()}동`;
+}
+
+function firstFilled(...values: any[]): any {
+    return values.find((value) => value !== null && value !== undefined && value !== '');
+}
+
+function toAmount(...values: any[]): number {
+    const value = firstFilled(...values);
+    const parsed = Number(value || 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeServiceType(type: any): string {
+    const raw = String(type || '').trim();
+    const withoutPackage = raw.startsWith('package_') ? raw.replace(/^package_/, '') : raw;
+    if (withoutPackage === 'car_sht' || withoutPackage === 'reservation_car_sht') return 'sht';
+    if (withoutPackage === 'car') return 'vehicle';
+    return withoutPackage || 'service';
 }
 
 function formatNote(value: any): string {
@@ -166,10 +185,15 @@ function getServiceDateValue(service: any): string {
     return String(
         service.checkin ||
         service.checkinDate ||
+        service.checkin_date ||
         service.tourDate ||
+        service.usage_date ||
         service.usageDate ||
         service.ra_datetime ||
+        service.pickup_datetime ||
         service.pickupDatetime ||
+        service.return_datetime ||
+        service.returnDatetime ||
         service.re_created_at ||
         ''
     ).trim();
@@ -277,12 +301,126 @@ function getServiceLabel(type: string) {
         airport: '공항',
         hotel: '호텔',
         tour: '투어',
+        ticket: '티켓',
         rentcar: '렌터카',
         vehicle: '크루즈 차량',
         car: '크루즈 차량',
         sht: '스하차량',
     };
     return map[type] || type;
+}
+
+function normalizePackageRoot(pkg: any): any {
+    const service = pkg?.service || {};
+    const packageMaster = pkg?.package_master || service?.package_master || {};
+    const adultCount = toAmount(pkg?.re_adult_count, pkg?.adult_count, pkg?.adult, service?.re_adult_count);
+    const childExtraBed = toAmount(pkg?.child_extra_bed);
+    const childNoExtraBed = toAmount(pkg?.child_no_extra_bed);
+    const infantTour = toAmount(pkg?.infant_tour);
+    const infantExtraBed = toAmount(pkg?.infant_extra_bed);
+    const infantSeat = toAmount(pkg?.infant_seat);
+    const adultPrice = toAmount(pkg?.adult_price, packageMaster?.base_price);
+    const childExtraBedPrice = toAmount(pkg?.child_extra_bed_price, packageMaster?.price_child_extra_bed);
+    const childNoExtraBedPrice = toAmount(pkg?.child_no_extra_bed_price, packageMaster?.price_child_no_extra_bed);
+    const infantTourPrice = toAmount(pkg?.infant_tour_price, packageMaster?.price_infant_tour);
+    const infantExtraBedPrice = toAmount(pkg?.infant_extra_bed_price, packageMaster?.price_infant_extra_bed);
+    const infantSeatPrice = toAmount(pkg?.infant_seat_price, packageMaster?.price_infant_seat);
+    const explicitTotalPrice = toAmount(pkg?.total_price, pkg?.total_amount, pkg?.totalPrice, service?.total_amount, service?.totalPrice);
+    const calculatedPackagePrice =
+        (adultCount * adultPrice) +
+        (childExtraBed * childExtraBedPrice) +
+        (childNoExtraBed * childNoExtraBedPrice) +
+        (infantTour * infantTourPrice) +
+        (infantExtraBed * infantExtraBedPrice) +
+        (infantSeat * infantSeatPrice);
+    return {
+        ...pkg,
+        serviceType: 'package',
+        re_id: firstFilled(pkg?.re_id, pkg?.reservation_id, service?.re_id),
+        reservation_id: firstFilled(pkg?.reservation_id, pkg?.re_id, service?.re_id),
+        re_status: firstFilled(pkg?.re_status, pkg?.status, service?.re_status, service?.status),
+        re_created_at: firstFilled(pkg?.re_created_at, service?.re_created_at, pkg?.created_at),
+        package_name: firstFilled(pkg?.package_name, packageMaster?.name, pkg?.name),
+        package_code: firstFilled(pkg?.package_code, packageMaster?.package_code),
+        package_description: firstFilled(pkg?.package_description, packageMaster?.description, pkg?.description),
+        packageTotalAmount: explicitTotalPrice > 0 ? explicitTotalPrice : calculatedPackagePrice,
+        adultCount,
+        childCount: toAmount(pkg?.re_child_count, pkg?.child_count, pkg?.child, service?.re_child_count),
+        infantCount: toAmount(pkg?.re_infant_count, pkg?.infant_count, pkg?.infant, service?.re_infant_count),
+        childExtraBed,
+        childNoExtraBed,
+        infantFree: toAmount(pkg?.infant_free),
+        infantTour,
+        infantExtraBed,
+        infantSeat,
+        adultPrice,
+        childExtraBedPrice,
+        childNoExtraBedPrice,
+        infantTourPrice,
+        infantExtraBedPrice,
+        infantSeatPrice,
+        airportVehicle: firstFilled(pkg?.airport_vehicle),
+        ninhBinhVehicle: firstFilled(pkg?.ninh_binh_vehicle),
+        hanoiVehicle: firstFilled(pkg?.hanoi_vehicle),
+        cruiseVehicle: firstFilled(pkg?.cruise_vehicle),
+        shtPickupVehicle: firstFilled(pkg?.sht_pickup_vehicle),
+        shtPickupSeat: firstFilled(pkg?.sht_pickup_seat),
+        shtDropoffVehicle: firstFilled(pkg?.sht_dropoff_vehicle),
+        shtDropoffSeat: firstFilled(pkg?.sht_dropoff_seat),
+    };
+}
+
+function normalizePackageService(service: any): any {
+    const base = service?.service || {};
+    const type = normalizeServiceType(service?.serviceType || service?.re_type || base?.re_type);
+    if (type === 'package') return normalizePackageRoot(service);
+
+    const roomInfo = service?.roomPriceInfo || service?.room_price_info || {};
+    const airportInfo = service?.airportPriceInfo || service?.airport_price_info || {};
+    const hotelInfo = service?.hotelPriceInfo || service?.hotel_price_info || {};
+    const tourInfo = service?.tourPriceInfo || service?.tour_price_info || {};
+    const rentInfo = service?.rentcarPriceInfo || service?.rentcar_price_info || service?.carPriceInfo || {};
+
+    return {
+        ...service,
+        serviceType: type,
+        isPackageService: true,
+        re_status: firstFilled(service?.re_status, service?.status, base?.re_status, base?.status),
+        re_created_at: firstFilled(service?.re_created_at, base?.re_created_at),
+        checkin: firstFilled(service?.checkin, service?.checkin_date),
+        checkinDate: firstFilled(service?.checkinDate, service?.checkin_date),
+        tourDate: firstFilled(service?.tourDate, service?.usage_date, service?.usageDate),
+        usageDate: firstFilled(service?.usageDate, service?.usage_date, service?.pickup_datetime),
+        pickupDatetime: firstFilled(service?.pickupDatetime, service?.pickup_datetime, service?.ra_datetime),
+        returnDatetime: firstFilled(service?.returnDatetime, service?.return_datetime),
+        cruise: firstFilled(service?.cruise, service?.cruiseName, roomInfo?.cruise_name),
+        cruiseName: firstFilled(service?.cruiseName, service?.cruise, roomInfo?.cruise_name),
+        roomType: firstFilled(service?.roomType, roomInfo?.room_type, service?.room_price_code, hotelInfo?.room_name, service?.hotel_price_code),
+        hotelName: firstFilled(service?.hotelName, hotelInfo?.hotel_name, service?.hotel_category),
+        tourName: firstFilled(service?.tourName, service?.tour_name, tourInfo?.tour?.tour_name, service?.tour_price_code),
+        category: firstFilled(service?.category, service?.way_type, service?.sht_category, airportInfo?.service_type, rentInfo?.way_type),
+        route: firstFilled(service?.route, airportInfo?.route, rentInfo?.route),
+        carType: firstFilled(service?.carType, service?.vehicle_type, airportInfo?.vehicle_type, rentInfo?.vehicle_type, service?.rentcar_price_code),
+        airportName: firstFilled(service?.airportName, service?.ra_airport_location, service?.airport_location),
+        pickupLocation: firstFilled(service?.pickupLocation, service?.pickup_location),
+        dropoffLocation: firstFilled(service?.dropoffLocation, service?.dropoff_location, service?.destination),
+        flightNumber: firstFilled(service?.flightNumber, service?.ra_flight_number),
+        passengerCount: firstFilled(service?.passengerCount, service?.ra_passenger_count, service?.passenger_count),
+        carCount: firstFilled(service?.carCount, service?.ra_car_count, service?.car_count),
+        luggageCount: firstFilled(service?.luggageCount, service?.ra_luggage_count, service?.luggage_count),
+        guestCount: firstFilled(service?.guestCount, service?.guest_count),
+        tourCapacity: firstFilled(service?.tourCapacity, service?.tour_capacity),
+        vehicleNumber: firstFilled(service?.vehicleNumber, service?.vehicle_number),
+        seatNumber: firstFilled(service?.seatNumber, service?.seat_number),
+        driverName: firstFilled(service?.driverName, service?.driver_name),
+        dispatchCode: firstFilled(service?.dispatchCode, service?.dispatch_code),
+        adult: toAmount(service?.adult, service?.adult_count, service?.guest_count, base?.re_adult_count),
+        child: toAmount(service?.child, service?.child_count, base?.re_child_count),
+        infant: toAmount(service?.infant, service?.infant_count, base?.re_infant_count),
+        unitAmount: toAmount(service?.unitPrice, service?.unit_price, airportInfo?.price, hotelInfo?.base_price, tourInfo?.price_per_person, rentInfo?.price),
+        serviceTotalAmount: toAmount(service?.totalPrice, service?.total_price, service?.room_total_price, service?.car_total_price, service?.total_amount),
+        note: firstFilled(service?.note, service?.request_note),
+    };
 }
 
 export default function PackageReservationDetailModal({
@@ -292,15 +430,110 @@ export default function PackageReservationDetailModal({
     allUserServices,
     loading,
 }: PackageReservationDetailModalProps) {
+    const [packageDetailMap, setPackageDetailMap] = useState<Record<string, any>>({});
+
+    const packageRootIds = useMemo(() => {
+        const list = Array.isArray(allUserServices) ? allUserServices : [];
+        return Array.from(new Set(
+            list
+                .filter((s) => s?.serviceType === 'package' || s?.re_type === 'package')
+                .map((s) => String(s?.reservation_id || s?.re_id || '').trim())
+                .filter(Boolean)
+        )).sort();
+    }, [allUserServices]);
+
+    useEffect(() => {
+        if (!isOpen || packageRootIds.length === 0) {
+            setPackageDetailMap({});
+            return;
+        }
+
+        let cancelled = false;
+        const loadPackageDetails = async () => {
+            const { data: packageDetails, error } = await supabase
+                .from('reservation_package')
+                .select('*')
+                .in('reservation_id', packageRootIds);
+
+            if (cancelled || error) return;
+
+            const packageIds = Array.from(new Set(
+                [
+                    ...(Array.isArray(allUserServices) ? allUserServices : []).map((s: any) => s?.package_id),
+                    ...(packageDetails || []).map((detail: any) => detail?.package_id),
+                ].filter(Boolean)
+            ));
+
+            const { data: packageMasters } = packageIds.length > 0
+                ? await supabase
+                    .from('package_master')
+                    .select('id, name, package_code, description, base_price, price_child_extra_bed, price_child_no_extra_bed, price_infant_tour, price_infant_extra_bed, price_infant_seat')
+                    .in('id', packageIds)
+                : { data: [] as any[] };
+
+            if (cancelled) return;
+
+            const masterMap = new Map((packageMasters || []).map((pkg: any) => [pkg.id, pkg]));
+            const nextMap: Record<string, any> = {};
+
+            (packageDetails || []).forEach((detail: any) => {
+                const reservationId = String(detail?.reservation_id || '').trim();
+                if (!reservationId) return;
+                nextMap[reservationId] = {
+                    ...detail,
+                    package_master: masterMap.get(detail?.package_id),
+                };
+            });
+
+            packageRootIds.forEach((reservationId) => {
+                const root = (Array.isArray(allUserServices) ? allUserServices : []).find((s: any) => String(s?.reservation_id || s?.re_id || '').trim() === reservationId);
+                if (!root) return;
+                nextMap[reservationId] = {
+                    ...(nextMap[reservationId] || {}),
+                    package_master: nextMap[reservationId]?.package_master || masterMap.get(root?.package_id),
+                };
+            });
+
+            setPackageDetailMap(nextMap);
+        };
+
+        loadPackageDetails();
+        return () => {
+            cancelled = true;
+        };
+    }, [allUserServices, isOpen, packageRootIds]);
+
     const filteredServices = useMemo(() => {
         const list = Array.isArray(allUserServices) ? allUserServices : [];
-        const hasPackageScoped = list.some((s) => s?.serviceType === 'package' || s?.isPackageService);
-        return hasPackageScoped ? list.filter((s) => s?.serviceType === 'package' || s?.isPackageService) : list;
+        const packageReservationIds = new Set(
+            list
+                .filter((s) => s?.serviceType === 'package' || s?.re_type === 'package')
+                .map((s) => String(s?.reservation_id || s?.re_id || '').trim())
+                .filter(Boolean)
+        );
+        const hasPackageScoped = packageReservationIds.size > 0 || list.some((s) => s?.isPackageService);
+        const scoped = hasPackageScoped
+            ? list.filter((s) => {
+                const reservationId = String(s?.reservation_id || s?.re_id || '').trim();
+                return s?.serviceType === 'package' || s?.re_type === 'package' || s?.isPackageService || packageReservationIds.has(reservationId);
+            })
+            : list;
+        return scoped.map(normalizePackageService);
     }, [allUserServices]);
 
     const packageRoots = useMemo(
-        () => filteredServices.filter((s) => s?.serviceType === 'package'),
-        [filteredServices]
+        () => filteredServices
+            .filter((s) => s?.serviceType === 'package')
+            .map((pkg) => {
+                const reservationId = String(pkg?.reservation_id || pkg?.re_id || '').trim();
+                const detail = reservationId ? packageDetailMap[reservationId] : null;
+                return normalizePackageRoot({
+                    ...(detail || {}),
+                    ...pkg,
+                    package_master: pkg?.package_master || detail?.package_master,
+                });
+            }),
+        [filteredServices, packageDetailMap]
     );
 
     const packageRootRows = useMemo(() => {
@@ -313,21 +546,40 @@ export default function PackageReservationDetailModal({
     }, [packageRoots]);
 
     const packageServices = useMemo(() => {
-        const nonPackage = filteredServices.filter((s) => s?.serviceType !== 'package' && !isUnknownTourService(s));
+        const nonPackage = filteredServices.filter((s) => s?.serviceType !== 'package');
 
-        // 동일 투어 중복 제거
-        const tourSeen = new Set<string>();
+        // 모든 서비스의 중복 제거 (reservation_id + serviceType + 주요 식별자 조합)
+        const seen = new Set<string>();
         const deduped = nonPackage.filter((s) => {
-            if (s?.serviceType !== 'tour') return true;
-            const rawName = getTourDisplayName(s);
-            const key = [
-                String(s?.tourDate || ''),
-                rawName,
-                String(s?.pickupLocation || s?.pickup_location || ''),
-                String(s?.dropoffLocation || s?.destination || s?.dropoff_location || ''),
-            ].join('|');
-            if (tourSeen.has(key)) return false;
-            tourSeen.add(key);
+            const reservationId = String(s?.reservation_id || s?.re_id || '');
+            const serviceType = String(s?.serviceType || '');
+            
+            // 각 서비스 타입별 고유 식별자 생성
+            let uniqueKey = `${reservationId}|${serviceType}`;
+            
+            if (serviceType === 'tour') {
+                // 투어: 날짜 + 투어명 + 픽업/드롭
+                const rawName = getTourDisplayName(s);
+                uniqueKey += `|${String(s?.tourDate || '')}|${rawName}|${String(s?.pickupLocation || s?.pickup_location || '')}|${String(s?.dropoffLocation || s?.destination || s?.dropoff_location || '')}`;
+            } else if (serviceType === 'airport') {
+                // 공항: 날짜 + 구분 (픽업/샌딩)
+                uniqueKey += `|${String(s?.ra_datetime || '')}|${String(s?.category || s?.way_type || '')}`;
+            } else if (serviceType === 'cruise') {
+                // 크루즈: 체크인 날짜
+                uniqueKey += `|${String(s?.checkin || '')}`;
+            } else if (serviceType === 'hotel') {
+                // 호텔: 체크인 날짜 + 호텔명
+                uniqueKey += `|${String(s?.checkinDate || '')}|${String(s?.hotelName || '')}`;
+            } else if (serviceType === 'rentcar') {
+                // 렌트카: 픽업 날짜시간
+                uniqueKey += `|${String(s?.pickupDatetime || '')}`;
+            } else if (serviceType === 'sht') {
+                // 스하: 사용 날짜 + 분류
+                uniqueKey += `|${String(s?.usageDate || '')}|${String(s?.category || '')}`;
+            }
+            
+            if (seen.has(uniqueKey)) return false;
+            seen.add(uniqueKey);
             return true;
         });
 
@@ -355,9 +607,11 @@ export default function PackageReservationDetailModal({
     }, [filteredServices]);
 
     const totalAmount = useMemo(
-        () => packageRootRows.reduce((sum, p) => sum + Number(p?.total_amount || p?.totalPrice || 0), 0),
+        () => packageRootRows.reduce((sum, p) => sum + Number(p?.packageTotalAmount || 0), 0),
         [packageRootRows]
     );
+
+    const displayTotalAmount = totalAmount;
 
     if (!isOpen) return null;
 
@@ -408,7 +662,7 @@ export default function PackageReservationDetailModal({
                                 </div>
                                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
                                     <div className="text-xs text-emerald-700">패키지 총액 합계 (예약 단위 단일요금)</div>
-                                    <div className="text-xl font-bold text-emerald-900">{Number(totalAmount || 0).toLocaleString()}동</div>
+                                    <div className="text-xl font-bold text-emerald-900">{formatAmount(displayTotalAmount)}</div>
                                 </div>
                             </div>
 
@@ -425,21 +679,63 @@ export default function PackageReservationDetailModal({
                                             </div>
                                             <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
                                                 <div>예약일: {formatKst(pkg.re_created_at || pkg.service?.re_created_at)}</div>
-                                                <div>인원: 성인 {pkg.re_adult_count || 0}, 아동 {pkg.re_child_count || 0}, 유아 {pkg.re_infant_count || 0}</div>
-                                                <div className="font-semibold text-emerald-700">총액 (단일요금): {formatAmount(pkg.total_amount || pkg.totalPrice)}</div>
+                                                <div>인원: 성인 {pkg.adultCount || 0}, 아동 {pkg.childCount || 0}, 유아 {pkg.infantCount || 0}</div>
+                                                <div className="font-semibold text-emerald-700">총액 (단일요금): {formatAmount(pkg.packageTotalAmount)}</div>
                                             </div>
-                                            {(pkg.child_extra_bed != null || pkg.child_no_extra_bed != null || pkg.infant_free != null || pkg.infant_tour != null || pkg.infant_extra_bed != null || pkg.infant_seat != null) && (
-                                                <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700 bg-white border border-indigo-100 rounded p-2">
-                                                    <div>아동: 엑스트라베드 {pkg.child_extra_bed || 0}, 베드없음 {pkg.child_no_extra_bed || 0}</div>
-                                                    <div>유아: 무료 {pkg.infant_free || 0}, 투어 {pkg.infant_tour || 0}, 엑스트라베드 {pkg.infant_extra_bed || 0}, 좌석 {pkg.infant_seat || 0}</div>
-                                                    <div>공항 차량: {humanizeText(pkg.airport_vehicle, '미정')}</div>
-                                                    <div>닌빈 차량: {humanizeText(pkg.ninh_binh_vehicle, '미정')}</div>
-                                                    <div>하노이 차량: {humanizeText(pkg.hanoi_vehicle, '미정')}</div>
-                                                    <div>크루즈 차량: {humanizeText(pkg.cruise_vehicle, '미정')}</div>
-                                                    <div>스하 픽업: {humanizeText(pkg.sht_pickup_vehicle, '미정')} / {humanizeText(pkg.sht_pickup_seat, '좌석 미정')}</div>
-                                                    <div>스하 드롭: {humanizeText(pkg.sht_dropoff_vehicle, '미정')} / {humanizeText(pkg.sht_dropoff_seat, '좌석 미정')}</div>
+                                            {/* 단가 × 수량 = 합계 */}
+                                            <div className="mt-2 bg-white border border-indigo-100 rounded p-2 text-xs space-y-1">
+                                                <div className="font-semibold text-gray-500 mb-1">단가 × 수량 = 합계</div>
+                                                {pkg.adultCount > 0 && pkg.adultPrice > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">성인 {pkg.adultPrice.toLocaleString()}동 × {pkg.adultCount}명</span>
+                                                        <span className="font-medium text-gray-800">{(pkg.adultPrice * pkg.adultCount).toLocaleString()}동</span>
+                                                    </div>
+                                                )}
+                                                {pkg.childExtraBed > 0 && pkg.childExtraBedPrice > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">아동(엑베) {pkg.childExtraBedPrice.toLocaleString()}동 × {pkg.childExtraBed}명</span>
+                                                        <span className="font-medium text-gray-800">{(pkg.childExtraBedPrice * pkg.childExtraBed).toLocaleString()}동</span>
+                                                    </div>
+                                                )}
+                                                {pkg.childNoExtraBed > 0 && pkg.childNoExtraBedPrice > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">아동(베드없음) {pkg.childNoExtraBedPrice.toLocaleString()}동 × {pkg.childNoExtraBed}명</span>
+                                                        <span className="font-medium text-gray-800">{(pkg.childNoExtraBedPrice * pkg.childNoExtraBed).toLocaleString()}동</span>
+                                                    </div>
+                                                )}
+                                                {pkg.infantTour > 0 && pkg.infantTourPrice > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">유아(투어) {pkg.infantTourPrice.toLocaleString()}동 × {pkg.infantTour}명</span>
+                                                        <span className="font-medium text-gray-800">{(pkg.infantTourPrice * pkg.infantTour).toLocaleString()}동</span>
+                                                    </div>
+                                                )}
+                                                {pkg.infantExtraBed > 0 && pkg.infantExtraBedPrice > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">유아(엑베) {pkg.infantExtraBedPrice.toLocaleString()}동 × {pkg.infantExtraBed}명</span>
+                                                        <span className="font-medium text-gray-800">{(pkg.infantExtraBedPrice * pkg.infantExtraBed).toLocaleString()}동</span>
+                                                    </div>
+                                                )}
+                                                {pkg.infantSeat > 0 && pkg.infantSeatPrice > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">유아(좌석) {pkg.infantSeatPrice.toLocaleString()}동 × {pkg.infantSeat}명</span>
+                                                        <span className="font-medium text-gray-800">{(pkg.infantSeatPrice * pkg.infantSeat).toLocaleString()}동</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-between pt-1 border-t border-indigo-100 font-semibold text-emerald-700">
+                                                    <span>합계</span>
+                                                    <span>{formatAmount(pkg.packageTotalAmount)}</span>
                                                 </div>
-                                            )}
+                                            </div>
+                                            <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700 bg-white border border-indigo-100 rounded p-2">
+                                                <div>아동: 엑스트라베드 {pkg.childExtraBed || 0}, 베드없음 {pkg.childNoExtraBed || 0}</div>
+                                                <div>유아: 무료 {pkg.infantFree || 0}, 투어 {pkg.infantTour || 0}, 엑스트라베드 {pkg.infantExtraBed || 0}, 좌석 {pkg.infantSeat || 0}</div>
+                                                <div>공항 차량: {humanizeText(pkg.airportVehicle, '미정')}</div>
+                                                <div>닌빈 차량: {humanizeText(pkg.ninhBinhVehicle, '미정')}</div>
+                                                <div>하노이 차량: {humanizeText(pkg.hanoiVehicle, '미정')}</div>
+                                                <div>크루즈 차량: {humanizeText(pkg.cruiseVehicle, '미정')}</div>
+                                                <div>스하 픽업: {humanizeText(pkg.shtPickupVehicle, '미정')} / {humanizeText(pkg.shtPickupSeat, '좌석 미정')}</div>
+                                                <div>스하 드롭: {humanizeText(pkg.shtDropoffVehicle, '미정')} / {humanizeText(pkg.shtDropoffSeat, '좌석 미정')}</div>
+                                            </div>
                                             {pkg.package_description && (
                                                 <div className="mt-2 text-xs text-gray-600 bg-white border border-gray-200 rounded p-2 whitespace-pre-line">
                                                     {humanizeText(pkg.package_description)}
@@ -463,8 +759,8 @@ export default function PackageReservationDetailModal({
                                     const cruiseNameValue = cruiseFromNote.cruiseName || service.cruiseName || service.cruise;
                                     const roomTypeValue = cruiseFromNote.roomType || service.roomType;
                                     const airportLocations = type === 'airport' ? getAirportDisplayLocations(service) : null;
-                                    const tourNameValue = type === 'tour' ? getTourDisplayName(service) : '';
                                     const hasTourNameSource = type === 'tour' || !!(service.tourName || service.tour_name || service.tour?.tour_name);
+                                    const unitAmount = Number(service.unitAmount || 0);
                                     return (
                                         <div key={`${service.reservation_id || service.re_id || type}-${idx}`} className="border border-gray-200 rounded-lg p-3 bg-white">
                                             <div className="flex items-center justify-between gap-2">
@@ -482,6 +778,7 @@ export default function PackageReservationDetailModal({
                                                         일정: {formatKst(service.checkin || service.checkinDate || service.tourDate || service.usageDate || service.ra_datetime || service.pickupDatetime)}
                                                     </div>
                                                 )}
+                                                {service.returnDatetime && <div>리턴 일정: {formatKst(service.returnDatetime)}</div>}
                                                 {cruiseNameValue && <div>크루즈: {humanizeServiceName(cruiseNameValue, '크루즈 프로그램')}</div>}
                                                 {roomTypeValue && <div>객실타입: {humanizeServiceName(roomTypeValue, '객실 타입 확정 예정')}</div>}
                                                 {hasTourNameSource && <div>투어명: {getTourDisplayName(service)}</div>}
@@ -510,22 +807,21 @@ export default function PackageReservationDetailModal({
                                                 {service.seatNumber && <div>좌석: {humanizeText(service.seatNumber)}</div>}
                                                 {service.driverName && <div>기사: {humanizeText(service.driverName)}</div>}
                                                 {service.dispatchCode && <div>배차코드: {humanizeText(service.dispatchCode)}</div>}
-                                                {(service.adult != null || service.child != null || service.infant != null) && (
+                                            {(service.adult != null || service.child != null || service.infant != null) && (
                                                     <div>인원 구성: 성인 {service.adult || 0}, 아동 {service.child || 0}, 유아 {service.infant || 0}</div>
                                                 )}
                                             </div>
 
-                                            <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center text-sm">
-                                                <span className="text-gray-500">금액</span>
-                                                <div className="text-right">
+                                            <div className="mt-2 pt-2 border-t border-gray-100">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-gray-500 text-sm">금액</span>
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">패키지 포함</span>
-                                                    <div className="text-xs text-gray-500 mt-1">단일 패키지 요금(인원수 반영)에 포함</div>
                                                 </div>
                                             </div>
 
-                                            {formatNote(service.note) && (
+                                            {formatNote(service.note || service.request_note) && (
                                                 <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded whitespace-pre-line">
-                                                    비고: {formatNote(service.note)}
+                                                    비고: {formatNote(service.note || service.request_note)}
                                                 </div>
                                             )}
                                         </div>

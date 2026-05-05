@@ -20,7 +20,7 @@ export default function ReservationDetailModalSwitch({
   loading,
 }: ReservationDetailModalSwitchProps) {
   const hasPackageDetails = useMemo(
-    () => (allUserServices || []).some((s: any) => s?.serviceType === 'package' || s?.isPackageService),
+    () => (allUserServices || []).some((s: any) => s?.serviceType === 'package' || s?.re_type === 'package' || s?.isPackageService),
     [allUserServices]
   );
 

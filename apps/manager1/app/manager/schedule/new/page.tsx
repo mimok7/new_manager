@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ManagerLayout from '@/components/ManagerLayout';
 import supabase from '@/lib/supabase';
 import ReservationDetailModalSwitch from '@/components/ReservationDetailModalSwitch';
+import PackageDetailModalContainer from '@/components/PackageDetailModalContainer';
 import GoogleSheetsDetailModal from '@/components/GoogleSheetsDetailModal';
 import ServiceCardBody from '@/components/ServiceCardBody';
 import {
@@ -210,6 +211,8 @@ export default function ManagerSchedulePage() {
   const [dbUserInfo, setDbUserInfo] = useState<any>(null);
   const [dbUserServices, setDbUserServices] = useState<any[]>([]);
   const [dbModalLoading, setDbModalLoading] = useState(false);
+  const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
+  const [packageModalUserId, setPackageModalUserId] = useState<string | null>(null);
 
   // Google Sheets 데이터
   const [googleSheetsData, setGoogleSheetsData] = useState<any[]>([]);
@@ -677,12 +680,21 @@ export default function ManagerSchedulePage() {
       // 2. 사용자의 모든 예약 ID 조회
       const { data: reservations, error: resError } = await supabase
         .from('reservation')
-        .select('re_id, re_type, re_status, re_created_at')
+        .select('re_id, re_type, re_status, re_created_at, total_amount, price_breakdown, re_adult_count, re_child_count, re_infant_count, package_id')
         .eq('re_user_id', userId)
         .neq('re_type', 'car_sht')
         .order('re_created_at', { ascending: false });
 
       if (resError) throw resError;
+
+      // 패키지 예약이 있으면 PackageDetailModalContainer로 라우팅
+      if (reservations.some((r: any) => r.re_type === 'package')) {
+        setIsDBModalOpen(false);
+        setDbModalLoading(false);
+        setPackageModalUserId(userId);
+        setIsPackageModalOpen(true);
+        return;
+      }
 
       const reservationIds = reservations.map(r => r.re_id);
       const packageIds = reservations.filter((r: any) => r.re_type === 'package').map((r: any) => r.re_id);
@@ -4827,6 +4839,13 @@ export default function ManagerSchedulePage() {
           </div>
         </div>
       </div >
+
+      {/* 패키지 예약 상세 모달 */}
+      <PackageDetailModalContainer
+        userId={packageModalUserId}
+        isOpen={isPackageModalOpen}
+        onClose={() => { setIsPackageModalOpen(false); setPackageModalUserId(null); }}
+      />
 
       {/* DB 예약 상세 모달 */}
       <ReservationDetailModalSwitch
