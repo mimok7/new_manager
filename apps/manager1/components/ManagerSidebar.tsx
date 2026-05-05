@@ -147,6 +147,13 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
               isActive={isActiveTab('sht-car')}
               onClick={() => handleNavigation('/manager/sht-car')}
             />
+            <NavItem
+              icon="🤝"
+              label="제휴업체"
+              path="https://partner.stayhalong.com/partner/admin/reservations"
+              isActive={isActiveTab('partner-reservations')}
+              onClick={() => window.open('https://partner.stayhalong.com/partner/admin/reservations', '_blank')}
+            />
             </div>
           </div>
 

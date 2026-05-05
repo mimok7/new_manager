@@ -75,7 +75,7 @@ git push origin main
 - **예약 구조**: `reservation` (메인) → `reservation_*` (서비스별 상세)
 - **제휴업체**: `partner` → `partner_service` → `partner_price` / `partner_user` / `partner_reservation`
 - **가격 시스템**: `*_price` 테이블로 동적 가격 계산
-- **스키마 참조**: `sht-platform/sql/db.csv` (또는 각 앱의 `sql/db.csv`)
+- **스키마 참조 (권장)**: `sht-platform/sql/db-schema.json` — 구조화된 JSON 스키마를 기본 참조로 사용하세요. CSV는 가볍게 참고용으로 보관됩니다 (`sht-platform/sql/db.csv`).
 
 ### 표준 예약 저장 패턴
 ```tsx

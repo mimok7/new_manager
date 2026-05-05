@@ -33,6 +33,13 @@ const STATUS_COLOR: Record<string, string> = {
     completed: 'bg-blue-50 text-blue-700',
 };
 
+// request_note에서 시간 정보 추출
+function extractTimeFromNote(note?: string | null): string {
+    if (!note) return '-';
+    const timeMatch = note.match(/\[(예약시간|예약일)\]\s*([\d\-]+)\s*([\d:]+)?/);
+    return timeMatch?.[3] || '-';
+}
+
 export default function AdminReservationsPage() {
     const [rows, setRows] = useState<Row[]>([]);
     const [partners, setPartners] = useState<{ partner_id: string; name: string }[]>([]);
@@ -100,11 +107,10 @@ export default function AdminReservationsPage() {
                                 <tr>
                                     <th className="px-2 py-2 text-left">업체</th>
                                     <th className="px-2 py-2 text-left">서비스</th>
-                                    <th className="px-2 py-2 text-left">체크인</th>
-                                    <th className="px-2 py-2 text-left">체크아웃</th>
-                                    <th className="px-2 py-2 text-right">박/실/명</th>
                                     <th className="px-2 py-2 text-left">예약자</th>
-                                    <th className="px-2 py-2 text-right">금액</th>
+                                    <th className="px-2 py-2 text-right">인원수</th>
+                                    <th className="px-2 py-2 text-left">예약일</th>
+                                    <th className="px-2 py-2 text-left">시간</th>
                                     <th className="px-2 py-2 text-center">상태</th>
                                     <th className="px-2 py-2 text-center">변경</th>
                                 </tr>
@@ -114,11 +120,10 @@ export default function AdminReservationsPage() {
                                     <tr key={r.pr_id} className="border-t border-gray-100 hover:bg-gray-50">
                                         <td className="px-2 py-2">{r.partner?.name || '-'}</td>
                                         <td className="px-2 py-2">{r.service?.service_name || '-'}</td>
+                                        <td className="px-2 py-2">{r.contact_name || '-'}<br /><span className="text-gray-500 text-xs">{r.contact_phone || ''}</span></td>
+                                        <td className="px-2 py-2 text-right">{r.guest_count}</td>
                                         <td className="px-2 py-2">{r.checkin_date}</td>
-                                        <td className="px-2 py-2">{r.checkout_date}</td>
-                                        <td className="px-2 py-2 text-right">{r.nights}/{r.room_count}/{r.guest_count}</td>
-                                        <td className="px-2 py-2">{r.contact_name || '-'}<br /><span className="text-gray-500">{r.contact_phone || ''}</span></td>
-                                        <td className="px-2 py-2 text-right text-red-600 font-semibold">{Number(r.total_price).toLocaleString()}</td>
+                                        <td className="px-2 py-2">{extractTimeFromNote(r.request_note)}</td>
                                         <td className="px-2 py-2 text-center">
                                             <span className={`px-2 py-0.5 rounded ${STATUS_COLOR[r.status] || 'bg-gray-50'}`}>{STATUS_LABEL[r.status] || r.status}</span>
                                         </td>

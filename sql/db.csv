@@ -1415,4 +1415,81 @@ v_notification_stats,completed_count,bigint,NULL 가능,null,5
 v_notification_stats,urgent_count,bigint,NULL 가능,null,6
 v_notification_stats,high_count,bigint,NULL 가능,null,7
 v_notification_stats,business_count,bigint,NULL 가능,null,8
-v_notification_stats,customer_count,bigint,NULL 가능,null,9
+v_notification_stats,customer_count,bigint,NULL 가능,null,9partner,partner_id,uuid,NOT NULL,gen_random_uuid(),1
+partner,name,text,NOT NULL,null,2
+partner,category,text,NOT NULL,null,3
+partner,description,text,NULL 가능,null,4
+partner,address,text,NULL 가능,null,5
+partner,phone,text,NULL 가능,null,6
+partner,email,text,NULL 가능,null,7
+partner,website,text,NULL 가능,null,8
+partner,operating_hours,text,NULL 가능,null,9
+partner,region,text,NOT NULL,null,10
+partner,thumbnail_url,text,NULL 가능,null,11
+partner,display_order,integer,NULL 가능,null,12
+partner,is_active,boolean,NULL 가능,true,13
+partner,created_at,timestamp with time zone,NOT NULL,now(),14
+partner,updated_at,timestamp with time zone,NOT NULL,now(),15
+partner_price,price_code,text,NOT NULL,null,1
+partner_price,partner_id,uuid,NOT NULL,null,2
+partner_price,service_id,uuid,NOT NULL,null,3
+partner_price,currency,text,NOT NULL,'VND'::text,4
+partner_price,price_per_unit,numeric,NULL 가능,null,5
+partner_price,unit_type,text,NULL 가능,null,6
+partner_price,is_active,boolean,NULL 가능,true,7
+partner_price,created_at,timestamp with time zone,NOT NULL,now(),8
+partner_price,updated_at,timestamp with time zone,NOT NULL,now(),9
+partner_promotion,promo_id,uuid,NOT NULL,gen_random_uuid(),1
+partner_promotion,partner_id,uuid,NOT NULL,null,2
+partner_promotion,promo_name,text,NOT NULL,null,3
+partner_promotion,discount_type,text,NULL 가능,null,4
+partner_promotion,discount_value,numeric,NULL 가능,null,5
+partner_promotion,is_active,boolean,NULL 가능,true,6
+partner_promotion,start_date,date,NULL 가능,null,7
+partner_promotion,end_date,date,NULL 가능,null,8
+partner_promotion,created_at,timestamp with time zone,NOT NULL,now(),9
+partner_promotion,updated_at,timestamp with time zone,NOT NULL,now(),10
+partner_reservation,pr_id,uuid,NOT NULL,gen_random_uuid(),1
+partner_reservation,pr_user_id,uuid,NOT NULL,null,2
+partner_reservation,pr_partner_id,uuid,NOT NULL,null,3
+partner_reservation,pr_service_id,uuid,NOT NULL,null,4
+partner_reservation,pr_price_code,text,NULL 가능,null,5
+partner_reservation,checkin_date,date,NULL 가능,null,6
+partner_reservation,checkout_date,date,NULL 가능,null,7
+partner_reservation,nights,integer,NULL 가능,1,8
+partner_reservation,guest_count,integer,NOT NULL,1,9
+partner_reservation,room_count,integer,NOT NULL,1,10
+partner_reservation,unit_price,numeric,NOT NULL,0,11
+partner_reservation,total_price,numeric,NOT NULL,0,12
+partner_reservation,currency,text,NOT NULL,'VND'::text,13
+partner_reservation,status,text,NOT NULL,'pending'::text,14
+partner_reservation,request_note,text,NULL 가능,null,15
+partner_reservation,contact_name,text,NULL 가능,null,16
+partner_reservation,contact_phone,text,NULL 가능,null,17
+partner_reservation,created_at,timestamp with time zone,NOT NULL,now(),18
+partner_reservation,updated_at,timestamp with time zone,NOT NULL,now(),19
+partner_reservation,scheduled_at,timestamp with time zone,NULL 가능,null,20
+partner_reservation,duration_minutes,integer,NULL 가능,null,21
+partner_reservation,quantity,integer,NOT NULL,1,22
+partner_reservation,service_label,text,NULL 가능,null,23
+partner_reservation,price_label,text,NULL 가능,null,24
+partner_reservation,discount_rate,numeric,NOT NULL,0,25
+partner_reservation,discount_amount,numeric,NOT NULL,0,26
+partner_reservation,payment_status,text,NOT NULL,'unpaid'::text,27
+partner_reservation,confirmation_code,text,NULL 가능,null,28
+partner_service,service_id,uuid,NOT NULL,gen_random_uuid(),1
+partner_service,partner_id,uuid,NOT NULL,null,2
+partner_service,service_name,text,NOT NULL,null,3
+partner_service,description,text,NULL 가능,null,4
+partner_service,category,text,NULL 가능,null,5
+partner_service,is_active,boolean,NULL 가능,true,6
+partner_service,sort_order,integer,NULL 가능,null,7
+partner_service,created_at,timestamp with time zone,NOT NULL,now(),8
+partner_service,updated_at,timestamp with time zone,NOT NULL,now(),9
+partner_user,partner_user_id,uuid,NOT NULL,gen_random_uuid(),1
+partner_user,pu_partner_id,uuid,NOT NULL,null,2
+partner_user,pu_user_id,uuid,NOT NULL,null,3
+partner_user,role,text,NOT NULL,'user'::text,4
+partner_user,is_active,boolean,NULL 가능,true,5
+partner_user,created_at,timestamp with time zone,NOT NULL,now(),6
+partner_user,updated_at,timestamp with time zone,NOT NULL,now(),7

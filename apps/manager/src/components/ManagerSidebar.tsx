@@ -221,6 +221,13 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
                                 headerClass="bg-green-50 border-green-100 text-green-700"
                             >
                                 <NavItem
+                                    icon="🤝"
+                                    label="제휴업체 예약"
+                                    path="https://partner.stayhalong.com/partner/admin/reservations"
+                                    isActive={activeTab === 'partner-reservations'}
+                                    onClick={() => window.open('https://partner.stayhalong.com/partner/admin/reservations', '_blank')}
+                                />
+                                <NavItem
                                     icon="🆕"
                                     label="신/구 구분"
                                     path="/manager/schedule/new"

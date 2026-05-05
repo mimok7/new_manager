@@ -261,6 +261,11 @@ export default function BookingDetailPage() {
 
             const noteParts: string[] = [];
             noteParts.push(`[카카오톡 ID] ${contactKakao}`);
+            if (mode === 'schedule' && scheduledDate && scheduledTime) {
+                noteParts.push(`[예약시간] ${scheduledDate} ${scheduledTime}`);
+            } else if (mode === 'order' && scheduledDate) {
+                noteParts.push(`[예약일] ${scheduledDate}${scheduledTime ? ` ${scheduledTime}` : ''}`);
+            }
             if (couponCode) noteParts.push(`[쿠폰] ${couponCode}`);
             if (requestNote.trim()) noteParts.push(`[요청사항]\n${requestNote.trim()}`);
 
