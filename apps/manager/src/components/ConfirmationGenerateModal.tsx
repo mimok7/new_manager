@@ -1131,9 +1131,16 @@ export default function ConfirmationGenerateModal({ isOpen, onClose, quoteId, au
                                                                     )}
                                                                     {reservation.service_type === 'airport' && (() => {
                                                                         const entries = allAirportEntries.length > 0 ? allAirportEntries : [reservation];
+                                                                        const sortedEntries = entries.sort((a, b) => {
+                                                                            const aWay = (a.service_details?.ra_way_type || a.service_details?.way_type || '').toLowerCase();
+                                                                            const bWay = (b.service_details?.ra_way_type || b.service_details?.way_type || '').toLowerCase();
+                                                                            const aIsPickup = aWay.includes('픽업') || aWay.includes('pickup');
+                                                                            const bIsPickup = bWay.includes('픽업') || bWay.includes('pickup');
+                                                                            return aIsPickup ? -1 : bIsPickup ? 1 : 0;
+                                                                        });
                                                                         return (
-                                                                            <div className={entries.length > 1 ? 'grid grid-cols-2 gap-4' : ''}>
-                                                                                {entries.map((entry, ei) => {
+                                                                            <div className={sortedEntries.length > 1 ? 'grid grid-cols-2 gap-4' : ''}>
+                                                                                {sortedEntries.map((entry, ei) => {
                                                                                     const d = entry.service_details as any;
                                                                                     const p = entry.priceDetail as any;
                                                                                     const way = d?.ra_way_type || d?.way_type || '';
@@ -1256,9 +1263,7 @@ export default function ConfirmationGenerateModal({ isOpen, onClose, quoteId, au
                                                                                 return parts.join(', ');
                                                                             })()}</span></div>
                                                                             <div><span className="text-gray-500">픽업장소:</span> <span className="font-bold text-gray-900">{(reservation.service_details as any).pickup_location || '-'}</span></div>
-                                                                            {(reservation.service_details as any).dropoff_location && (
-                                                                                <div><span className="text-gray-500">드랍장소:</span> <span className="font-bold text-gray-900">{(reservation.service_details as any).dropoff_location}</span></div>
-                                                                            )}
+                                                                            <div><span className="text-gray-500">드랍장소:</span> <span className="font-bold text-gray-900">{(reservation.service_details as any).dropoff_location || '-'}</span></div>
                                                                             {(reservation.priceDetail?.vehicle_type || reservation.priceDetail?.tour_vehicle) && (
                                                                                 <div><span className="text-gray-500">차량명:</span> <span className="font-bold text-gray-900">{reservation.priceDetail?.vehicle_type || reservation.priceDetail?.tour_vehicle}</span></div>
                                                                             )}
@@ -1410,6 +1415,12 @@ export default function ConfirmationGenerateModal({ isOpen, onClose, quoteId, au
                                                     const sorted = [...nonShtRows, ...Array.from(shtByReservation.values())].sort((a, b) =>
                                                         (serviceOrder[a.service_type] ?? 99) - (serviceOrder[b.service_type] ?? 99)
                                                     );
+                                                    const reservationServiceCount = sorted.reduce((acc, row) => {
+                                                        const key = String(row.reservation_id || '').trim();
+                                                        if (!key) return acc;
+                                                        acc.set(key, (acc.get(key) || 0) + 1);
+                                                        return acc;
+                                                    }, new Map<string, number>());
                                                     // 공항 픽업/샌딩 한 행 병합
                                                     const allPayAirportEntries = sorted.filter(r => r.service_type === 'airport');
                                                     let payAirportSeen = false;
@@ -1575,6 +1586,7 @@ export default function ConfirmationGenerateModal({ isOpen, onClose, quoteId, au
                                                             && r.reservation_total_amount !== null
                                                             && Number.isFinite(Number(r.reservation_total_amount));
                                                         const reservationRowTotal = Number(r.reservation_total_amount || 0);
+                                                        const reservationRowCount = reservationServiceCount.get(String(r.reservation_id || '').trim()) || 0;
 
                                                         const mergedAirportReservationTotal = r.service_type === 'airport' && allPayAirportEntries.length > 1
                                                             ? Array.from(
@@ -1592,7 +1604,7 @@ export default function ConfirmationGenerateModal({ isOpen, onClose, quoteId, au
 
                                                         const rowAmount = mergedAirportReservationTotal !== null && Number.isFinite(mergedAirportReservationTotal)
                                                             ? mergedAirportReservationTotal
-                                                            : (hasReservationTotal ? reservationRowTotal : rowAmountFallback);
+                                                            : (hasReservationTotal && reservationRowCount <= 1 ? reservationRowTotal : rowAmountFallback);
 
                                                         return (
                                                             <tr key={`pay-row-${i}`} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>

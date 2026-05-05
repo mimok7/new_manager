@@ -87,6 +87,9 @@ function humanizeServiceName(value: any, fallbackLabel: string): string {
 }
 
 function getTourDisplayName(service: any): string {
+    const forcedName = service?.forcedTourName || service?.displayTourName;
+    if (forcedName) return humanizeText(forcedName, '투어 프로그램');
+
     const directName = service.tourName || service.tour_name || service.tour?.tour_name;
     if (directName && !isCodeLike(directName)) return humanizeText(directName, '투어 프로그램');
 
@@ -96,7 +99,7 @@ function getTourDisplayName(service: any): string {
     if (noteTour) return humanizeText(noteTour.replace(/[\[\]]/g, ''), '투어 프로그램');
 
     const joined = `${service.route || ''} ${service.category || ''} ${service.pickupLocation || service.pickup_location || ''} ${service.dropoffLocation || service.dropoff_location || service.destination || ''} ${note}`;
-    if (/닌빈|ninh/i.test(joined)) return '닌빈투어';
+    if (/닌빈|ninh/i.test(joined)) return '닌빈 투어';
     if (/하노이|hanoi/i.test(joined)) return '하노이 오후 투어';
 
     if (directName) return humanizeServiceName(directName, '투어 프로그램');
@@ -206,6 +209,25 @@ function getTimeValue(value: string): number {
     const d = new Date(normalized);
     const t = d.getTime();
     return Number.isNaN(t) ? Number.MAX_SAFE_INTEGER : t;
+}
+
+function getDateKey(value: string): string {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const m = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m) return m[1];
+
+    const d = new Date(raw.replace(' ', 'T'));
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toISOString().slice(0, 10);
+}
+
+function plusDays(dateKey: string, days: number): string {
+    if (!dateKey) return '';
+    const d = new Date(`${dateKey}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return '';
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
 }
 
 function getAirportOrderWeight(service: any): number {
@@ -583,8 +605,48 @@ export default function PackageReservationDetailModal({
             return true;
         });
 
+        const pickupAirportDate = [...deduped]
+            .filter((s) => s?.serviceType === 'airport' && humanizeWayType(s?.category || s?.way_type) === '픽업')
+            .map((s) => getDateKey(getServiceDateValue(s)))
+            .filter(Boolean)
+            .sort()[0] || '';
+
+        const nextDayOfPickup = plusDays(pickupAirportDate, 1);
+
+        const filteredByPickupTourRule = deduped.filter((s) => {
+            if (s?.serviceType !== 'tour') return true;
+            const tourDateKey = getDateKey(getServiceDateValue(s));
+            return !(pickupAirportDate && tourDateKey === pickupAirportDate);
+        });
+
+        const enrichedTours = filteredByPickupTourRule.map((s) => {
+            if (s?.serviceType !== 'tour') return s;
+            const tourDateKey = getDateKey(getServiceDateValue(s));
+            if (nextDayOfPickup && tourDateKey === nextDayOfPickup) {
+                return { ...s, forcedTourName: '닌빈 투어' };
+            }
+            return s;
+        });
+
+        // 다음날 투어가 명시적으로 매칭되지 않아도, 픽업 이후 첫 투어명이 미정이면 닌빈 투어로 보정
+        const toursAfterPickup = enrichedTours
+            .filter((s) => s?.serviceType === 'tour')
+            .map((s) => ({ s, t: getTimeValue(getServiceDateValue(s)) }))
+            .filter((row) => row.t !== Number.MAX_SAFE_INTEGER)
+            .sort((a, b) => a.t - b.t);
+
+        const pickupTime = getTimeValue(`${pickupAirportDate}T00:00:00`);
+        const firstTourAfterPickup = toursAfterPickup.find((row) => pickupAirportDate && row.t > pickupTime);
+
+        const finalTours = enrichedTours.map((s) => {
+            if (s?.serviceType !== 'tour') return s;
+            if (!firstTourAfterPickup || s !== firstTourAfterPickup.s) return s;
+            if (!isUnknownTourService(s)) return s;
+            return { ...s, forcedTourName: '닌빈 투어' };
+        });
+
         // 날짜순 정렬 + 같은 날짜 공항은 픽업 먼저, 샌딩 나중
-        return [...deduped].sort((a, b) => {
+        return [...finalTours].sort((a, b) => {
             const ta = getTimeValue(getServiceDateValue(a));
             const tb = getTimeValue(getServiceDateValue(b));
             const dateA = getServiceDateValue(a).slice(0, 10);
@@ -669,7 +731,19 @@ export default function PackageReservationDetailModal({
                             {packageRootRows.length > 0 && (
                                 <div className="space-y-3">
                                     <h3 className="text-sm font-semibold text-gray-800">패키지 예약 목록</h3>
-                                    {packageRootRows.map((pkg, idx) => (
+                                    {packageRootRows.map((pkg, idx) => {
+                                        const knownSubtotal =
+                                            (Number(pkg.childExtraBed || 0) * Number(pkg.childExtraBedPrice || 0)) +
+                                            (Number(pkg.childNoExtraBed || 0) * Number(pkg.childNoExtraBedPrice || 0)) +
+                                            (Number(pkg.infantTour || 0) * Number(pkg.infantTourPrice || 0)) +
+                                            (Number(pkg.infantExtraBed || 0) * Number(pkg.infantExtraBedPrice || 0)) +
+                                            (Number(pkg.infantSeat || 0) * Number(pkg.infantSeatPrice || 0));
+                                        const remainingForAdult = Math.max(0, Number(pkg.packageTotalAmount || 0) - knownSubtotal);
+                                        const displayAdultPrice = Number(pkg.adultPrice || 0) > 0
+                                            ? Number(pkg.adultPrice || 0)
+                                            : (Number(pkg.adultCount || 0) > 0 ? Math.round(remainingForAdult / Number(pkg.adultCount || 1)) : 0);
+
+                                        return (
                                         <div key={`${pkg.re_id || pkg.reservation_id || idx}`} className="border border-indigo-100 rounded-lg p-3 bg-indigo-50/40">
                                             <div className="flex flex-wrap items-center justify-between gap-2">
                                                 <div className="font-semibold text-indigo-800">
@@ -682,13 +756,11 @@ export default function PackageReservationDetailModal({
                                                 <div>인원: 성인 {pkg.adultCount || 0}, 아동 {pkg.childCount || 0}, 유아 {pkg.infantCount || 0}</div>
                                                 <div className="font-semibold text-emerald-700">총액 (단일요금): {formatAmount(pkg.packageTotalAmount)}</div>
                                             </div>
-                                            {/* 단가 × 수량 = 합계 */}
                                             <div className="mt-2 bg-white border border-indigo-100 rounded p-2 text-xs space-y-1">
-                                                <div className="font-semibold text-gray-500 mb-1">단가 × 수량 = 합계</div>
-                                                {pkg.adultCount > 0 && pkg.adultPrice > 0 && (
+                                                {pkg.adultCount > 0 && displayAdultPrice > 0 && (
                                                     <div className="flex justify-between">
-                                                        <span className="text-gray-600">성인 {pkg.adultPrice.toLocaleString()}동 × {pkg.adultCount}명</span>
-                                                        <span className="font-medium text-gray-800">{(pkg.adultPrice * pkg.adultCount).toLocaleString()}동</span>
+                                                        <span className="text-gray-600">성인 {displayAdultPrice.toLocaleString()}동 × {pkg.adultCount}명</span>
+                                                        <span className="font-medium text-gray-800">{(displayAdultPrice * pkg.adultCount).toLocaleString()}동</span>
                                                     </div>
                                                 )}
                                                 {pkg.childExtraBed > 0 && pkg.childExtraBedPrice > 0 && (
@@ -721,10 +793,6 @@ export default function PackageReservationDetailModal({
                                                         <span className="font-medium text-gray-800">{(pkg.infantSeatPrice * pkg.infantSeat).toLocaleString()}동</span>
                                                     </div>
                                                 )}
-                                                <div className="flex justify-between pt-1 border-t border-indigo-100 font-semibold text-emerald-700">
-                                                    <span>합계</span>
-                                                    <span>{formatAmount(pkg.packageTotalAmount)}</span>
-                                                </div>
                                             </div>
                                             <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700 bg-white border border-indigo-100 rounded p-2">
                                                 <div>아동: 엑스트라베드 {pkg.childExtraBed || 0}, 베드없음 {pkg.childNoExtraBed || 0}</div>
@@ -742,7 +810,8 @@ export default function PackageReservationDetailModal({
                                                 </div>
                                             )}
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
 
@@ -788,6 +857,7 @@ export default function PackageReservationDetailModal({
                                                 {service.carType && <div>차량타입: {humanizeServiceName(service.carType, '차량 배정 예정')}</div>}
                                                 {type === 'airport' ? (
                                                     <>
+                                                        <div>공항명: {humanizeText(service.airportName || service.ra_airport_location, '미정')}</div>
                                                         <div>픽업 장소: {airportLocations?.pickup || '미정'}</div>
                                                         <div>샌딩 장소: {airportLocations?.sending || '미정'}</div>
                                                     </>
