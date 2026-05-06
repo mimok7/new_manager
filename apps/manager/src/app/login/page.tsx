@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import supabase from '@/lib/supabase';
+import { setCachedRole } from '@/lib/userUtils';
 
 // useSearchParams는 Suspense 경계 안에서만 사용 가능
 function ErrorFromParams() {
@@ -41,8 +42,9 @@ function LoginForm() {
         return;
       }
 
-      // ✅ 로그인 후 세션 재확인
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      // ✅ 로그인 후 로컬 세션 재확인
+      const { data: { session }, error: userError } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
 
       if (userError || !user) {
         console.error('❌ 사용자 정보 조회 실패:', userError);
@@ -91,6 +93,8 @@ function LoginForm() {
         setLoading(false);
         return;
       }
+
+      setCachedRole(userRole);
 
       router.push('/'); // 홈 메뉴 페이지로 이동
       router.refresh(); // 세션 반영

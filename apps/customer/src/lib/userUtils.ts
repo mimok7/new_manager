@@ -216,18 +216,19 @@ export const upsertUserProfile = async (
 // 현재 사용자 정보 가져오기 (인증 정보 + DB 정보)
 export const getCurrentUserInfo = async () => {
   try {
-    // 1. 인증된 사용자 정보 가져오기
-    const { data: authData, error: authError } = await supabase.auth.getUser();
+    // 1. 로컬 세션에서 인증된 사용자 정보 가져오기
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const authUser = session?.user ?? null;
 
-    if (authError || !authData.user) {
+    if (authError || !authUser) {
       clearCachedCurrentUserInfo();
       return { user: null, userData: null, error: authError };
     }
 
-    const cachedUserInfo = getCachedCurrentUserInfo(authData.user.id, authData.user.email || '');
+    const cachedUserInfo = getCachedCurrentUserInfo(authUser.id, authUser.email || '');
     if (cachedUserInfo) {
       return {
-        user: authData.user,
+        user: authUser,
         userData: cachedUserInfo.userData,
         error: null,
       };
@@ -237,24 +238,24 @@ export const getCurrentUserInfo = async () => {
     const { data: userData, error: dbError } = await supabase
       .from('users')
       .select('id, email, name, english_name, phone_number, role, created_at, updated_at')
-      .eq('id', authData.user.id)
+      .eq('id', authUser.id)
       .maybeSingle();
 
     if (dbError) {
       console.error('사용자 DB 정보 조회 실패:', dbError);
       // DB 정보가 없어도 인증 정보는 반환
-      setCachedCurrentUserInfo(authData.user, null);
+      setCachedCurrentUserInfo(authUser, null);
       return {
-        user: authData.user,
+        user: authUser,
         userData: null,
         error: dbError,
       };
     }
 
-    setCachedCurrentUserInfo(authData.user, userData);
+    setCachedCurrentUserInfo(authUser, userData);
 
     return {
-      user: authData.user,
+      user: authUser,
       userData,
       error: null,
     };
@@ -317,13 +318,9 @@ export const setupAuthListener = (onUserChange: (user: any, userData: any) => vo
       return;
     }
 
-    // Token refresh failure: token invalid/expired/rotated -> clear local state
-    // Don't force signOut immediately – let the user retry on their next action
+    // Token refresh failure can be transient on mobile/background tabs; keep cached state until explicit sign-out.
     if (event === 'TOKEN_REFRESH_FAILED') {
-      console.warn('Auth listener: token refresh failed, clearing cache');
-      clearCachedRole();
-      clearCachedCurrentUserInfo();
-      onUserChange(null, null);
+      console.warn('Auth listener: token refresh failed; preserving local state until explicit sign-out');
       return;
     }
   });

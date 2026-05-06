@@ -27,9 +27,10 @@ export default function PartnerLoginPage() {
         let cancelled = false;
         (async () => {
             try {
-                const { data: { user } } = await supabase.auth.getUser();
+                const { data: { session } } = await supabase.auth.getSession();
+                const user = session?.user ?? null;
                 if (cancelled) return;
-                
+
                 if (user) {
                     // 세션이 있으면 역할 조회 후 리다이렉트
                     const { data: userData } = await supabase

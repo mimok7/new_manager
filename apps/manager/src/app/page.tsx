@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import supabase from '@/lib/supabase';
+import { getCachedRole, setCachedRole } from '@/lib/userUtils';
 
 interface UserProfile {
   id: string;
@@ -18,14 +19,13 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try { sessionStorage.removeItem('app:session:cache'); } catch { /* noop */ }
-    try { sessionStorage.removeItem('app:auth:cache'); } catch { /* noop */ }
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
     try {
-      const { data: { user: authUser }, error } = await supabase.auth.getUser();
+      const { data: { session }, error } = await supabase.auth.getSession();
+      const authUser = session?.user ?? null;
 
       if (error || !authUser) {
         console.log('❌ 로그인되지 않은 상태');
@@ -35,6 +35,24 @@ export default function HomePage() {
       }
 
       console.log('✅ 인증된 사용자:', authUser.email);
+
+      const cachedRole = getCachedRole();
+      if (cachedRole && ['admin', 'manager', 'dispatcher'].includes(cachedRole)) {
+        const userProfile: UserProfile = {
+          id: authUser.id,
+          email: authUser.email || '',
+          role: cachedRole as 'manager' | 'admin' | 'dispatcher',
+          name: authUser.email?.split('@')[0] || '사용자'
+        };
+
+        setUser(userProfile);
+        if (cachedRole === 'dispatcher') {
+          router.push('/dispatch');
+        } else {
+          router.push('/manager/schedule/new');
+        }
+        return;
+      }
 
       // 사용자 테이블에서 권한 확인
       const { data: profile, error: profileError } = await supabase
@@ -48,6 +66,7 @@ export default function HomePage() {
       if (profile && profile.role) {
         // users 테이블에 등록되고 role이 있는 경우
         userRole = profile.role;
+        setCachedRole(userRole);
         console.log('✅ 등록된 사용자 권한:', userRole);
       } else {
         // users 테이블에 없거나 role이 없는 경우 = 기본 매니저 권한 부여

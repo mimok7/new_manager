@@ -1,29 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 let _supabase: SupabaseClient | null = null;
-const AUTH_CALL_TIMEOUT_MS = 10000;
-
-function withTimeoutFallback<T>(
-  promise: Promise<T>,
-  fallback: () => T,
-  timeoutMs = AUTH_CALL_TIMEOUT_MS
-): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      resolve(fallback());
-    }, timeoutMs);
-
-    promise
-      .then((result) => {
-        clearTimeout(timer);
-        resolve(result);
-      })
-      .catch((error) => {
-        clearTimeout(timer);
-        reject(error);
-      });
-  });
-}
 
 function initSupabase(): SupabaseClient | null {
   const g = globalThis as any;
@@ -86,37 +63,20 @@ const supabaseProxy: any = new Proxy({}, {
             return async (...args: any[]) => {
               if (args.length === 0 && typeof window !== 'undefined' && typeof (target as any).getSession === 'function') {
                 try {
-                  const sessionResult = await withTimeoutFallback(
-                    Promise.resolve((target as any).getSession()),
-                    () => ({ data: { session: null }, error: new Error('supabase_getSession_timeout') } as any),
-                    AUTH_CALL_TIMEOUT_MS
-                  );
+                  const sessionResult = await Promise.resolve((target as any).getSession());
                   const sessionUser = sessionResult?.data?.session?.user ?? null;
                   if (sessionUser) {
                     return { data: { user: sessionUser }, error: null } as any;
                   }
                 } catch {
-                  // Ignore and fallback to getUser call
+                  // Treat transient local-session read failures as signed-out without network verification.
                 }
+
+                return { data: { user: null }, error: null } as any;
               }
 
-              return withTimeoutFallback(
-                Promise.resolve(original.apply(target, args)),
-                () => ({ data: { user: null }, error: new Error('supabase_getUser_timeout') } as any),
-                AUTH_CALL_TIMEOUT_MS
-              );
+              return Promise.resolve(original.apply(target, args));
             };
-          }
-
-          if (authProp === 'getSession') {
-            return (...args: any[]) => withTimeoutFallback(
-              Promise.resolve(original.apply(target, args)),
-              () => {
-                const timeoutError = new Error('supabase_getSession_timeout');
-                return { data: { session: null }, error: timeoutError } as any;
-              },
-              AUTH_CALL_TIMEOUT_MS
-            );
           }
 
           return original.bind(target);

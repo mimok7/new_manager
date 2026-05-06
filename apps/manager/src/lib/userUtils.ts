@@ -21,13 +21,19 @@ const getCookie = (name: string): string | null => {
   } catch { return null; }
 };
 
-export const getCachedRole = (): 'guest' | 'member' | 'manager' | 'admin' | null => {
+type CachedRole = 'guest' | 'member' | 'manager' | 'admin' | 'dispatcher';
+
+const isCachedRole = (role: string | null): role is CachedRole => (
+  role === 'guest' || role === 'member' || role === 'manager' || role === 'admin' || role === 'dispatcher'
+);
+
+export const getCachedRole = (): CachedRole | null => {
   try {
     if (typeof window === 'undefined') return null;
     // localStorage 우선 + sessionStorage 폴백으로 탭/재시작 모두 대응
     const v = window.localStorage.getItem(ROLE_CACHE_KEY) || window.sessionStorage.getItem(ROLE_CACHE_KEY);
     if (!v) return null;
-    if (v === 'guest' || v === 'member' || v === 'manager' || v === 'admin') return v;
+    if (isCachedRole(v)) return v;
     return null;
   } catch { return null; }
 };
@@ -58,9 +64,9 @@ export const clearCachedRole = () => {
 };
 
 // Secondary cookie-based role retrieval (cross-tab). Returns null if invalid.
-export const getCookieRole = (): 'guest' | 'member' | 'manager' | 'admin' | null => {
+export const getCookieRole = (): CachedRole | null => {
   const v = getCookie(ROLE_COOKIE_KEY);
-  if (v === 'guest' || v === 'member' || v === 'manager' || v === 'admin') return v;
+  if (isCachedRole(v)) return v;
   return null;
 };
 
@@ -183,10 +189,11 @@ export const upsertUserProfile = async (
 // 현재 사용자 정보 가져오기 (인증 정보 + DB 정보)
 export const getCurrentUserInfo = async () => {
   try {
-    // 1. 인증된 사용자 정보 가져오기
-    const { data: authData, error: authError } = await supabase.auth.getUser();
+    // 1. 로컬 세션에서 인증된 사용자 정보 가져오기
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const authUser = session?.user ?? null;
 
-    if (authError || !authData.user) {
+    if (authError || !authUser) {
       return { user: null, userData: null, error: authError };
     }
 
@@ -194,21 +201,21 @@ export const getCurrentUserInfo = async () => {
     const { data: userData, error: dbError } = await supabase
       .from('users')
       .select('id, email, name, english_name, phone_number, role, created_at, updated_at')
-      .eq('id', authData.user.id)
+      .eq('id', authUser.id)
       .single();
 
     if (dbError) {
       console.error('사용자 DB 정보 조회 실패:', dbError);
       // DB 정보가 없어도 인증 정보는 반환
       return {
-        user: authData.user,
+        user: authUser,
         userData: null,
         error: dbError,
       };
     }
 
     return {
-      user: authData.user,
+      user: authUser,
       userData,
       error: null,
     };
@@ -269,16 +276,9 @@ export const setupAuthListener = (onUserChange: (user: any, userData: any) => vo
       return;
     }
 
-    // Token refresh failure: token invalid/expired/rotated -> force sign out and clear state
+    // Token refresh failure can be transient on mobile/background tabs; keep cached state until explicit sign-out.
     if (event === 'TOKEN_REFRESH_FAILED') {
-      console.warn('Auth listener: token refresh failed, signing out');
-      try {
-        await supabase.auth.signOut();
-      } catch (e) {
-        console.warn('Auth listener: signOut after refresh failure failed', e);
-      }
-      clearCachedRole();
-      onUserChange(null, null);
+      console.warn('Auth listener: token refresh failed; preserving local state until explicit sign-out');
       return;
     }
   });

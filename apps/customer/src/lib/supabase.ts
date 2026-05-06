@@ -42,12 +42,18 @@ export function getSupabase(): SupabaseClient {
 // Minimal safe fallback stub used when env vars are not provided.
 const fallbackStub: any = {
   auth: {
+    async getSession() {
+      return { data: { session: null }, error: null };
+    },
     async getUser() {
       return { data: { user: null }, error: null };
     },
     // preserve common auth methods used in the app
+    signInWithPassword: async () => ({ data: null, error: new Error('Supabase not configured') }),
+    signUp: async () => ({ data: null, error: new Error('Supabase not configured') }),
     signIn: async () => ({ data: null, error: new Error('Supabase not configured') }),
-    signOut: async () => ({ data: null, error: new Error('Supabase not configured') })
+    signOut: async () => ({ data: null, error: new Error('Supabase not configured') }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe() { } } } })
   },
   from: (_table: string) => ({
     select: (_cols?: string) => ({
@@ -75,6 +81,37 @@ const supabaseProxy: any = new Proxy({}, {
   get(_, prop) {
     const client = initSupabase();
     const obj: any = client || fallbackStub;
+    if (prop === 'auth' && obj?.auth) {
+      const authObj = obj.auth;
+      return new Proxy(authObj, {
+        get(target, authProp) {
+          const original = (target as any)[authProp as any];
+          if (typeof original !== 'function') return original;
+
+          if (authProp === 'getUser') {
+            return async (...args: any[]) => {
+              if (args.length === 0 && typeof window !== 'undefined' && typeof (target as any).getSession === 'function') {
+                try {
+                  const sessionResult = await Promise.resolve((target as any).getSession());
+                  const sessionUser = sessionResult?.data?.session?.user ?? null;
+                  if (sessionUser) {
+                    return { data: { user: sessionUser }, error: null } as any;
+                  }
+                } catch {
+                  // Keep browser auth checks local; avoid network verification loops on transient failures.
+                }
+
+                return { data: { user: null }, error: null } as any;
+              }
+
+              return Promise.resolve(original.apply(target, args));
+            };
+          }
+
+          return original.bind(target);
+        }
+      });
+    }
     // @ts-ignore
     return obj[prop as any];
   }

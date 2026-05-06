@@ -17,11 +17,17 @@ const getCookie = (name: string): string | null => {
   } catch { return null; }
 };
 
-export const getCachedRole = (): 'guest' | 'member' | 'manager' | 'admin' | null => {
+type CachedRole = 'guest' | 'member' | 'manager' | 'admin' | 'dispatcher';
+
+const isCachedRole = (role: string | null): role is CachedRole => (
+  role === 'guest' || role === 'member' || role === 'manager' || role === 'admin' || role === 'dispatcher'
+);
+
+export const getCachedRole = (): CachedRole | null => {
   try {
     if (typeof window === 'undefined') return null;
     const v = window.localStorage.getItem(ROLE_CACHE_KEY) || window.sessionStorage.getItem(ROLE_CACHE_KEY);
-    if (v === 'guest' || v === 'member' || v === 'manager' || v === 'admin') return v;
+    if (isCachedRole(v)) return v;
     return null;
   } catch { return null; }
 };
@@ -50,9 +56,9 @@ export const clearCachedRole = () => {
   } catch {}
 };
 
-export const getCookieRole = (): 'guest' | 'member' | 'manager' | 'admin' | null => {
+export const getCookieRole = (): CachedRole | null => {
   const v = getCookie(ROLE_COOKIE_KEY);
-  if (v === 'guest' || v === 'member' || v === 'manager' || v === 'admin') return v;
+  if (isCachedRole(v)) return v;
   return null;
 };
 

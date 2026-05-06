@@ -1,4 +1,112 @@
 테이블명,컬럼명,데이터타입,NULL허용,기본값,위치
+_archive_reservation_no_quote_airport_backup_20260426,id,uuid,NULL 가능,null,1
+_archive_reservation_no_quote_airport_backup_20260426,reservation_id,uuid,NULL 가능,null,2
+_archive_reservation_no_quote_airport_backup_20260426,airport_price_code,text,NULL 가능,null,3
+_archive_reservation_no_quote_airport_backup_20260426,ra_airport_location,text,NULL 가능,null,4
+_archive_reservation_no_quote_airport_backup_20260426,ra_flight_number,text,NULL 가능,null,5
+_archive_reservation_no_quote_airport_backup_20260426,ra_datetime,timestamp with time zone,NULL 가능,null,6
+_archive_reservation_no_quote_airport_backup_20260426,ra_stopover_location,text,NULL 가능,null,7
+_archive_reservation_no_quote_airport_backup_20260426,ra_stopover_wait_minutes,integer,NULL 가능,null,8
+_archive_reservation_no_quote_airport_backup_20260426,ra_car_count,integer,NULL 가능,null,9
+_archive_reservation_no_quote_airport_backup_20260426,ra_passenger_count,integer,NULL 가능,null,10
+_archive_reservation_no_quote_airport_backup_20260426,ra_luggage_count,integer,NULL 가능,null,11
+_archive_reservation_no_quote_airport_backup_20260426,request_note,text,NULL 가능,null,12
+_archive_reservation_no_quote_airport_backup_20260426,ra_is_processed,text,NULL 가능,null,13
+_archive_reservation_no_quote_airport_backup_20260426,unit_price,numeric,NULL 가능,null,14
+_archive_reservation_no_quote_airport_backup_20260426,total_price,numeric,NULL 가능,null,15
+_archive_reservation_no_quote_airport_backup_20260426,created_at,timestamp with time zone,NULL 가능,null,16
+_archive_reservation_no_quote_airport_backup_20260426,dispatch_code,text,NULL 가능,null,17
+_archive_reservation_no_quote_airport_backup_20260426,pickup_confirmed_at,timestamp with time zone,NULL 가능,null,18
+_archive_reservation_no_quote_airport_backup_20260426,dispatch_memo,text,NULL 가능,null,19
+_archive_reservation_no_quote_airport_backup_20260426,way_type,text,NULL 가능,null,20
+_archive_reservation_no_quote_airport_backup_20260426,accommodation_info,text,NULL 가능,null,21
+_archive_reservation_no_quote_airport_backup_20260426,_row_id,bigint,NOT NULL,nextval('_archive_reservation_no_quote_airport_backup_202604__row_id_seq'::regclass),22
+_archive_reservation_no_quote_backup_20260426,re_id,uuid,NULL 가능,null,1
+_archive_reservation_no_quote_backup_20260426,re_user_id,uuid,NULL 가능,null,2
+_archive_reservation_no_quote_backup_20260426,re_quote_id,uuid,NULL 가능,null,3
+_archive_reservation_no_quote_backup_20260426,re_type,text,NULL 가능,null,4
+_archive_reservation_no_quote_backup_20260426,re_status,text,NULL 가능,null,5
+_archive_reservation_no_quote_backup_20260426,re_created_at,timestamp with time zone,NULL 가능,null,6
+_archive_reservation_no_quote_backup_20260426,re_update_at,timestamp with time zone,NULL 가능,null,7
+_archive_reservation_no_quote_backup_20260426,total_amount,numeric,NULL 가능,null,8
+_archive_reservation_no_quote_backup_20260426,paid_amount,numeric,NULL 가능,null,9
+_archive_reservation_no_quote_backup_20260426,payment_status,text,NULL 가능,null,10
+_archive_reservation_no_quote_backup_20260426,order_id,text,NULL 가능,null,11
+_archive_reservation_no_quote_backup_20260426,manager_note,text,NULL 가능,null,12
+_archive_reservation_no_quote_backup_20260426,package_id,uuid,NULL 가능,null,13
+_archive_reservation_no_quote_backup_20260426,pax_count,integer,NULL 가능,null,14
+_archive_reservation_no_quote_backup_20260426,re_adult_count,integer,NULL 가능,null,15
+_archive_reservation_no_quote_backup_20260426,re_child_count,integer,NULL 가능,null,16
+_archive_reservation_no_quote_backup_20260426,re_infant_count,integer,NULL 가능,null,17
+_archive_reservation_no_quote_backup_20260426,reservation_date,date,NULL 가능,null,18
+_archive_reservation_no_quote_backup_20260426,price_breakdown,jsonb,NULL 가능,null,19
+_archive_reservation_no_quote_backup_20260426,_row_id,bigint,NOT NULL,nextval('_archive_reservation_no_quote_backup_20260426__row_id_seq'::regclass),20
+_archive_reservation_no_quote_cruise_backup_20260426,reservation_id,uuid,NULL 가능,null,1
+_archive_reservation_no_quote_cruise_backup_20260426,room_price_code,text,NULL 가능,null,2
+_archive_reservation_no_quote_cruise_backup_20260426,checkin,date,NULL 가능,null,3
+_archive_reservation_no_quote_cruise_backup_20260426,guest_count,integer,NULL 가능,null,4
+_archive_reservation_no_quote_cruise_backup_20260426,unit_price,numeric,NULL 가능,null,5
+_archive_reservation_no_quote_cruise_backup_20260426,room_total_price,numeric,NULL 가능,null,6
+_archive_reservation_no_quote_cruise_backup_20260426,request_note,text,NULL 가능,null,7
+_archive_reservation_no_quote_cruise_backup_20260426,id,uuid,NULL 가능,null,8
+_archive_reservation_no_quote_cruise_backup_20260426,created_at,timestamp with time zone,NULL 가능,null,9
+_archive_reservation_no_quote_cruise_backup_20260426,boarding_code,text,NULL 가능,null,10
+_archive_reservation_no_quote_cruise_backup_20260426,boarding_assist,boolean,NULL 가능,null,11
+_archive_reservation_no_quote_cruise_backup_20260426,updated_at,timestamp with time zone,NULL 가능,null,12
+_archive_reservation_no_quote_cruise_backup_20260426,room_count,integer,NULL 가능,null,13
+_archive_reservation_no_quote_cruise_backup_20260426,adult_count,integer,NULL 가능,null,14
+_archive_reservation_no_quote_cruise_backup_20260426,child_count,integer,NULL 가능,null,15
+_archive_reservation_no_quote_cruise_backup_20260426,infant_count,integer,NULL 가능,null,16
+_archive_reservation_no_quote_cruise_backup_20260426,accommodation_info,text,NULL 가능,null,17
+_archive_reservation_no_quote_cruise_backup_20260426,child_extra_bed_count,integer,NULL 가능,null,18
+_archive_reservation_no_quote_cruise_backup_20260426,extra_bed_count,integer,NULL 가능,null,19
+_archive_reservation_no_quote_cruise_backup_20260426,single_count,integer,NULL 가능,null,20
+_archive_reservation_no_quote_cruise_backup_20260426,connecting_room,boolean,NULL 가능,null,21
+_archive_reservation_no_quote_cruise_backup_20260426,birthday_event,boolean,NULL 가능,null,22
+_archive_reservation_no_quote_cruise_backup_20260426,birthday_name,text,NULL 가능,null,23
+_archive_reservation_no_quote_cruise_backup_20260426,_row_id,bigint,NOT NULL,nextval('_archive_reservation_no_quote_cruise_backup_2026042__row_id_seq'::regclass),24
+_archive_reservation_no_quote_tour_backup_20260426,reservation_id,uuid,NULL 가능,null,1
+_archive_reservation_no_quote_tour_backup_20260426,tour_price_code,text,NULL 가능,null,2
+_archive_reservation_no_quote_tour_backup_20260426,tour_capacity,integer,NULL 가능,null,3
+_archive_reservation_no_quote_tour_backup_20260426,pickup_location,text,NULL 가능,null,4
+_archive_reservation_no_quote_tour_backup_20260426,dropoff_location,text,NULL 가능,null,5
+_archive_reservation_no_quote_tour_backup_20260426,total_price,numeric,NULL 가능,null,6
+_archive_reservation_no_quote_tour_backup_20260426,request_note,text,NULL 가능,null,7
+_archive_reservation_no_quote_tour_backup_20260426,id,uuid,NULL 가능,null,8
+_archive_reservation_no_quote_tour_backup_20260426,created_at,timestamp with time zone,NULL 가능,null,9
+_archive_reservation_no_quote_tour_backup_20260426,usage_date,date,NULL 가능,null,10
+_archive_reservation_no_quote_tour_backup_20260426,unit_price,numeric,NULL 가능,null,11
+_archive_reservation_no_quote_tour_backup_20260426,adult_count,integer,NULL 가능,null,12
+_archive_reservation_no_quote_tour_backup_20260426,child_count,integer,NULL 가능,null,13
+_archive_reservation_no_quote_tour_backup_20260426,infant_count,integer,NULL 가능,null,14
+_archive_reservation_no_quote_tour_backup_20260426,accommodation_info,text,NULL 가능,null,15
+_archive_reservation_no_quote_tour_backup_20260426,dispatch_code,text,NULL 가능,null,16
+_archive_reservation_no_quote_tour_backup_20260426,_row_id,bigint,NOT NULL,nextval('_archive_reservation_no_quote_tour_backup_20260426__row_id_seq'::regclass),17
+_backup_pg_indexes_20260426,schemaname,name,NULL 가능,null,1
+_backup_pg_indexes_20260426,tablename,name,NULL 가능,null,2
+_backup_pg_indexes_20260426,indexname,name,NULL 가능,null,3
+_backup_pg_indexes_20260426,indexdef,text,NULL 가능,null,4
+_backup_pg_indexes_20260426,backed_up_at,timestamp with time zone,NULL 가능,null,5
+_backup_pg_indexes_20260426,_row_id,bigint,NOT NULL,nextval('_backup_pg_indexes_20260426__row_id_seq'::regclass),6
+_backup_pg_policies_20260426,schemaname,name,NULL 가능,null,1
+_backup_pg_policies_20260426,tablename,name,NULL 가능,null,2
+_backup_pg_policies_20260426,policyname,name,NULL 가능,null,3
+_backup_pg_policies_20260426,permissive,text,NULL 가능,null,4
+_backup_pg_policies_20260426,roles_text,text,NULL 가능,null,5
+_backup_pg_policies_20260426,cmd,text,NULL 가능,null,6
+_backup_pg_policies_20260426,qual,text,NULL 가능,null,7
+_backup_pg_policies_20260426,with_check,text,NULL 가능,null,8
+_backup_pg_policies_20260426,backed_up_at,timestamp with time zone,NULL 가능,null,9
+_backup_pg_policies_20260426,_row_id,bigint,NOT NULL,nextval('_backup_pg_policies_20260426__row_id_seq'::regclass),10
+additional_fee_template,id,integer,NOT NULL,nextval('additional_fee_template_id_seq'::regclass),1
+additional_fee_template,name,character varying,NOT NULL,null,2
+additional_fee_template,amount,numeric,NOT NULL,0,3
+additional_fee_template,service_type,character varying,NULL 가능,NULL::character varying,4
+additional_fee_template,description,text,NULL 가능,null,5
+additional_fee_template,sort_order,integer,NOT NULL,0,6
+additional_fee_template,is_active,boolean,NOT NULL,true,7
+additional_fee_template,created_at,timestamp with time zone,NOT NULL,now(),8
+additional_fee_template,updated_at,timestamp with time zone,NOT NULL,now(),9
 airport,id,uuid,NOT NULL,gen_random_uuid(),1
 airport,airport_code,character varying,NOT NULL,null,2
 airport,passenger_count,integer,NULL 가능,1,8
@@ -35,6 +143,26 @@ available_tours_by_date,max_guests,integer,NULL 가능,null,6
 available_tours_by_date,price_per_person,numeric,NULL 가능,null,7
 available_tours_by_date,vehicle_type,text,NULL 가능,null,8
 available_tours_by_date,available_date,date,NULL 가능,null,9
+backup_reservation_car_sht,reservation_id,uuid,NULL 가능,null,1
+backup_reservation_car_sht,vehicle_number,text,NULL 가능,null,2
+backup_reservation_car_sht,seat_number,text,NULL 가능,null,3
+backup_reservation_car_sht,sht_category,text,NULL 가능,null,4
+backup_reservation_car_sht,id,uuid,NOT NULL,gen_random_uuid(),5
+backup_reservation_car_sht,created_at,timestamp with time zone,NOT NULL,now(),6
+backup_reservation_car_sht,dispatch_code,text,NULL 가능,null,7
+backup_reservation_car_sht,pickup_confirmed_at,timestamp with time zone,NULL 가능,null,8
+backup_reservation_car_sht,dispatch_memo,text,NULL 가능,null,9
+backup_reservation_car_sht,car_price_code,text,NULL 가능,null,10
+backup_reservation_car_sht,car_count,integer,NULL 가능,0,11
+backup_reservation_car_sht,passenger_count,integer,NULL 가능,0,12
+backup_reservation_car_sht,pickup_datetime,date,NULL 가능,null,13
+backup_reservation_car_sht,pickup_location,text,NULL 가능,null,14
+backup_reservation_car_sht,dropoff_location,text,NULL 가능,null,15
+backup_reservation_car_sht,car_total_price,numeric,NULL 가능,0,16
+backup_reservation_car_sht,request_note,text,NULL 가능,null,17
+backup_reservation_car_sht,updated_at,timestamp with time zone,NULL 가능,now(),18
+backup_reservation_car_sht,unit_price,numeric,NULL 가능,null,19
+backup_reservation_car_sht,usage_date,date,NULL 가능,null,20
 business_notifications,id,uuid,NOT NULL,gen_random_uuid(),1
 business_notifications,notification_id,uuid,NULL 가능,null,2
 business_notifications,business_type,character varying,NOT NULL,null,3
@@ -136,6 +264,8 @@ cruise_info,capacity,text,NULL 가능,null,35
 cruise_info,awards,text,NULL 가능,null,36
 cruise_info,facilities,jsonb,NULL 가능,null,37
 cruise_info,display_order,integer,NULL 가능,0,38
+cruise_info,cruise_images,jsonb,NOT NULL,'[]'::jsonb,39
+cruise_info,room_images,jsonb,NOT NULL,'[]'::jsonb,40
 cruise_info_by_category,category,text,NULL 가능,null,1
 cruise_info_by_category,cruise_name,text,NULL 가능,null,2
 cruise_info_by_category,room_count,bigint,NULL 가능,null,3
@@ -396,6 +526,114 @@ package_master,price_infant_tour,integer,NULL 가능,900000,12
 package_master,price_infant_extra_bed,integer,NULL 가능,4200000,13
 package_master,price_infant_seat,integer,NULL 가능,800000,14
 package_master,vehicle_config,jsonb,NULL 가능,"'{""2"": {""hanoi"": ""승용차"", ""airport"": ""승용차"", ""ninhBinh"": ""승용차""}, ""3"": {""hanoi"": ""SUV (Xpander급)"", ""airport"": ""SUV (Xpander급)"", ""ninhBinh"": ""SUV (Xpander급)""}, ""4"": {""hanoi"": ""카니발,VF9,이노바"", ""airport"": ""SUV (Xpander급)"", ""ninhBinh"": ""카니발,VF9,이노바""}, ""5"": {""hanoi"": ""9인승 리무진"", ""airport"": ""카니발,이노바"", ""ninhBinh"": ""9인승 리무진""}, ""6"": {""hanoi"": ""9인승 리무진"", ""airport"": ""9인승 리무진"", ""ninhBinh"": ""9인승 리무진""}, ""7"": {""hanoi"": ""9인승 리무진"", ""airport"": ""9인승 리무진"", ""ninhBinh"": ""9인승 리무진""}, ""8"": {""hanoi"": ""11인승 리무진"", ""airport"": ""11인승 리무진"", ""ninhBinh"": ""11인승 리무진""}, ""9"": {""hanoi"": ""11인승 리무진"", ""airport"": ""11인승 리무진"", ""ninhBinh"": ""11인승 리무진""}, ""10"": {""hanoi"": ""11인승 리무진"", ""airport"": ""11인승 리무진"", ""ninhBinh"": ""11인승 리무진""}}'::jsonb",15
+partner,partner_id,uuid,NOT NULL,gen_random_uuid(),1
+partner,partner_code,text,NOT NULL,null,2
+partner,name,text,NOT NULL,null,3
+partner,category,text,NOT NULL,'hotel'::text,4
+partner,region,text,NULL 가능,null,5
+partner,address,text,NULL 가능,null,6
+partner,contact_name,text,NULL 가능,null,7
+partner,contact_phone,text,NULL 가능,null,8
+partner,contact_email,text,NULL 가능,null,9
+partner,description,text,NULL 가능,null,10
+partner,is_active,boolean,NOT NULL,true,11
+partner,created_at,timestamp with time zone,NOT NULL,now(),12
+partner,updated_at,timestamp with time zone,NOT NULL,now(),13
+partner,subcategory,text,NULL 가능,null,14
+partner,timezone,text,NOT NULL,'Asia/Ho_Chi_Minh'::text,15
+partner,default_discount_rate,numeric,NOT NULL,0,16
+partner,website_url,text,NULL 가능,null,17
+partner,map_url,text,NULL 가능,null,18
+partner,thumbnail_url,text,NULL 가능,null,19
+partner,branch_name,text,NULL 가능,null,20
+partner,open_hours,text,NULL 가능,null,21
+partner,booking_lead_hours,integer,NOT NULL,0,22
+partner,internal_memo,text,NULL 가능,null,23
+partner_price,price_code,text,NOT NULL,null,1
+partner_price,service_id,uuid,NOT NULL,null,2
+partner_price,valid_from,date,NULL 가능,null,3
+partner_price,valid_to,date,NULL 가능,null,4
+partner_price,price,numeric,NOT NULL,null,5
+partner_price,condition_label,text,NULL 가능,null,6
+partner_price,note,text,NULL 가능,null,7
+partner_price,created_at,timestamp with time zone,NOT NULL,now(),8
+partner_price,duration_minutes,integer,NULL 가능,null,9
+partner_price,tier_label,text,NULL 가능,null,10
+partner_price,sht_price,numeric,NULL 가능,null,11
+partner_price,is_active,boolean,NOT NULL,true,12
+partner_promotion,promo_id,uuid,NOT NULL,gen_random_uuid(),1
+partner_promotion,partner_id,uuid,NOT NULL,null,2
+partner_promotion,promo_code,text,NOT NULL,null,3
+partner_promotion,promo_name,text,NOT NULL,null,4
+partner_promotion,promo_type,text,NOT NULL,null,5
+partner_promotion,benefit_value,numeric,NULL 가능,null,6
+partner_promotion,benefit_unit,text,NULL 가능,null,7
+partner_promotion,free_item_name,text,NULL 가능,null,8
+partner_promotion,min_people,integer,NULL 가능,null,9
+partner_promotion,max_people,integer,NULL 가능,null,10
+partner_promotion,requires_coupon,boolean,NOT NULL,false,11
+partner_promotion,coupon_label,text,NULL 가능,null,12
+partner_promotion,requires_cruise_booking,boolean,NOT NULL,false,13
+partner_promotion,min_cruise_people,integer,NULL 가능,null,14
+partner_promotion,member_grade_min,text,NULL 가능,null,15
+partner_promotion,is_active,boolean,NOT NULL,true,16
+partner_promotion,valid_from,date,NULL 가능,null,17
+partner_promotion,valid_to,date,NULL 가능,null,18
+partner_promotion,note,text,NULL 가능,null,19
+partner_promotion,created_at,timestamp with time zone,NOT NULL,now(),20
+partner_promotion,updated_at,timestamp with time zone,NOT NULL,now(),21
+partner_reservation,pr_id,uuid,NOT NULL,gen_random_uuid(),1
+partner_reservation,pr_user_id,uuid,NOT NULL,null,2
+partner_reservation,pr_partner_id,uuid,NOT NULL,null,3
+partner_reservation,pr_service_id,uuid,NOT NULL,null,4
+partner_reservation,pr_price_code,text,NULL 가능,null,5
+partner_reservation,checkin_date,date,NULL 가능,null,6
+partner_reservation,checkout_date,date,NULL 가능,null,7
+partner_reservation,nights,integer,NULL 가능,1,8
+partner_reservation,guest_count,integer,NOT NULL,1,9
+partner_reservation,room_count,integer,NOT NULL,1,10
+partner_reservation,unit_price,numeric,NOT NULL,0,11
+partner_reservation,total_price,numeric,NOT NULL,0,12
+partner_reservation,currency,text,NOT NULL,'VND'::text,13
+partner_reservation,status,text,NOT NULL,'pending'::text,14
+partner_reservation,request_note,text,NULL 가능,null,15
+partner_reservation,contact_name,text,NULL 가능,null,16
+partner_reservation,contact_phone,text,NULL 가능,null,17
+partner_reservation,created_at,timestamp with time zone,NOT NULL,now(),18
+partner_reservation,updated_at,timestamp with time zone,NOT NULL,now(),19
+partner_reservation,scheduled_at,timestamp with time zone,NULL 가능,null,20
+partner_reservation,duration_minutes,integer,NULL 가능,null,21
+partner_reservation,quantity,integer,NOT NULL,1,22
+partner_reservation,service_label,text,NULL 가능,null,23
+partner_reservation,price_label,text,NULL 가능,null,24
+partner_reservation,discount_rate,numeric,NOT NULL,0,25
+partner_reservation,discount_amount,numeric,NOT NULL,0,26
+partner_reservation,payment_status,text,NOT NULL,'unpaid'::text,27
+partner_reservation,confirmation_code,text,NULL 가능,null,28
+partner_service,service_id,uuid,NOT NULL,gen_random_uuid(),1
+partner_service,partner_id,uuid,NOT NULL,null,2
+partner_service,service_type,text,NOT NULL,'service'::text,3
+partner_service,service_name,text,NOT NULL,null,4
+partner_service,description,text,NULL 가능,null,5
+partner_service,capacity,integer,NULL 가능,null,6
+partner_service,default_price,numeric,NOT NULL,0,7
+partner_service,currency,text,NOT NULL,'VND'::text,8
+partner_service,is_active,boolean,NOT NULL,true,9
+partner_service,created_at,timestamp with time zone,NOT NULL,now(),10
+partner_service,updated_at,timestamp with time zone,NOT NULL,now(),11
+partner_service,service_subtype,text,NULL 가능,null,12
+partner_service,unit,text,NOT NULL,'session'::text,13
+partner_service,duration_minutes,integer,NULL 가능,null,14
+partner_service,min_quantity,integer,NOT NULL,1,15
+partner_service,max_quantity,integer,NULL 가능,null,16
+partner_service,sht_discount_rate,numeric,NULL 가능,null,17
+partner_service,thumbnail_url,text,NULL 가능,null,18
+partner_service,sort_order,integer,NOT NULL,0,19
+partner_user,pu_id,uuid,NOT NULL,gen_random_uuid(),1
+partner_user,pu_user_id,uuid,NOT NULL,null,2
+partner_user,pu_partner_id,uuid,NOT NULL,null,3
+partner_user,role,text,NOT NULL,'staff'::text,4
+partner_user,created_at,timestamp with time zone,NOT NULL,now(),5
 payment_info,code,text,NOT NULL,null,1
 payment_info,name,text,NOT NULL,null,2
 payment_notifications,id,uuid,NOT NULL,gen_random_uuid(),1
@@ -501,6 +739,7 @@ reservation_airport,pickup_confirmed_at,timestamp with time zone,NULL 가능,nul
 reservation_airport,dispatch_memo,text,NULL 가능,null,19
 reservation_airport,way_type,text,NULL 가능,'pickup'::text,20
 reservation_airport,accommodation_info,text,NULL 가능,null,21
+reservation_airport,vehicle_type,text,NULL 가능,null,23
 reservation_airport_fasttrack,id,uuid,NOT NULL,gen_random_uuid(),1
 reservation_airport_fasttrack,reservation_id,uuid,NOT NULL,null,2
 reservation_airport_fasttrack,reservation_airport_id,uuid,NOT NULL,null,3
@@ -803,6 +1042,7 @@ reservation_no_quote_backup,re_child_count,integer,NULL 가능,null,16
 reservation_no_quote_backup,re_infant_count,integer,NULL 가능,null,17
 reservation_no_quote_backup,reservation_date,date,NULL 가능,null,18
 reservation_no_quote_backup,price_breakdown,jsonb,NULL 가능,null,19
+reservation_no_quote_backup,_backup_pk,bigint,NOT NULL,nextval('reservation_no_quote_backup__backup_pk_seq'::regclass),20
 reservation_no_quote_reservation_airport_backup,id,uuid,NULL 가능,null,1
 reservation_no_quote_reservation_airport_backup,reservation_id,uuid,NULL 가능,null,2
 reservation_no_quote_reservation_airport_backup,airport_price_code,text,NULL 가능,null,3
@@ -824,6 +1064,7 @@ reservation_no_quote_reservation_airport_backup,pickup_confirmed_at,timestamp wi
 reservation_no_quote_reservation_airport_backup,dispatch_memo,text,NULL 가능,null,19
 reservation_no_quote_reservation_airport_backup,way_type,text,NULL 가능,null,20
 reservation_no_quote_reservation_airport_backup,accommodation_info,text,NULL 가능,null,21
+reservation_no_quote_reservation_airport_backup,_backup_pk,bigint,NOT NULL,nextval('reservation_no_quote_reservation_airport_backup__backup_pk_seq'::regclass),22
 reservation_no_quote_reservation_cruise_backup,reservation_id,uuid,NULL 가능,null,1
 reservation_no_quote_reservation_cruise_backup,room_price_code,text,NULL 가능,null,2
 reservation_no_quote_reservation_cruise_backup,checkin,date,NULL 가능,null,3
@@ -847,6 +1088,7 @@ reservation_no_quote_reservation_cruise_backup,single_count,integer,NULL 가능,
 reservation_no_quote_reservation_cruise_backup,connecting_room,boolean,NULL 가능,null,21
 reservation_no_quote_reservation_cruise_backup,birthday_event,boolean,NULL 가능,null,22
 reservation_no_quote_reservation_cruise_backup,birthday_name,text,NULL 가능,null,23
+reservation_no_quote_reservation_cruise_backup,_backup_pk,bigint,NOT NULL,nextval('reservation_no_quote_reservation_cruise_backup__backup_pk_seq'::regclass),24
 reservation_no_quote_reservation_tour_backup,reservation_id,uuid,NULL 가능,null,1
 reservation_no_quote_reservation_tour_backup,tour_price_code,text,NULL 가능,null,2
 reservation_no_quote_reservation_tour_backup,tour_capacity,integer,NULL 가능,null,3
@@ -863,6 +1105,7 @@ reservation_no_quote_reservation_tour_backup,child_count,integer,NULL 가능,nul
 reservation_no_quote_reservation_tour_backup,infant_count,integer,NULL 가능,null,14
 reservation_no_quote_reservation_tour_backup,accommodation_info,text,NULL 가능,null,15
 reservation_no_quote_reservation_tour_backup,dispatch_code,text,NULL 가능,null,16
+reservation_no_quote_reservation_tour_backup,_backup_pk,bigint,NOT NULL,nextval('reservation_no_quote_reservation_tour_backup__backup_pk_seq'::regclass),17
 reservation_package,id,uuid,NOT NULL,gen_random_uuid(),1
 reservation_package,reservation_id,uuid,NOT NULL,null,2
 reservation_package,package_id,uuid,NOT NULL,null,3
@@ -952,21 +1195,6 @@ reservation_status_log,changed_by,uuid,NULL 가능,null,6
 reservation_status_log,changed_by_email,text,NULL 가능,null,7
 reservation_status_log,changed_at,timestamp with time zone,NOT NULL,now(),8
 reservation_status_log,note,text,NULL 가능,null,9
-reservation_tour,reservation_id,uuid,NULL 가능,null,1
-reservation_tour,tour_price_code,text,NULL 가능,null,2
-reservation_tour,tour_capacity,integer,NULL 가능,null,3
-reservation_tour,pickup_location,text,NULL 가능,null,4
-reservation_tour,dropoff_location,text,NULL 가능,null,5
-reservation_tour,total_price,numeric,NULL 가능,null,6
-reservation_tour,request_note,text,NULL 가능,null,7
-reservation_tour,id,uuid,NOT NULL,gen_random_uuid(),8
-reservation_tour,created_at,timestamp with time zone,NOT NULL,now(),9
-reservation_tour,usage_date,date,NULL 가능,null,10
-reservation_tour,unit_price,numeric,NULL 가능,null,11
-reservation_tour,adult_count,integer,NULL 가능,1,12
-reservation_tour,child_count,integer,NULL 가능,0,13
-reservation_tour,infant_count,integer,NULL 가능,0,14
-reservation_tour,dispatch_code,text,NULL 가능,null,16
 reservation_ticket,id,uuid,NOT NULL,gen_random_uuid(),1
 reservation_ticket,reservation_id,uuid,NOT NULL,null,2
 reservation_ticket,ticket_type,text,NOT NULL,'other'::text,3
@@ -984,6 +1212,21 @@ reservation_ticket,total_price,numeric,NOT NULL,0,14
 reservation_ticket,request_note,text,NULL 가능,null,15
 reservation_ticket,created_at,timestamp with time zone,NOT NULL,now(),16
 reservation_ticket,updated_at,timestamp with time zone,NOT NULL,now(),17
+reservation_tour,reservation_id,uuid,NULL 가능,null,1
+reservation_tour,tour_price_code,text,NULL 가능,null,2
+reservation_tour,tour_capacity,integer,NULL 가능,null,3
+reservation_tour,pickup_location,text,NULL 가능,null,4
+reservation_tour,dropoff_location,text,NULL 가능,null,5
+reservation_tour,total_price,numeric,NULL 가능,null,6
+reservation_tour,request_note,text,NULL 가능,null,7
+reservation_tour,id,uuid,NOT NULL,gen_random_uuid(),8
+reservation_tour,created_at,timestamp with time zone,NOT NULL,now(),9
+reservation_tour,usage_date,date,NULL 가능,null,10
+reservation_tour,unit_price,numeric,NULL 가능,null,11
+reservation_tour,adult_count,integer,NULL 가능,1,12
+reservation_tour,child_count,integer,NULL 가능,0,13
+reservation_tour,infant_count,integer,NULL 가능,0,14
+reservation_tour,dispatch_code,text,NULL 가능,null,16
 room,id,uuid,NOT NULL,gen_random_uuid(),1
 room,base_price,numeric,NULL 가능,null,2
 room,created_at,timestamp with time zone,NULL 가능,now(),3
@@ -1415,81 +1658,4 @@ v_notification_stats,completed_count,bigint,NULL 가능,null,5
 v_notification_stats,urgent_count,bigint,NULL 가능,null,6
 v_notification_stats,high_count,bigint,NULL 가능,null,7
 v_notification_stats,business_count,bigint,NULL 가능,null,8
-v_notification_stats,customer_count,bigint,NULL 가능,null,9partner,partner_id,uuid,NOT NULL,gen_random_uuid(),1
-partner,name,text,NOT NULL,null,2
-partner,category,text,NOT NULL,null,3
-partner,description,text,NULL 가능,null,4
-partner,address,text,NULL 가능,null,5
-partner,phone,text,NULL 가능,null,6
-partner,email,text,NULL 가능,null,7
-partner,website,text,NULL 가능,null,8
-partner,operating_hours,text,NULL 가능,null,9
-partner,region,text,NOT NULL,null,10
-partner,thumbnail_url,text,NULL 가능,null,11
-partner,display_order,integer,NULL 가능,null,12
-partner,is_active,boolean,NULL 가능,true,13
-partner,created_at,timestamp with time zone,NOT NULL,now(),14
-partner,updated_at,timestamp with time zone,NOT NULL,now(),15
-partner_price,price_code,text,NOT NULL,null,1
-partner_price,partner_id,uuid,NOT NULL,null,2
-partner_price,service_id,uuid,NOT NULL,null,3
-partner_price,currency,text,NOT NULL,'VND'::text,4
-partner_price,price_per_unit,numeric,NULL 가능,null,5
-partner_price,unit_type,text,NULL 가능,null,6
-partner_price,is_active,boolean,NULL 가능,true,7
-partner_price,created_at,timestamp with time zone,NOT NULL,now(),8
-partner_price,updated_at,timestamp with time zone,NOT NULL,now(),9
-partner_promotion,promo_id,uuid,NOT NULL,gen_random_uuid(),1
-partner_promotion,partner_id,uuid,NOT NULL,null,2
-partner_promotion,promo_name,text,NOT NULL,null,3
-partner_promotion,discount_type,text,NULL 가능,null,4
-partner_promotion,discount_value,numeric,NULL 가능,null,5
-partner_promotion,is_active,boolean,NULL 가능,true,6
-partner_promotion,start_date,date,NULL 가능,null,7
-partner_promotion,end_date,date,NULL 가능,null,8
-partner_promotion,created_at,timestamp with time zone,NOT NULL,now(),9
-partner_promotion,updated_at,timestamp with time zone,NOT NULL,now(),10
-partner_reservation,pr_id,uuid,NOT NULL,gen_random_uuid(),1
-partner_reservation,pr_user_id,uuid,NOT NULL,null,2
-partner_reservation,pr_partner_id,uuid,NOT NULL,null,3
-partner_reservation,pr_service_id,uuid,NOT NULL,null,4
-partner_reservation,pr_price_code,text,NULL 가능,null,5
-partner_reservation,checkin_date,date,NULL 가능,null,6
-partner_reservation,checkout_date,date,NULL 가능,null,7
-partner_reservation,nights,integer,NULL 가능,1,8
-partner_reservation,guest_count,integer,NOT NULL,1,9
-partner_reservation,room_count,integer,NOT NULL,1,10
-partner_reservation,unit_price,numeric,NOT NULL,0,11
-partner_reservation,total_price,numeric,NOT NULL,0,12
-partner_reservation,currency,text,NOT NULL,'VND'::text,13
-partner_reservation,status,text,NOT NULL,'pending'::text,14
-partner_reservation,request_note,text,NULL 가능,null,15
-partner_reservation,contact_name,text,NULL 가능,null,16
-partner_reservation,contact_phone,text,NULL 가능,null,17
-partner_reservation,created_at,timestamp with time zone,NOT NULL,now(),18
-partner_reservation,updated_at,timestamp with time zone,NOT NULL,now(),19
-partner_reservation,scheduled_at,timestamp with time zone,NULL 가능,null,20
-partner_reservation,duration_minutes,integer,NULL 가능,null,21
-partner_reservation,quantity,integer,NOT NULL,1,22
-partner_reservation,service_label,text,NULL 가능,null,23
-partner_reservation,price_label,text,NULL 가능,null,24
-partner_reservation,discount_rate,numeric,NOT NULL,0,25
-partner_reservation,discount_amount,numeric,NOT NULL,0,26
-partner_reservation,payment_status,text,NOT NULL,'unpaid'::text,27
-partner_reservation,confirmation_code,text,NULL 가능,null,28
-partner_service,service_id,uuid,NOT NULL,gen_random_uuid(),1
-partner_service,partner_id,uuid,NOT NULL,null,2
-partner_service,service_name,text,NOT NULL,null,3
-partner_service,description,text,NULL 가능,null,4
-partner_service,category,text,NULL 가능,null,5
-partner_service,is_active,boolean,NULL 가능,true,6
-partner_service,sort_order,integer,NULL 가능,null,7
-partner_service,created_at,timestamp with time zone,NOT NULL,now(),8
-partner_service,updated_at,timestamp with time zone,NOT NULL,now(),9
-partner_user,partner_user_id,uuid,NOT NULL,gen_random_uuid(),1
-partner_user,pu_partner_id,uuid,NOT NULL,null,2
-partner_user,pu_user_id,uuid,NOT NULL,null,3
-partner_user,role,text,NOT NULL,'user'::text,4
-partner_user,is_active,boolean,NULL 가능,true,5
-partner_user,created_at,timestamp with time zone,NOT NULL,now(),6
-partner_user,updated_at,timestamp with time zone,NOT NULL,now(),7
+v_notification_stats,customer_count,bigint,NULL 가능,null,9

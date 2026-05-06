@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 const CACHE_KEY = 'sht_partner_user_cache';
+const PROFILE_CACHE_KEY = 'sht_partner_profile_cache';
+const PROFILE_CACHE_TTL_MS = 1000 * 60 * 30;
 
 function readCache(): any | null {
     if (typeof window === 'undefined') return null;
@@ -18,6 +20,29 @@ function writeCache(user: any | null) {
     try {
         if (user) window.localStorage.setItem(CACHE_KEY, JSON.stringify(user));
         else window.localStorage.removeItem(CACHE_KEY);
+    } catch { /* noop */ }
+}
+
+function readProfileCache(userId: string): AuthState['profile'] | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = window.localStorage.getItem(PROFILE_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed?.userId !== userId || !parsed?.cachedAt) return null;
+        if (Date.now() - parsed.cachedAt > PROFILE_CACHE_TTL_MS) return null;
+        return parsed.profile ?? null;
+    } catch { return null; }
+}
+
+function writeProfileCache(userId: string | null, profile: AuthState['profile'] | null) {
+    if (typeof window === 'undefined') return;
+    try {
+        if (!userId || !profile) {
+            window.localStorage.removeItem(PROFILE_CACHE_KEY);
+            return;
+        }
+        window.localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({ userId, profile, cachedAt: Date.now() }));
     } catch { /* noop */ }
 }
 
@@ -67,30 +92,33 @@ export function useAuth(requiredRoles?: string[], redirectOnFail: string = '/par
                 writeCache(user);
 
                 // role/partner_id 조회
-                let profile: AuthState['profile'] = null;
+                let profile: AuthState['profile'] = readProfileCache(user.id);
                 try {
-                    const { data: u } = await supabase
-                        .from('users')
-                        .select('role, name')
-                        .eq('id', user.id)
-                        .maybeSingle();
-                    let partner_id: string | null = null;
-                    let partner_code: string | null = null;
-                    let partner_name: string | null = null;
-                    let branch_name: string | null = null;
-                    if (u?.role === 'partner') {
-                        const { data: pu } = await supabase
-                            .from('partner_user')
-                            .select('pu_partner_id, partner:pu_partner_id(partner_code, name, branch_name)')
-                            .eq('pu_user_id', user.id)
+                    if (!profile) {
+                        const { data: u } = await supabase
+                            .from('users')
+                            .select('role, name')
+                            .eq('id', user.id)
                             .maybeSingle();
-                        partner_id = (pu as any)?.pu_partner_id ?? null;
-                        const p = (pu as any)?.partner;
-                        partner_code = p?.partner_code ?? null;
-                        partner_name = p?.name ?? null;
-                        branch_name = p?.branch_name ?? null;
+                        let partner_id: string | null = null;
+                        let partner_code: string | null = null;
+                        let partner_name: string | null = null;
+                        let branch_name: string | null = null;
+                        if (u?.role === 'partner') {
+                            const { data: pu } = await supabase
+                                .from('partner_user')
+                                .select('pu_partner_id, partner:pu_partner_id(partner_code, name, branch_name)')
+                                .eq('pu_user_id', user.id)
+                                .maybeSingle();
+                            partner_id = (pu as any)?.pu_partner_id ?? null;
+                            const p = (pu as any)?.partner;
+                            partner_code = p?.partner_code ?? null;
+                            partner_name = p?.name ?? null;
+                            branch_name = p?.branch_name ?? null;
+                        }
+                        profile = { role: u?.role, name: u?.name, partner_id, partner_code, partner_name, branch_name };
+                        writeProfileCache(user.id, profile);
                     }
-                    profile = { role: u?.role, name: u?.name, partner_id, partner_code, partner_name, branch_name };
                 } catch { /* ignore */ }
 
                 if (cancelled) return;
@@ -117,6 +145,7 @@ export function useAuth(requiredRoles?: string[], redirectOnFail: string = '/par
             if (cancelled) return;
             if (event === 'SIGNED_OUT') {
                 writeCache(null);
+                writeProfileCache(null, null);
                 setState({ user: null, profile: null, loading: false });
                 router.replace(redirectOnFail);
                 return;
