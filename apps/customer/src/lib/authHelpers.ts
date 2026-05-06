@@ -55,16 +55,16 @@ function getStoredSessionUser(): any | null {
  * 현재 로그인된 사용자 조회.
  *
  * 핵심:
- *  - supabase.auth.getSession()은 로컬 캐시만 읽음 → 네트워크/타임아웃 불필요
+ *  - supabase.auth.getUser()는 서버에서 JWT 유효성 검증 → 만료된 토큰 403 방지
  *  - 실패 시 sessionStorage / localStorage 백업에서 복구 시도
  *  - timeoutMs 인자는 하위 호환을 위해 유지하지만 실제로 사용하지 않음
  */
 export async function getSessionUser(_timeoutMs?: number): Promise<{ user: any; error: any }> {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data, error } = await supabase.auth.getUser();
 
-    if (session?.user) {
-      return { user: session.user, error: null };
+    if (data?.user) {
+      return { user: data.user, error: null };
     }
 
     // 로컬 백업에서 복구 시도
@@ -91,8 +91,8 @@ export async function getSessionUser(_timeoutMs?: number): Promise<{ user: any; 
  */
 export async function refreshAuthBeforeSubmit(_timeoutMs?: number): Promise<{ user: any; error?: any }> {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (session?.user) return { user: session.user, error: null };
+    const { data, error } = await supabase.auth.getUser();
+    if (data?.user) return { user: data.user, error: null };
     const fallbackUser = getStoredSessionUser();
     if (fallbackUser) return { user: fallbackUser, error: null };
     return { user: null, error: error || new Error('No active session') };

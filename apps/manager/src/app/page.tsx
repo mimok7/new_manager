@@ -24,8 +24,7 @@ export default function HomePage() {
 
   const checkAuth = async () => {
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      const authUser = session?.user ?? null;
+      const { data: { user: authUser }, error } = await supabase.auth.getUser();
 
       if (error || !authUser) {
         console.log('❌ 로그인되지 않은 상태');

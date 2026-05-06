@@ -109,8 +109,8 @@ export function useAuth(requiredRoles?: string[], redirectOnFail: string = '/log
 
         const checkOnce = async () => {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
-                await applyAuth(session?.user ?? null);
+                const { data: { user } } = await supabase.auth.getUser();
+                await applyAuth(user ?? null);
             } catch (err) {
                 if (cancelled) return;
                 setAuthState((prev) => ({ ...prev, loading: false, error: err as Error }));
@@ -146,16 +146,16 @@ export function useAuth(requiredRoles?: string[], redirectOnFail: string = '/log
 
     const refetch = async () => {
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
                 const { data } = await supabase
                     .from('users')
                     .select('role')
-                    .eq('id', session.user.id)
+                    .eq('id', user.id)
                     .maybeSingle();
                 const role = ((data?.role as string) || 'guest');
-                writeSessionCache(session.user, role);
-                setAuthState({ user: session.user, role, loading: false, error: null });
+                writeSessionCache(user, role);
+                setAuthState({ user, role, loading: false, error: null });
             } else {
                 writeSessionCache(null);
                 setAuthState({ user: null, role: null, loading: false, error: null });

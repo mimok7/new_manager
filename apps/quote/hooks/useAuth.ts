@@ -77,18 +77,15 @@ export function useAuth(redirectOnFail: string = '/login') {
                     setAuthState({ user: cached, loading: false, error: null });
                 }
 
-                const { data: { session } } = await supabase.auth.getSession();
+                const { data: { user: verifiedUser } } = await supabase.auth.getUser();
                 if (cancelled) return;
-                if (session?.user) {
-                    writeSessionCache(session.user);
-                    setAuthState({ user: session.user, loading: false, error: null });
-                } else if (!cached) {
-                    // 캐시도 없고 세션도 없을 때만 로그인 페이지로 이동
+                if (verifiedUser) {
+                    writeSessionCache(verifiedUser);
+                    setAuthState({ user: verifiedUser, loading: false, error: null });
+                } else {
+                    writeSessionCache(null);
                     setAuthState({ user: null, loading: false, error: null });
                     router.replace(redirectOnFail);
-                } else {
-                    // 캐시가 있으면 일단 유지 (네트워크 일시 장애 등 대비)
-                    setAuthState(prev => ({ ...prev, loading: false }));
                 }
             } catch (err) {
                 if (cancelled) return;
@@ -123,10 +120,10 @@ export function useAuth(redirectOnFail: string = '/login') {
 
     const refetch = async () => {
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                writeSessionCache(session.user);
-                setAuthState({ user: session.user, loading: false, error: null });
+            const { data: { user: verifiedUser } } = await supabase.auth.getUser();
+            if (verifiedUser) {
+                writeSessionCache(verifiedUser);
+                setAuthState({ user: verifiedUser, loading: false, error: null });
             } else {
                 writeSessionCache(null);
                 setAuthState({ user: null, loading: false, error: null });

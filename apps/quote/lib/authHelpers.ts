@@ -61,24 +61,14 @@ function getStoredSessionUser(): any | null {
  */
 export async function getSessionUser(_timeoutMs?: number): Promise<{ user: any; error: any }> {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-    if (session?.user) {
-      return { user: session.user, error: null };
-    }
-
-    // 로컬 백업에서 복구 시도
-    const fallbackUser = getStoredSessionUser();
-    if (fallbackUser) {
-      return { user: fallbackUser, error: null };
+    if (user) {
+      return { user, error: null };
     }
 
     return { user: null, error };
   } catch (err) {
-    const fallbackUser = getStoredSessionUser();
-    if (fallbackUser) {
-      return { user: fallbackUser, error: null };
-    }
     return { user: null, error: err };
   }
 }
@@ -91,14 +81,10 @@ export async function getSessionUser(_timeoutMs?: number): Promise<{ user: any; 
  */
 export async function refreshAuthBeforeSubmit(_timeoutMs?: number): Promise<{ user: any; error?: any }> {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (session?.user) return { user: session.user, error: null };
-    const fallbackUser = getStoredSessionUser();
-    if (fallbackUser) return { user: fallbackUser, error: null };
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (user) return { user, error: null };
     return { user: null, error: error || new Error('No active session') };
   } catch (err) {
-    const fallbackUser = getStoredSessionUser();
-    if (fallbackUser) return { user: fallbackUser, error: null };
     return { user: null, error: err };
   }
 }

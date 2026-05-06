@@ -58,27 +58,6 @@ const supabaseProxy: any = new Proxy({}, {
         get(target, authProp) {
           const original = (target as any)[authProp as any];
           if (typeof original !== 'function') return original;
-
-          if (authProp === 'getUser') {
-            return async (...args: any[]) => {
-              if (args.length === 0 && typeof window !== 'undefined' && typeof (target as any).getSession === 'function') {
-                try {
-                  const sessionResult = await Promise.resolve((target as any).getSession());
-                  const sessionUser = sessionResult?.data?.session?.user ?? null;
-                  if (sessionUser) {
-                    return { data: { user: sessionUser }, error: null } as any;
-                  }
-                } catch {
-                  // Treat transient local-session read failures as signed-out without network verification.
-                }
-
-                return { data: { user: null }, error: null } as any;
-              }
-
-              return Promise.resolve(original.apply(target, args));
-            };
-          }
-
           return original.bind(target);
         }
       });

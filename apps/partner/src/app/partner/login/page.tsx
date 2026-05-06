@@ -27,8 +27,9 @@ export default function PartnerLoginPage() {
         let cancelled = false;
         (async () => {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
-                const user = session?.user ?? null;
+                // ✅ getSession() → getUser(): 서버에서 JWT 유효성 검증
+                const { data } = await supabase.auth.getUser();
+                const user = data?.user ?? null;
                 if (cancelled) return;
 
                 if (user) {

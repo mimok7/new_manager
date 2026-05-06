@@ -21,6 +21,8 @@ export default function ManagerLayout({ children, title, activeTab }: ManagerLay
   const [userRole, setUserRole] = useState<string | null>(() => getCachedRole() || getCookieRole() || 'guest');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [sidebarMode, setSidebarMode] = useState<'auto' | 'manual'>('auto');
+  // ✅ 인증 완료 전까지 children 렌더링 차단 (403 방지)
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,16 +30,11 @@ export default function ManagerLayout({ children, title, activeTab }: ManagerLay
 
     const init = async () => {
       try {
-        // 레이아웃 렌더를 블로킹하지 않고 세션을 동기화한다.
-        const { data, error } = await supabase.auth.getSession();
+        // ✅ getSession() → getUser() 로 변경: 서버에서 JWT 유효성 검증 + 만료 시 자동 갱신
+        const { data, error } = await supabase.auth.getUser();
         if (cancelled) return;
-        const sessionUser = data?.session?.user ?? null;
+        const sessionUser = data?.user ?? null;
         if (error || !sessionUser) {
-          // 캐시된 role/사용자가 있으면 일시적 세션 미스로 간주하고 유지
-          if (cachedRole) {
-            setUserRole(cachedRole);
-            return;
-          }
           setUserRole('guest');
           router.replace('/login');
           return;
@@ -48,14 +45,11 @@ export default function ManagerLayout({ children, title, activeTab }: ManagerLay
         const roleFromCache = cached || cookieRole;
         setUserRole(roleFromCache || 'guest');
         if (!cached && roleFromCache) setCachedRole(roleFromCache);
+        // ✅ 인증 완료 → children 렌더링 허용
+        setAuthReady(true);
       } catch (err) {
         console.warn('세션 확인 경고:', err);
         if (cancelled) return;
-        // 일시 오류 시 캐시된 role이 있으면 유지 (강제 로그아웃 금지)
-        if (cachedRole) {
-          setUserRole(cachedRole);
-          return;
-        }
         setUserRole('guest');
         router.replace('/login');
       }
@@ -209,7 +203,11 @@ export default function ManagerLayout({ children, title, activeTab }: ManagerLay
             {title && <h1 className="text-lg font-semibold text-gray-800 truncate">{title}</h1>}
           </div>
           <main className="flex-1 overflow-y-auto px-4 py-6">
-            {children}
+            {authReady ? children : (
+              <div className="flex justify-center items-center h-72">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500" />
+              </div>
+            )}
             <div className="h-10" />
           </main>
         </div>

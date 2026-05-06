@@ -112,6 +112,7 @@ function CruiseCarReservationEditContent() {
     const [additionalFee, setAdditionalFee] = useState(0);
     const [additionalFeeDetail, setAdditionalFeeDetail] = useState('');
     const [feeTemplates, setFeeTemplates] = useState<{ id: number; name: string; amount: number }[]>([]);
+    const [authChecked, setAuthChecked] = useState(false);
 
     const baseTotalPrice = useMemo(
         () => vehicleForms.reduce((sum, item) => sum + (item.car_total_price || 0), 0),
@@ -125,13 +126,37 @@ function CruiseCarReservationEditContent() {
 
     const finalTotalPrice = baseTotalPrice + additionalFee;
 
+    // ✅ 인증 상태 확인 (403 에러 사전 방지)
     useEffect(() => {
+        let cancelled = false;
+        const checkAuth = async () => {
+            try {
+                const { data, error } = await supabase.auth.getUser();
+                if (cancelled) return;
+                if (error || !data?.user) {
+                    router.replace('/login');
+                    return;
+                }
+                setAuthChecked(true);
+            } catch (err) {
+                if (cancelled) return;
+                console.warn('인증 확인 오류:', err);
+                router.replace('/login');
+            }
+        };
+        checkAuth();
+        return () => { cancelled = true; };
+    }, []);
+
+    // ✅ 인증 후 예약 데이터 로드
+    useEffect(() => {
+        if (!authChecked) return;
         if (reservationId) {
             loadReservation();
         } else {
             router.push('/manager/reservation-edit');
         }
-    }, [reservationId]);
+    }, [reservationId, authChecked]);
 
     useEffect(() => {
         loadWayTypeOptions();

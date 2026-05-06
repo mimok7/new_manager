@@ -42,9 +42,8 @@ function LoginForm() {
         return;
       }
 
-      // ✅ 로그인 후 로컬 세션 재확인
-      const { data: { session }, error: userError } = await supabase.auth.getSession();
-      const user = session?.user ?? null;
+      // ✅ 로그인 후 서버에서 사용자 재확인
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
         console.error('❌ 사용자 정보 조회 실패:', userError);

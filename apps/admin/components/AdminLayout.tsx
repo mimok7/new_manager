@@ -92,9 +92,8 @@ export default function AdminLayout({ children, title, activeTab }: AdminLayoutP
 
     const fullCheck = async () => {
       try {
-        // 세션 우선 확인 (localStorage 기반, 거의 즉시 반환)
-        const { data: { session } } = await supabase.auth.getSession();
-        const sessionUser = session?.user ?? null;
+        // 서버에서 JWT 유효성 검증 (만료 시 자동 갱신)
+        const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
         if (!sessionUser) {
           if (cancelled) return;

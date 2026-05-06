@@ -24,13 +24,13 @@ export default function HomeRedirector() {
                 if (cancelled) return;
 
                 if (cachedUser) {
-                    // Cached user can be stale after session expiry; verify local session first.
+                    // Cached user can be stale after session expiry; verify with server.
                     const { default: supabase } = await import('@/lib/supabase');
-                    const { data: { session } } = await supabase.auth.getSession();
+                    const { data: { user } } = await supabase.auth.getUser();
 
                     if (cancelled) return;
 
-                    if (!session?.user) {
+                    if (!user) {
                         clearCachedUser();
                         return;
                     }
@@ -45,8 +45,7 @@ export default function HomeRedirector() {
 
                 // Lazy-load Supabase only if needed; keep homepage paint unblocked.
                 const { default: supabase } = await import('@/lib/supabase');
-                const { data: { session }, error } = await supabase.auth.getSession();
-                const user = session?.user ?? null;
+                const { data: { user }, error } = await supabase.auth.getUser();
 
                 if (cancelled) return;
                 if (error || !user) return;

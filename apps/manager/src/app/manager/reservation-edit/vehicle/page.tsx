@@ -43,6 +43,7 @@ interface CruiseCarReservation {
     request_note: string;
     dispatch_code: string;
     dispatch_memo: string;
+    cruise_name?: string;
     reservation: {
         re_id: string;
         re_status: string;
@@ -112,6 +113,7 @@ function CruiseCarReservationEditContent() {
     const [additionalFee, setAdditionalFee] = useState(0);
     const [additionalFeeDetail, setAdditionalFeeDetail] = useState('');
     const [feeTemplates, setFeeTemplates] = useState<{ id: number; name: string; amount: number }[]>([]);
+    const [authChecked, setAuthChecked] = useState(false);
 
     const baseTotalPrice = useMemo(
         () => vehicleForms.reduce((sum, item) => sum + (item.car_total_price || 0), 0),
@@ -125,13 +127,37 @@ function CruiseCarReservationEditContent() {
 
     const finalTotalPrice = baseTotalPrice + additionalFee;
 
+    // ✅ 인증 상태 확인 (403 에러 사전 방지)
     useEffect(() => {
+        let cancelled = false;
+        const checkAuth = async () => {
+            try {
+                const { data, error } = await supabase.auth.getUser();
+                if (cancelled) return;
+                if (error || !data?.user) {
+                    router.replace('/login');
+                    return;
+                }
+                setAuthChecked(true);
+            } catch (err) {
+                if (cancelled) return;
+                console.warn('인증 확인 오류:', err);
+                router.replace('/login');
+            }
+        };
+        checkAuth();
+        return () => { cancelled = true; };
+    }, []);
+
+    // ✅ 인증 후 예약 데이터 로드
+    useEffect(() => {
+        if (!authChecked) return;
         if (reservationId) {
             loadReservation();
         } else {
             router.push('/manager/reservation-edit');
         }
-    }, [reservationId]);
+    }, [reservationId, authChecked]);
 
     useEffect(() => {
         loadWayTypeOptions();
@@ -147,6 +173,11 @@ function CruiseCarReservationEditContent() {
     }, []);
 
     const getAutoTotal = (item: VehicleFormData) => {
+        // 크루즈 셔틀 리무진: 승객 수로만 계산
+        if (item.vehicle_type === '크루즈 셔틀 리무진') {
+            return (item.unit_price || 0) * (item.passenger_count || 0);
+        }
+        // 다른 차량: 차량 대수 우선, 없으면 승객 수
         const targetCount = item.car_count > 0 ? item.car_count : item.passenger_count;
         return (item.unit_price || 0) * targetCount;
     };
@@ -251,19 +282,25 @@ function CruiseCarReservationEditContent() {
         }
     };
 
-    const ensureVehicleTypeOptions = async (wayType: string, route: string) => {
+    const ensureVehicleTypeOptions = async (wayType: string, route: string, cruiseName?: string) => {
         if (!wayType || !route) return;
         const key = `${wayType}__${route}`;
         if (vehicleTypeOptionsByKey[key]) return;
 
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('rentcar_price')
                 .select('vehicle_type')
                 .eq('way_type', wayType)
                 .eq('route', route)
-                .not('vehicle_type', 'is', null)
-                .order('vehicle_type');
+                .not('vehicle_type', 'is', null);
+
+            // 크루즈 명이 있으면 해당 크루즈 카테고리로 필터링
+            if (cruiseName) {
+                query = query.eq('category', cruiseName);
+            }
+
+            const { data, error } = await query.order('vehicle_type');
 
             if (error) throw error;
 
@@ -293,17 +330,22 @@ function CruiseCarReservationEditContent() {
         return data as RentcarPriceOption | null;
     };
 
-    const findRentcarPrice = async (wayType: string, route: string, vehicleType: string) => {
+    const findRentcarPrice = async (wayType: string, route: string, vehicleType: string, cruiseName?: string) => {
         if (!wayType || !route || !vehicleType) return null;
 
-        const { data, error } = await supabase
+        let query = supabase
             .from('rentcar_price')
             .select('rent_code, way_type, route, vehicle_type, price')
             .eq('way_type', wayType)
             .eq('route', route)
-            .eq('vehicle_type', vehicleType)
-            .limit(1)
-            .maybeSingle();
+            .eq('vehicle_type', vehicleType);
+
+        // 크루즈 명이 있으면 해당 크루즈 카테고리로 필터링
+        if (cruiseName) {
+            query = query.eq('category', cruiseName);
+        }
+
+        const { data, error } = await query.limit(1).maybeSingle();
 
         if (error) {
             console.error('❌ rentcar_price 선택값 조회 실패:', error);
@@ -311,7 +353,7 @@ function CruiseCarReservationEditContent() {
         }
 
         if (!data) {
-            console.warn('⚠️ 일치하는 rentcar_price 데이터가 없습니다:', { wayType, route, vehicleType });
+            console.warn('⚠️ 일치하는 rentcar_price 데이터가 없습니다:', { wayType, route, vehicleType, cruiseName });
             return null;
         }
 
@@ -412,8 +454,22 @@ function CruiseCarReservationEditContent() {
                 dispatch_memo: ''
             };
 
+            // 크루즈 명 조회
+            let cruiseName = '';
+            if (firstRow?.room_price_code) {
+                const { data: cruiseData } = await supabase
+                    .from('cruise_rate_card')
+                    .select('cruise_name')
+                    .eq('id', firstRow.room_price_code)
+                    .maybeSingle();
+                if (cruiseData?.cruise_name) {
+                    cruiseName = cruiseData.cruise_name;
+                }
+            }
+
             const fullReservation: CruiseCarReservation = {
                 ...(firstRow || defaultCarInfo),
+                cruise_name: cruiseName,
                 reservation: {
                     re_id: resRow.re_id,
                     re_status: resRow.re_status,
@@ -438,7 +494,7 @@ function CruiseCarReservationEditContent() {
                 const route = row.route || rentcarPriceInfo?.route || '';
 
                 if (wayType) await ensureRouteOptions(wayType);
-                if (wayType && route) await ensureVehicleTypeOptions(wayType, route);
+                if (wayType && route) await ensureVehicleTypeOptions(wayType, route, cruiseName);
 
                 const form: VehicleFormData = {
                     rentcar_price_code: existingCode,
@@ -679,14 +735,32 @@ function CruiseCarReservationEditContent() {
                                     </div>
                                 </div>
                             </div>
+                            {reservation.cruise_name && (
+                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">크루즈 명</label>
+                                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <span className="text-lg font-semibold text-blue-900">⛴️</span>
+                                        <span className="text-lg font-semibold text-blue-900">{reservation.cruise_name}</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="bg-white rounded-lg shadow-sm p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
-                                    <Car className="w-5 h-5" />
-                                    크루즈 차량 세부사항 수정
-                                </h3>
+                                <div>
+                                    <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                                        <Car className="w-5 h-5" />
+                                        크루즈 차량 세부사항 수정
+                                    </h3>
+                                    {reservation.cruise_name && (
+                                        <p className="text-sm text-gray-600 mt-2 flex items-center gap-2">
+                                            <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                                ⛴️ {reservation.cruise_name}
+                                            </span>
+                                        </p>
+                                    )}
+                                </div>
                                 <button
                                     type="button"
                                     onClick={addVehicleForm}
@@ -760,7 +834,7 @@ function CruiseCarReservationEditContent() {
                                                                 unit_price: 0
                                                             });
                                                             if (item.way_type && nextRoute) {
-                                                                await ensureVehicleTypeOptions(item.way_type, nextRoute);
+                                                                await ensureVehicleTypeOptions(item.way_type, nextRoute, reservation.cruise_name);
                                                             }
                                                         }}
                                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -786,13 +860,18 @@ function CruiseCarReservationEditContent() {
                                                                 rentcar_price_code: ''
                                                             });
 
-                                                            const priceInfo = await findRentcarPrice(item.way_type, item.route, nextType);
+                                                            const priceInfo = await findRentcarPrice(item.way_type, item.route, nextType, reservation.cruise_name);
                                                             if (priceInfo) {
                                                                 updateVehicleFormWithAutoTotal(index, {
                                                                     rentcar_price_code: priceInfo.rent_code || '',
                                                                     way_type: priceInfo.way_type || item.way_type,
                                                                     route: priceInfo.route || item.route,
                                                                     vehicle_type: priceInfo.vehicle_type || nextType,
+                                                                    manual_total: false,
+                                                                    unit_price: priceInfo.price || 0
+                                                                });
+                                                            }
+                                                        }}
                                                                     manual_total: false,
                                                                     unit_price: priceInfo.price || 0
                                                                 });
@@ -824,12 +903,16 @@ function CruiseCarReservationEditContent() {
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                                         <Car className="inline w-4 h-4 mr-1" />
                                                         차량 대수
+                                                        {item.vehicle_type === '크루즈 셔틀 리무진' && (
+                                                            <span className="ml-2 text-xs text-orange-600">(크루즈 셔틀은 승객 수 기반)</span>
+                                                        )}
                                                     </label>
                                                     <input
                                                         type="number"
                                                         value={item.car_count}
                                                         onChange={(e) => updateVehicleFormWithAutoTotal(index, { car_count: parseInt(e.target.value, 10) || 0 })}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        disabled={item.vehicle_type === '크루즈 셔틀 리무진'}
+                                                        className={`w-full px-3 py-2 border rounded-lg ${item.vehicle_type === '크루즈 셔틀 리무진' ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed' : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'}`}
                                                         min="0"
                                                     />
                                                 </div>
@@ -838,12 +921,15 @@ function CruiseCarReservationEditContent() {
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                                         <Users className="inline w-4 h-4 mr-1" />
                                                         승객 수
+                                                        {item.vehicle_type === '크루즈 셔틀 리무진' && (
+                                                            <span className="ml-2 text-xs font-semibold text-blue-600">(기본값)</span>
+                                                        )}
                                                     </label>
                                                     <input
                                                         type="number"
                                                         value={item.passenger_count}
                                                         onChange={(e) => updateVehicleFormWithAutoTotal(index, { passenger_count: parseInt(e.target.value, 10) || 0 })}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${item.vehicle_type === '크루즈 셔틀 리무진' ? 'border-blue-300 bg-blue-50' : 'border-gray-300'}`}
                                                         min="0"
                                                     />
                                                 </div>
@@ -943,7 +1029,12 @@ function CruiseCarReservationEditContent() {
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">단가 (VND)</label>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        단가 (VND)
+                                                        {item.vehicle_type === '크루즈 셔틀 리무진' && (
+                                                            <span className="text-xs text-gray-500 ml-1">(승객당)</span>
+                                                        )}
+                                                    </label>
                                                     <input
                                                         type="number"
                                                         value={item.unit_price}
@@ -954,7 +1045,18 @@ function CruiseCarReservationEditContent() {
                                                 </div>
 
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">총 가격 (VND)</label>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        총 가격 (VND)
+                                                        {item.vehicle_type === '크루즈 셔틀 리무진' ? (
+                                                            <span className="text-xs text-blue-600 ml-1 font-semibold">
+                                                                (단가 × {item.passenger_count})
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-xs text-gray-500 ml-1">
+                                                                (단가 × {item.car_count > 0 ? item.car_count : item.passenger_count})
+                                                            </span>
+                                                        )}
+                                                    </label>
                                                     <input
                                                         type="number"
                                                         value={item.car_total_price}

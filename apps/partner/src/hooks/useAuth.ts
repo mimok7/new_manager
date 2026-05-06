@@ -78,11 +78,12 @@ export function useAuth(requiredRoles?: string[], redirectOnFail: string = '/par
 
         const init = async () => {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
+                // ✅ getSession() → getUser(): 서버에서 JWT 유효성 검증 + 만료 시 자동 refresh
+                const { data, error } = await supabase.auth.getUser();
                 if (cancelled) return;
 
-                const user = session?.user || cached || null;
-                if (!user) {
+                const user = data?.user || null;
+                if (!user || error) {
                     writeCache(null);
                     setState({ user: null, profile: null, loading: false });
                     router.replace(redirectOnFail);

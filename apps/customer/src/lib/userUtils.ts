@@ -216,9 +216,8 @@ export const upsertUserProfile = async (
 // 현재 사용자 정보 가져오기 (인증 정보 + DB 정보)
 export const getCurrentUserInfo = async () => {
   try {
-    // 1. 로컬 세션에서 인증된 사용자 정보 가져오기
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    const authUser = session?.user ?? null;
+    // 1. 서버에서 인증된 사용자 정보 가져오기
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !authUser) {
       clearCachedCurrentUserInfo();

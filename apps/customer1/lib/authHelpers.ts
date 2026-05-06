@@ -1,13 +1,13 @@
 import supabase from './supabase';
 
 /**
- * Get user from local session without a network request.
+ * Get current authenticated user with server verification.
  */
 export async function getSessionUser(): Promise<{ user: any; error: any }> {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data: { user }, error } = await supabase.auth.getUser();
     if (error) return { user: null, error };
-    if (session?.user) return { user: session.user, error: null };
+    if (user) return { user, error: null };
     return { user: null, error: new Error('No active session') };
   } catch (err) {
     return { user: null, error: err };
@@ -20,11 +20,11 @@ export async function getSessionUser(): Promise<{ user: any; error: any }> {
  */
 export async function refreshAuthBeforeSubmit(): Promise<{ user: any; error?: any }> {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session) {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
       return { user: null, error: error || new Error('No active session') };
     }
-    return { user: session.user, error: null };
+    return { user, error: null };
   } catch (err) {
     return { user: null, error: err };
   }

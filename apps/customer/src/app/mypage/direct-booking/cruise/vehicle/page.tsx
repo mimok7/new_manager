@@ -307,9 +307,9 @@ function CruiseVehicleContent() {
                     return;
                 }
 
-                const { data: { session } } = await supabase.auth.getSession();
+                const { data: { user: currentUser } } = await supabase.auth.getUser();
                 if (cancelled) return;
-                if (session?.user) setUser(session.user);
+                if (currentUser) setUser(currentUser);
 
                 // 크루즈 예약 조회
                 const { data: reservation, error: resError } = await supabase
