@@ -86,6 +86,18 @@ const normalizeReservationStatus = (status?: string) => {
     return statusMap[value] || value;
 };
 
+// 서비스 표시 순서 정의
+const SERVICE_ORDER = ['cruise', 'vehicle', 'car_sht', 'airport', 'rentcar', 'tour', 'hotel', 'package', 'ticket'];
+
+const sortServices = (services: ServiceReservation[]) => {
+    const orderMap = new Map(SERVICE_ORDER.map((type, idx) => [type, idx]));
+    return [...services].sort((a, b) => {
+        const orderA = orderMap.get(a.re_type) ?? 999;
+        const orderB = orderMap.get(b.re_type) ?? 999;
+        return orderA - orderB;
+    });
+};
+
 
 export default function BulkReservationPage() {
     const router = useRouter();
@@ -1847,7 +1859,7 @@ export default function BulkReservationPage() {
                                                                     <div className="flex items-start justify-between gap-3 mb-3">
                                                                         <div className="min-w-0">
                                                                             <div className="flex flex-wrap gap-1 mb-2">
-                                                                                {reservation.services.map((service, idx) => (
+                                                                                {sortServices(reservation.services).map((service, idx) => (
                                                                                     <span key={idx} className={`text-xs px-2 py-0.5 rounded flex items-center gap-1 font-medium ${getTypeBadgeStyle(service.re_type)}`}>
                                                                                         {getTypeIcon(service.re_type)}
                                                                                         {getTypeName(service.re_type)}
@@ -1863,12 +1875,16 @@ export default function BulkReservationPage() {
                                                                                     <span className="ml-2 font-semibold text-base text-gray-900">{reservation.users?.name || 'N/A'}</span>
                                                                                 </div>
                                                                                 <div className="text-sm text-gray-600 truncate">
-                                                                                    <span className="text-xs text-gray-500">여행명:</span>
-                                                                                    <span className="ml-2 italic">{reservation.quote?.title || 'N/A'}</span>
+                                                                                    <span className="text-xs text-gray-500">영문이름:</span>
+                                                                                    <span className="ml-2 text-gray-700">{reservation.users?.english_name || (reservation.users?.email ? reservation.users.email.split('@')[0] : 'N/A')}</span>
                                                                                 </div>
                                                                                 <div className="text-sm text-gray-600 truncate">
                                                                                     <span className="text-xs text-gray-500">이메일:</span>
                                                                                     <span className="ml-2 text-xs text-gray-600 italic">{reservation.users?.email || 'N/A'}</span>
+                                                                                </div>
+                                                                                <div className="text-sm text-gray-600 truncate">
+                                                                                    <span className="text-xs text-gray-500">예약일시:</span>
+                                                                                    <span className="ml-2 text-xs text-gray-600">{new Date(reservation.re_update_at || reservation.re_created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -1890,15 +1906,6 @@ export default function BulkReservationPage() {
                                                                             >
                                                                                 <Edit className="w-4 h-4 text-green-600" />
                                                                             </button>
-                                                                            <div className="text-xs text-gray-400">
-                                                                                {new Date(reservation.re_update_at || reservation.re_created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="grid grid-cols-1 gap-1 text-sm text-gray-600">
-                                                                        <div className="text-sm text-gray-500">
-                                                                            <span className="text-xs text-gray-500">영문이름:</span>
-                                                                            <span className="ml-2 text-gray-700">{reservation.users?.english_name || (reservation.users?.email ? reservation.users.email.split('@')[0] : 'N/A')}</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>

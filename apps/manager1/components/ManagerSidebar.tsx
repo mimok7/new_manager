@@ -81,7 +81,7 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
             className="lg:hidden p-1 rounded-md hover:bg-gray-100 text-gray-600"
             aria-label="메뉴 닫기"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" suppressHydrationWarning>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>

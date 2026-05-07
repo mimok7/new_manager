@@ -164,7 +164,7 @@ export default function ManagerLayout({ children, title, activeTab }: ManagerLay
               className="mr-3 p-2 rounded-md hover:bg-gray-100 text-gray-600"
               aria-label="사이드바 토글"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" suppressHydrationWarning>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
