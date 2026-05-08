@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import AlertProvider from '@/components/AlertProvider';
 import GlobalNotificationWrapper from '@/components/GlobalNotificationWrapper';
 import AuthInitializer from '@/components/AuthInitializer';
+import TabSessionGuard from '@/components/TabSessionGuard';
 import QueryProvider from '@/components/QueryProvider';
 import ConsoleErrorOnly from '@/components/ConsoleErrorOnly';
 
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <QueryProvider>
           <AlertProvider siteName="스테이 하롱 트레블">
             <AuthInitializer />
+            <TabSessionGuard loginPath="/login" />
             {/* ✅ 머릿글 */}
             <Header />
 

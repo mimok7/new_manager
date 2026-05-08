@@ -8,7 +8,7 @@ import { primeAuthCache } from '@/hooks/useAuth';
 import { clearInvalidSession, isInvalidRefreshTokenError } from '@/lib/authRecovery';
 
 const TAB_SESSION_KEY = 'sht:tab:id';
-const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:';
+const ACTIVE_TAB_KEY = 'sht:active:tab';
 
 function getOrCreateTabId() {
   if (typeof window === 'undefined') return '';
@@ -20,10 +20,10 @@ function getOrCreateTabId() {
   return tabId;
 }
 
-function markActiveTab(userId: string) {
+function markActiveTab() {
   if (typeof window === 'undefined') return;
   const tabId = getOrCreateTabId();
-  localStorage.setItem(`${ACTIVE_TAB_PREFIX}${userId}`, JSON.stringify({ tabId, ts: Date.now() }));
+  localStorage.setItem(ACTIVE_TAB_KEY, JSON.stringify({ tabId, ts: Date.now() }));
 }
 
 export default function LoginPage() {
@@ -67,7 +67,7 @@ export default function LoginPage() {
       primeAuthCache(user);
       // 단일 세션 강제: 다른 기기/탭의 모든 세션 종료 (실패해도 로그인 진행)
       try { await supabase.auth.signOut({ scope: 'others' }); } catch { /* noop */ }
-      markActiveTab(user.id);
+      markActiveTab();
       router.replace('/mypage');
 
     } catch (err) {

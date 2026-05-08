@@ -3,6 +3,7 @@ import '../styles/globals.css';
 import AlertProvider from '@/components/AlertProvider';
 import GlobalNotificationWrapper from '@/components/GlobalNotificationWrapper';
 import AuthInitializer from '@/components/AuthInitializer';
+import TabSessionGuard from '@/components/TabSessionGuard';
 import QueryProvider from '@/components/QueryProvider';
 
 export const metadata = {
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <QueryProvider>
           <AlertProvider siteName="스테이 하롱 관리자">
             <AuthInitializer />
+            <TabSessionGuard loginPath="/login" />
             <main className="w-full">{children}</main>
             <GlobalNotificationWrapper />
           </AlertProvider>

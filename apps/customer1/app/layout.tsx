@@ -2,6 +2,7 @@ import React from 'react';
 import { Inter } from 'next/font/google';
 import AlertProvider from '../components/AlertProvider';
 import QueryProvider from '../components/QueryProvider';
+import TabSessionGuard from '../components/TabSessionGuard';
 import '../styles/globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -21,6 +22,7 @@ export default function RootLayout({
       <body className={`${inter.className} bg-white text-gray-900 antialiased flex flex-col min-h-screen`}>
         <QueryProvider>
           <AlertProvider>
+            <TabSessionGuard loginPath="/login" />
             <main className="flex-1 w-full">
               {children}
             </main>

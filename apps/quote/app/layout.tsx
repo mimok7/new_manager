@@ -4,6 +4,7 @@ import NewHomeHeader from '../components/new-home/NewHomeHeader';
 import NewHomeFooter from '../components/new-home/NewHomeFooter';
 import AlertProvider from '../components/AlertProvider';
 import AuthInitializer from '../components/AuthInitializer';
+import TabSessionGuard from '../components/TabSessionGuard';
 import QueryProvider from '../components/QueryProvider';
 import '../styles/globals.css';
 
@@ -25,6 +26,7 @@ export default function RootLayout({
         <QueryProvider>
           <AlertProvider>
             <AuthInitializer />
+            <TabSessionGuard loginPath="/login" />
             <NewHomeHeader />
             <main className="flex-1 w-full">
               {children}

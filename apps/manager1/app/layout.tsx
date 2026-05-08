@@ -1,6 +1,7 @@
 import React from 'react';
 import '../styles/globals.css';
 import ConsoleErrorOnly from '@/components/ConsoleErrorOnly';
+import TabSessionGuard from '@/components/TabSessionGuard';
 
 export const metadata = {
   title: '스테이하롱 퀵매니저',
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko" suppressHydrationWarning>
       <body className="bg-background text-foreground">
         <ConsoleErrorOnly />
+        <TabSessionGuard loginPath="/login" />
         <main className="w-full">{children}</main>
       </body>
     </html>
