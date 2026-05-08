@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useEffect, useRef, useState } from 'react';
 
 const TAB_SESSION_KEY = 'sht:tab:id';
 const ACTIVE_TAB_KEY = 'sht:active:tab';
@@ -26,38 +25,55 @@ function readTabId(raw: string | null) {
     }
 }
 
-export default function TabSessionGuard({ loginPath }: { loginPath: string }) {
+export default function TabSessionGuard({ loginPath: _loginPath }: { loginPath: string }) {
     const currentTabIdRef = useRef('');
+    const blockedRef = useRef(false);
+    const [blocked, setBlocked] = useState(false);
 
     useEffect(() => {
         currentTabIdRef.current = getOrCreateTabId();
 
-        const logoutLocal = async () => {
-            try {
-                await supabase.auth.signOut({ scope: 'local' });
-            } catch {
-                // noop
-            }
-            window.location.replace(loginPath);
+        const blockCurrentTab = () => {
+            if (blockedRef.current) return;
+            blockedRef.current = true;
+            setBlocked(true);
         };
 
         const syncWithActiveTab = () => {
             const activeTabId = readTabId(localStorage.getItem(ACTIVE_TAB_KEY));
             if (!activeTabId || activeTabId === currentTabIdRef.current) return;
-            void logoutLocal();
+            blockCurrentTab();
         };
 
         const handleStorage = (e: StorageEvent) => {
             if (e.key !== ACTIVE_TAB_KEY) return;
             const incomingTabId = readTabId(e.newValue);
             if (!incomingTabId || incomingTabId === currentTabIdRef.current) return;
-            void logoutLocal();
+            blockCurrentTab();
         };
 
         syncWithActiveTab();
         window.addEventListener('storage', handleStorage);
         return () => window.removeEventListener('storage', handleStorage);
-    }, [loginPath]);
+    }, []);
+
+    if (blocked) {
+        return (
+            <div className="fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center p-4">
+                <div className="w-full max-w-md rounded-xl bg-white p-6 text-center shadow-xl">
+                    <h2 className="text-xl font-bold text-red-600">동시 접속 차단</h2>
+                    <p className="mt-3 text-sm text-gray-700 leading-6">
+                        동시 접속은 보안상 차단되어 있습니다.
+                        <br />
+                        현재 창의 사용이 중지되었습니다.
+                    </p>
+                    <p className="mt-4 text-xs text-gray-500">
+                        계속 사용하려면 가장 최근 로그인한 창만 사용해 주세요.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return null;
 }
