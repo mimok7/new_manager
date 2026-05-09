@@ -26,6 +26,10 @@ function readTabId(raw: string | null) {
     }
 }
 
+function claimActiveTab(tabId: string) {
+    localStorage.setItem(ACTIVE_TAB_KEY, JSON.stringify({ tabId, ts: Date.now() }));
+}
+
 export default function TabSessionGuard({ loginPath }: { loginPath: string }) {
     const pathname = usePathname();
     const currentTabIdRef = useRef('');
@@ -44,11 +48,8 @@ export default function TabSessionGuard({ loginPath }: { loginPath: string }) {
             setBlocked(true);
         };
 
-        const syncWithActiveTab = () => {
-            const activeTabId = readTabId(localStorage.getItem(ACTIVE_TAB_KEY));
-            if (!activeTabId || activeTabId === currentTabIdRef.current) return;
-            blockCurrentTab();
-        };
+        // 새로 실행한 창을 항상 우선(active)으로 승격
+        claimActiveTab(currentTabIdRef.current);
 
         const handleStorage = (e: StorageEvent) => {
             if (e.key !== ACTIVE_TAB_KEY) return;
@@ -57,7 +58,6 @@ export default function TabSessionGuard({ loginPath }: { loginPath: string }) {
             blockCurrentTab();
         };
 
-        syncWithActiveTab();
         window.addEventListener('storage', handleStorage);
         return () => window.removeEventListener('storage', handleStorage);
     }, [pathname, loginPath]);
