@@ -70,8 +70,8 @@ export default function PackageDetailModalContainer({
         ]);
         if (cancelled) return;
 
-        const packageMasterMap = new Map((packageMasterRes.data || []).map((p: any) => [p.id, p]));
-        const packageDetailMap = new Map((packageDetailRes.data || []).map((row: any) => [row.reservation_id, row]));
+        const packageMasterMap = new Map<string, any>((packageMasterRes.data || []).map((p: any) => [p.id, p]));
+        const packageDetailMap = new Map<string, any>((packageDetailRes.data || []).map((row: any) => [row.reservation_id, row]));
         const cruiseData = cruiseRes.data || [];
         const airportData = airportRes.data || [];
         const tourData = tourRes.data || [];
@@ -107,10 +107,10 @@ export default function PackageDetailModalContainer({
           if (r?.room_type && !roomPriceMap.has(r.room_type)) roomPriceMap.set(r.room_type, r);
         });
         const tourById = new Map((tourNameRows || []).map((row: any) => [row.tour_id, row]));
-        const tourPriceMap = new Map((tourPriceRows.data || []).map((row: any) => [row.pricing_id, { ...row, tour: tourById.get(row.tour_id) }]));
+        const tourPriceMap = new Map<string, any>((tourPriceRows.data || []).map((row: any) => [row.pricing_id, { ...row, tour: tourById.get(row.tour_id) }]));
         const airportPriceRows = airportPrices.data || [];
-        const hotelPriceMap = new Map((hotelPrices.data || []).map((r: any) => [r.hotel_price_code, r]));
-        const rentcarPriceMap = new Map((rentcarPrices.data || []).map((r: any) => [r.rent_code, r]));
+        const hotelPriceMap = new Map<string, any>((hotelPrices.data || []).map((r: any) => [r.hotel_price_code, r]));
+        const rentcarPriceMap = new Map<string, any>((rentcarPrices.data || []).map((r: any) => [r.rent_code, r]));
 
         const getAirportPrice = (item: any) => {
           const way = String(item.way_type || item.ra_way_type || '').toLowerCase();
