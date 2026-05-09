@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import supabase from '@/lib/supabase';
-import { NOTIFICATION_RECEIVER_PREFERENCE_TABLE } from '@/lib/notificationReceiverDevice';
 
 const NOTIFICATION_RUNTIME_SETTINGS_TABLE = 'notification_runtime_settings';
 const RESERVATION_RUNTIME_SETTING_KEY = 'reservation_realtime_enabled';
@@ -215,57 +214,6 @@ export default function NotificationControlPage() {
     }
   };
 
-  const setReceiverDevice = async (managerId: string, deviceId: string, deviceLabel: string | null) => {
-    if (!managerId || !deviceId) return;
-
-    try {
-      setSaving(true);
-      setErrorMessage(null);
-
-      const { error } = await supabase.from(NOTIFICATION_RECEIVER_PREFERENCE_TABLE).upsert(
-        {
-          user_id: managerId,
-          preferred_device_id: deviceId,
-          preferred_device_label: deviceLabel,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id' }
-      );
-
-      if (error) throw error;
-      await loadStatus();
-      alert('선택한 매니저 계정의 수신 기기를 지정했습니다.');
-    } catch (error) {
-      console.error('알림 기기 설정 저장 실패:', error);
-      setErrorMessage('알림 수신 기기 저장에 실패했습니다. sql/026-admin-manager-notification-preference-access.sql 실행 여부를 확인해 주세요.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const clearPreference = async () => {
-    if (!selectedManagerId) return;
-
-    try {
-      setSaving(true);
-      setErrorMessage(null);
-
-      const { error } = await supabase
-        .from(NOTIFICATION_RECEIVER_PREFERENCE_TABLE)
-        .delete()
-        .eq('user_id', selectedManagerId);
-
-      if (error) throw error;
-      await loadStatus();
-      alert('선택한 매니저 계정의 기기 지정이 해제되었습니다.');
-    } catch (error) {
-      console.error('알림 기기 설정 해제 실패:', error);
-      setErrorMessage('알림 수신 기기 해제에 실패했습니다. sql/026-admin-manager-notification-preference-access.sql 실행 여부를 확인해 주세요.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (loading) {
     return (
       <AdminLayout title="알림 제어" activeTab="notification-control">
@@ -300,7 +248,7 @@ export default function NotificationControlPage() {
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-800">전역 알림 ON/OFF</h2>
           <p className="mt-2 text-sm text-gray-600">
-            시스템 이상 시 즉시 OFF 하면 manager/manager1의 예약 실시간 알림 구독이 중단됩니다.
+            시스템 이상 시 즉시 OFF 하면 manager/manager1의 예약 실시간 알림 구독이 계정 전체에서 중단됩니다.
           </p>
           <div className="mt-4 flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50 p-4">
             <div>
@@ -339,48 +287,26 @@ export default function NotificationControlPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <h3 className="text-base font-semibold text-gray-800">선택 계정의 저장된 수신 기기</h3>
-            <div className="mt-4 space-y-3 rounded-lg border border-blue-100 bg-blue-50 p-4">
-              <p className="text-sm text-gray-700">계정: <span className="font-semibold">{accountLabel(selectedManager)}</span></p>
-              <p className="text-sm text-gray-700">선택 기기: <span className="font-semibold">{selectedManager?.preferred_device_label || '-'}</span></p>
-              <p className="text-xs text-gray-500">기기 ID: {selectedManager?.preferred_device_id || '-'}</p>
-              <p className="text-xs text-gray-500">최근 변경: {selectedManager?.preference_updated_at ? new Date(selectedManager.preference_updated_at).toLocaleString('ko-KR') : '-'}</p>
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <h3 className="text-base font-semibold text-gray-800">선택 계정의 접속 탭</h3>
+          <p className="mt-1 text-xs text-gray-500">수신 대상은 기기 지정 없이 계정 기준으로 동작합니다.</p>
+          {selectedActiveRows.length === 0 ? (
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+              최근 90초 안에 감지된 접속 탭이 없습니다.
             </div>
-            <button
-              type="button"
-              onClick={clearPreference}
-              disabled={saving || !selectedManagerId}
-              className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
-            >
-              선택 계정 기기 지정 해제
-            </button>
-          </div>
-
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <h3 className="text-base font-semibold text-gray-800">선택 계정의 접속 탭</h3>
-            {selectedActiveRows.length === 0 ? (
-              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-                최근 90초 안에 감지된 접속 탭이 없습니다.
-              </div>
-            ) : (
-              <div className="mt-4 space-y-2">
-                {selectedActiveRows.map((row) => (
-                  <button
-                    key={`${row.app_name}-${row.tab_id}`}
-                    type="button"
-                    disabled={saving || !row.device_id}
-                    onClick={() => void setReceiverDevice(row.user_id, row.device_id || '', row.device_label)}
-                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-left text-sm transition-colors hover:border-blue-300 hover:bg-blue-50 disabled:opacity-50"
-                  >
-                    <p className="font-semibold text-gray-800">{row.device_label || row.device_id}</p>
-                    <p className="mt-1 text-xs text-gray-500">{row.app_name} · {row.is_leader ? '리더 탭' : '일반 탭'} · {row.last_seen ? new Date(row.last_seen).toLocaleTimeString('ko-KR') : '-'}</p>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {selectedActiveRows.map((row) => (
+                <div
+                  key={`${row.app_name}-${row.tab_id}`}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-left text-sm"
+                >
+                  <p className="font-semibold text-gray-800">{row.device_label || row.device_id}</p>
+                  <p className="mt-1 text-xs text-gray-500">{row.app_name} · {row.is_leader ? '리더 탭' : '일반 탭'} · {row.last_seen ? new Date(row.last_seen).toLocaleTimeString('ko-KR') : '-'}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="rounded-lg bg-white p-6 shadow-sm">
@@ -414,11 +340,9 @@ export default function NotificationControlPage() {
                             ({activeSessions.length}개 활성 / {sessions.length}개 전체)
                           </span>
                         </div>
-                        {account.preferred_device_label && (
-                          <p className="mt-1 text-xs text-gray-600">
-                            선택 기기: <span className="font-semibold">{account.preferred_device_label}</span>
-                          </p>
-                        )}
+                        <p className="mt-1 text-xs text-gray-600">
+                          수신 정책: <span className="font-semibold">계정 기준 (기기 지정 없음)</span>
+                        </p>
                       </div>
                       <button
                         type="button"
@@ -483,16 +407,9 @@ export default function NotificationControlPage() {
                                           탭 ID: {session.tab_id ? session.tab_id.substring(0, 12) + '...' : '(미식별)'} · {lastSeenTime}
                                         </div>
                                       </div>
-                                      {session.device_id && (
-                                        <button
-                                          type="button"
-                                          disabled={saving}
-                                          onClick={() => void setReceiverDevice(session.user_id, session.device_id || '', session.device_label)}
-                                          className="ml-2 whitespace-nowrap rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                                        >
-                                          지정
-                                        </button>
-                                      )}
+                                      <span className="ml-2 whitespace-nowrap rounded-md bg-gray-200 px-2 py-1 text-xs font-medium text-gray-700">
+                                        계정기준
+                                      </span>
                                     </div>
                                   );
                                 })}

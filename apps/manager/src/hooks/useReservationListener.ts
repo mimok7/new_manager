@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import supabase from '@/lib/supabase';
-import { getNotificationDeviceLabel, getOrCreateNotificationDeviceId, NOTIFICATION_RECEIVER_PREFERENCE_TABLE } from '@/lib/notificationReceiverDevice';
+import { getNotificationDeviceLabel, getOrCreateNotificationDeviceId } from '@/lib/notificationReceiverDevice';
 
 const LEADER_STALE_MS = 12000;
 const LEADER_HEARTBEAT_MS = 4000;
@@ -88,7 +88,7 @@ function showBrowserNotification(notification: ReservationNotification) {
 }
 
 function buildLeaderKey(scope: string) {
-  return `manager:reservation-notification-leader:${scope}`;
+  return `sht:reservation-notification-leader:${scope}`;
 }
 
 function readLeader(lockKey: string): { tabId: string; updatedAt: number } | null {
@@ -131,21 +131,29 @@ function removeLeader(lockKey: string, tabId: string) {
 export function useReservationListener(enabled: boolean, leaderScope: string) {
   const [latestReservation, setLatestReservation] = useState<ReservationNotification | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isCurrentDevicePreferred, setIsCurrentDevicePreferred] = useState(true);
   const [isRuntimeEnabled, setIsRuntimeEnabled] = useState(true);
   const lastSeenReservationIdRef = useRef<string | null>(null);
   const clearToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelRef = useRef<any>(null);
   const tabIdRef = useRef(`tab-${Math.random().toString(36).slice(2)}-${Date.now()}`);
   const leaderHeartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const preferenceChannelRef = useRef<any>(null);
   const deviceIdRef = useRef('server');
+  const enabledRef = useRef(enabled);
+  const runtimeEnabledRef = useRef(isRuntimeEnabled);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       deviceIdRef.current = getOrCreateNotificationDeviceId();
     }
   }, []);
+
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
+
+  useEffect(() => {
+    runtimeEnabledRef.current = isRuntimeEnabled;
+  }, [isRuntimeEnabled]);
 
   useEffect(() => {
     if (!enabled || !leaderScope) return;
@@ -207,7 +215,7 @@ export function useReservationListener(enabled: boolean, leaderScope: string) {
       window.clearInterval(timer);
       void clearPresence();
     };
-  }, [enabled, leaderScope, isCurrentDevicePreferred, isRuntimeEnabled]);
+  }, [enabled, leaderScope, isRuntimeEnabled]);
 
   useEffect(() => {
     let cancelled = false;
@@ -224,11 +232,13 @@ export function useReservationListener(enabled: boolean, leaderScope: string) {
         (payload) => {
           if (cancelled) return;
           if (payload.eventType === 'DELETE') {
+            runtimeEnabledRef.current = true;
             setIsRuntimeEnabled(true);
             return;
           }
 
           const nextValue = (payload.new as { setting_value_bool?: boolean } | null)?.setting_value_bool;
+          runtimeEnabledRef.current = nextValue !== false;
           setIsRuntimeEnabled(nextValue !== false);
         }
       )
@@ -297,23 +307,6 @@ export function useReservationListener(enabled: boolean, leaderScope: string) {
       stopRealtimeSubscription();
     };
 
-    const stopPreferenceSubscription = () => {
-      const preferenceChannel = preferenceChannelRef.current;
-      if (!preferenceChannel) return;
-
-      try {
-        void supabase.removeChannel?.(preferenceChannel);
-      } catch {
-        try {
-          preferenceChannel.unsubscribe();
-        } catch {
-          // noop
-        }
-      }
-
-      preferenceChannelRef.current = null;
-    };
-
     const startRealtimeSubscription = () => {
       if (channelRef.current) return;
 
@@ -328,6 +321,7 @@ export function useReservationListener(enabled: boolean, leaderScope: string) {
           },
           (payload) => {
             if (cancelled) return;
+            if (!enabledRef.current || !runtimeEnabledRef.current) return;
 
             const notification = normalizeReservation(payload.new as ReservationPayload);
             if (!notification) return;
@@ -367,15 +361,6 @@ export function useReservationListener(enabled: boolean, leaderScope: string) {
     const tryBecomeLeader = () => {
       if (cancelled || typeof window === 'undefined') return;
 
-      if (!isCurrentDevicePreferred) {
-        if (leaderHeartbeatRef.current) {
-          clearInterval(leaderHeartbeatRef.current);
-          leaderHeartbeatRef.current = null;
-        }
-        stopRealtimeSubscription();
-        return;
-      }
-
       const leader = readLeader(lockKey);
       const now = Date.now();
       const isLeaderMissing = !leader || now - leader.updatedAt > LEADER_STALE_MS;
@@ -401,7 +386,6 @@ export function useReservationListener(enabled: boolean, leaderScope: string) {
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        if (!isCurrentDevicePreferred) return;
         // 현재 보이는 탭이 즉시 알림을 받도록 리더를 재선점한다.
         claimLeadership();
       }
@@ -411,76 +395,11 @@ export function useReservationListener(enabled: boolean, leaderScope: string) {
       stopLeadership();
     };
 
-    const applyPreference = (preferredDeviceId: string | null) => {
-      const isPreferred = !preferredDeviceId || preferredDeviceId === deviceIdRef.current;
-      setIsCurrentDevicePreferred(isPreferred);
-      if (!isPreferred) {
-        stopLeadership();
-      } else {
-        tryBecomeLeader();
-      }
-    };
-
-    const loadPreference = async () => {
-      if (!leaderScope) {
-        setIsCurrentDevicePreferred(true);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from(NOTIFICATION_RECEIVER_PREFERENCE_TABLE)
-          .select('preferred_device_id')
-          .eq('user_id', leaderScope)
-          .maybeSingle();
-
-        if (cancelled) return;
-        if (error) {
-          setIsCurrentDevicePreferred(true);
-          return;
-        }
-
-        applyPreference(data?.preferred_device_id || null);
-      } catch {
-        if (!cancelled) {
-          setIsCurrentDevicePreferred(true);
-        }
-      }
-    };
-
-    const startPreferenceSubscription = () => {
-      if (!leaderScope || preferenceChannelRef.current) return;
-
-      preferenceChannelRef.current = supabase
-        .channel(`manager-notification-preference-${leaderScope}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: NOTIFICATION_RECEIVER_PREFERENCE_TABLE,
-            filter: `user_id=eq.${leaderScope}`,
-          },
-          (payload) => {
-            if (cancelled) return;
-            if (payload.eventType === 'DELETE') {
-              applyPreference(null);
-              return;
-            }
-
-            const nextDeviceId = (payload.new as { preferred_device_id?: string } | null)?.preferred_device_id || null;
-            applyPreference(nextDeviceId);
-          }
-        )
-        .subscribe();
-    };
-
     if (typeof window !== 'undefined' && typeof Notification !== 'undefined' && Notification.permission === 'default') {
       void Notification.requestPermission().catch(() => undefined);
     }
 
-    void loadPreference();
-    startPreferenceSubscription();
+    tryBecomeLeader();
     window.addEventListener('storage', handleStorage);
     window.addEventListener('beforeunload', handleBeforeUnload);
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -496,10 +415,9 @@ export function useReservationListener(enabled: boolean, leaderScope: string) {
         clearTimeout(clearToastTimerRef.current);
         clearToastTimerRef.current = null;
       }
-      stopPreferenceSubscription();
       stopLeadership();
     };
-  }, [enabled, isCurrentDevicePreferred, isRuntimeEnabled, leaderScope]);
+  }, [enabled, isRuntimeEnabled, leaderScope]);
 
   const clearLatestReservation = () => {
     setLatestReservation(null);
@@ -511,7 +429,7 @@ export function useReservationListener(enabled: boolean, leaderScope: string) {
     clearLatestReservation,
     currentDeviceId: deviceIdRef.current,
     currentDeviceLabel: getNotificationDeviceLabel(),
-    isCurrentDevicePreferred,
+    isCurrentDevicePreferred: true,
     isRuntimeEnabled,
   };
 }
