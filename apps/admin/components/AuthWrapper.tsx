@@ -4,7 +4,7 @@ import supabase from '@/lib/supabase';
 import { getCachedRole, getCookieRole, setCachedRole } from '@/lib/userUtils';
 
 const TAB_SESSION_KEY = 'sht:tab:id';
-const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:';
+const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:admin:';
 
 function getOrCreateTabId() {
   if (typeof window === 'undefined') return '';

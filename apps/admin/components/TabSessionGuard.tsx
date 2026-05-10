@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 const TAB_SESSION_KEY = 'sht:tab:id';
-const ACTIVE_TAB_KEY = 'sht:active:tab';
+const ACTIVE_TAB_KEY = 'sht:active:tab:admin';
 
 function getOrCreateTabId() {
   if (typeof window === 'undefined') return '';

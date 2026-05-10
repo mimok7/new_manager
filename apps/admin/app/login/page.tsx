@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import supabase from '@/lib/supabase';
 
 const TAB_SESSION_KEY = 'sht:tab:id';
-const ACTIVE_TAB_KEY = 'sht:active:tab';
+const ACTIVE_TAB_KEY = 'sht:active:tab:admin';
+const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:admin:';
 
 function getOrCreateTabId() {
   if (typeof window === 'undefined') return '';
@@ -18,10 +19,13 @@ function getOrCreateTabId() {
   return tabId;
 }
 
-function markActiveTab() {
+function markActiveTab(userId?: string) {
   if (typeof window === 'undefined') return;
   const tabId = getOrCreateTabId();
   localStorage.setItem(ACTIVE_TAB_KEY, JSON.stringify({ tabId, ts: Date.now() }));
+  if (userId) {
+    localStorage.setItem(`${ACTIVE_TAB_PREFIX}${userId}`, JSON.stringify({ tabId, ts: Date.now() }));
+  }
 }
 
 export default function LoginPage() {
@@ -66,7 +70,7 @@ export default function LoginPage() {
 
       // 단일 세션 강제: fire-and-forget (await 불필요 — 로그인 지연 방지)
       void supabase.auth.signOut({ scope: 'others' }).catch(() => undefined);
-      markActiveTab();
+      markActiveTab(user.id);
       router.replace('/admin');
       // router.refresh() 제거: replace 후 자동으로 새 세션 반영됨
     } catch (error) {

@@ -21,7 +21,7 @@ let authCache: {
 const CACHE_DURATION = 5 * 60 * 1000; // 5분 캐시
 const AUTH_CACHE_KEY = 'app:auth:cache';
 const TAB_SESSION_KEY = 'sht:tab:id';
-const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:';
+const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:customer1:';
 
 function getOrCreateTabId() {
     if (typeof window === 'undefined') return '';

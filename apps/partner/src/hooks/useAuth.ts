@@ -8,7 +8,7 @@ const CACHE_KEY = 'sht_partner_user_cache';
 const PROFILE_CACHE_KEY = 'sht_partner_profile_cache';
 const PROFILE_CACHE_TTL_MS = 1000 * 60 * 30;
 const TAB_SESSION_KEY = 'sht:tab:id';
-const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:';
+const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:partner:';
 
 function getOrCreateTabId() {
     if (typeof window === 'undefined') return '';

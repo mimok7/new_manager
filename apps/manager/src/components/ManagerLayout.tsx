@@ -11,7 +11,7 @@ import { RoleContext } from '@/app/components/RoleContext';
 import ManagerSidebar from './ManagerSidebar';
 
 const TAB_SESSION_KEY = 'sht:tab:id';
-const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:';
+const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:manager:';
 
 function getOrCreateTabId() {
   if (typeof window === 'undefined') return '';

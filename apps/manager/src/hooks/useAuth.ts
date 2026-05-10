@@ -12,7 +12,7 @@ interface AuthState {
 // 인메모리 + sessionStorage 백업 캐시 (새로고침/탭 복귀 시 깜빡임 방지)
 const AUTH_CACHE_KEY = 'app:auth:cache';
 const TAB_SESSION_KEY = 'sht:tab:id';
-const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:';
+const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:manager:';
 let authCache: { user: any | null; role: string | null; timestamp: number } | null = null;
 
 function getOrCreateTabId() {

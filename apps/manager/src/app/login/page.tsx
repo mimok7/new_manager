@@ -7,7 +7,8 @@ import supabase from '@/lib/supabase';
 import { setCachedRole } from '@/lib/userUtils';
 
 const TAB_SESSION_KEY = 'sht:tab:id';
-const ACTIVE_TAB_KEY = 'sht:active:tab';
+const ACTIVE_TAB_KEY = 'sht:active:tab:manager';
+const ACTIVE_TAB_PREFIX = 'sht:active:tab:user:manager:';
 
 function getOrCreateTabId() {
   if (typeof window === 'undefined') return '';
@@ -19,10 +20,13 @@ function getOrCreateTabId() {
   return tabId;
 }
 
-function markActiveTab() {
+function markActiveTab(userId?: string) {
   if (typeof window === 'undefined') return;
   const tabId = getOrCreateTabId();
   localStorage.setItem(ACTIVE_TAB_KEY, JSON.stringify({ tabId, ts: Date.now() }));
+  if (userId) {
+    localStorage.setItem(`${ACTIVE_TAB_PREFIX}${userId}`, JSON.stringify({ tabId, ts: Date.now() }));
+  }
 }
 
 // useSearchParams는 Suspense 경계 안에서만 사용 가능
@@ -117,7 +121,7 @@ function LoginForm() {
 
       // 단일 세션 강제: 다른 기기/탭의 모든 세션 종료 (실패해도 로그인 진행)
       try { await supabase.auth.signOut({ scope: 'others' }); } catch { /* noop */ }
-      markActiveTab();
+      markActiveTab(user.id);
       router.push('/'); // 홈 메뉴 페이지로 이동
       router.refresh(); // 세션 반영
 

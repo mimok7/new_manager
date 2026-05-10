@@ -3499,15 +3499,6 @@ export default function ManagerSchedulePage() {
               >
                 상세
               </button>
-              {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
-                <button
-                  onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
-                  className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
-                >
-                  🗑️
-                </button>
-              )}
             </div>
           </div>
           <div className="flex flex-col gap-1 text-sm text-gray-700 mt-1">
@@ -3609,15 +3600,6 @@ export default function ManagerSchedulePage() {
               >
                 상세
               </button>
-              {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
-                <button
-                  onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
-                  className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
-                >
-                  🗑️
-                </button>
-              )}
             </div>
           </div>
           <div className="flex flex-col gap-1 text-sm text-gray-700 mt-1">
@@ -3707,15 +3689,6 @@ export default function ManagerSchedulePage() {
               >
                 상세
               </button>
-              {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
-                <button
-                  onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
-                  className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
-                >
-                  🗑️
-                </button>
-              )}
             </div>
           </div>
           <div className="flex flex-col gap-1 text-sm text-gray-700 mt-1">
@@ -3791,15 +3764,6 @@ export default function ManagerSchedulePage() {
               >
                 상세
               </button>
-              {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
-                <button
-                  onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
-                  className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
-                >
-                  🗑️
-                </button>
-              )}
             </div>
           </div>
           <div className="flex flex-col gap-1 text-sm text-gray-700 mt-1">
@@ -3876,15 +3840,6 @@ export default function ManagerSchedulePage() {
               >
                 상세
               </button>
-              {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
-                <button
-                  onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
-                  className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
-                >
-                  🗑️
-                </button>
-              )}
             </div>
           </div>
           <div className="flex flex-col gap-1 text-sm text-gray-700 mt-1">
@@ -3956,15 +3911,6 @@ export default function ManagerSchedulePage() {
               >
                 상세
               </button>
-              {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
-                <button
-                  onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
-                  className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
-                >
-                  🗑️
-                </button>
-              )}
             </div>
           </div>
           <div className="flex flex-col gap-1 text-sm text-gray-700 mt-1">
@@ -4054,15 +4000,6 @@ export default function ManagerSchedulePage() {
               >
                 상세
               </button>
-              {(userEmail === 'kys@hyojacho.es.kr' || userEmail === 'kjh@hyojacho.es.kr') && (
-                <button
-                  onClick={() => handleDeleteGoogleSheetsReservation(reservation)}
-                  className="bg-red-500 text-white py-0.5 px-2 rounded text-xs hover:bg-red-600 transition-colors"
-                  title="삭제"
-                >
-                  🗑️
-                </button>
-              )}
             </div>
           </div>
           <div className="flex flex-col gap-1 text-sm text-gray-700 mt-1">
