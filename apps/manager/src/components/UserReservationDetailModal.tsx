@@ -86,13 +86,17 @@ const normalizeCruisePriceBreakdown = (pb: any, infantCount: number) => {
     const subtotal = Number(pb?.subtotal || 0);
     const optionTotal = Number(pb?.option_total || 0);
 
+    const computedGrandTotal = subtotal + surchargeTotal + optionTotal;
+
     return {
         ...pb,
         surcharges: normalizedSurcharges,
         surcharge_total: surchargeTotal,
-        grand_total: subtotal + surchargeTotal + optionTotal,
+        grand_total: Number.isFinite(Number(pb?.grand_total)) ? Number(pb.grand_total) : computedGrandTotal,
     };
 };
+
+const formatSignedAmount = (amount: number): string => `${amount > 0 ? '+' : ''}${amount.toLocaleString()}동`;
 
 const getFilteredNoteText = (note: any): string => {
     if (!note) return '';
@@ -126,8 +130,14 @@ const getManualAdditionalFee = (service: any): number => {
         ?? service?.manualAdditionalFee
         ?? service?.reservation_manual_additional_fee
         ?? service?.reservation?.manual_additional_fee
+        ?? service?.priceBreakdown?.adjustment_total
+        ?? service?.price_breakdown?.adjustment_total
+        ?? service?.reservation_price_breakdown?.adjustment_total
+        ?? service?.reservation?.price_breakdown?.adjustment_total
         ?? service?.priceBreakdown?.additional_fee
         ?? service?.price_breakdown?.additional_fee
+        ?? service?.reservation_price_breakdown?.additional_fee
+        ?? service?.reservation?.price_breakdown?.additional_fee
         ?? 0;
     const parsed = Number(raw || 0);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -158,7 +168,7 @@ const getReservationTotalAmount = (service: any): number | null => {
 };
 
 const hasReservationPricingOverride = (service: any, manualAdditionalFee: number, manualAdditionalFeeDetail: string): boolean => {
-    return manualAdditionalFee > 0
+    return manualAdditionalFee !== 0
         || !!manualAdditionalFeeDetail
         || !!service?.reservation_price_breakdown
         || !!service?.reservation?.price_breakdown;
@@ -463,7 +473,7 @@ export default function UserReservationDetailModal({
                 {type === 'cruise' && (
                     <>
                         {(() => {
-                            const rawPb = service.priceBreakdown || service.price_breakdown || null;
+                            const rawPb = service.priceBreakdown || service.price_breakdown || service.reservation_price_breakdown || service.reservation?.price_breakdown || null;
                             const pb = normalizeCruisePriceBreakdown(rawPb, Number(service.infant || 0));
                             const roomTotalPrice = Number(service.room_total_price || 0);
                             const pbGrandTotal = Number(pb?.grand_total || 0);
@@ -557,6 +567,30 @@ export default function UserReservationDetailModal({
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-gray-600">선택 옵션 합계</span>
                                                 <span className="font-medium">{Number(pb.option_total || 0).toLocaleString()}동</span>
+                                            </div>
+                                        )}
+                                        {Array.isArray(pb?.additional_fee_items) && pb.additional_fee_items.map((item: any, idx: number) => {
+                                            const amount = Number(item?.amount || 0);
+                                            if (!amount) return null;
+                                            return (
+                                                <div key={`adj-${idx}`} className="flex justify-between text-sm">
+                                                    <span className={amount > 0 ? 'text-orange-700' : 'text-indigo-700'}>{item?.name || '추가내역'}</span>
+                                                    <span className="font-medium">{formatSignedAmount(amount)}</span>
+                                                </div>
+                                            );
+                                        })}
+                                        {Number(pb?.additional_fee_manual || 0) !== 0 && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className={Number(pb.additional_fee_manual) > 0 ? 'text-orange-700' : 'text-indigo-700'}>
+                                                    {Number(pb.additional_fee_manual) > 0 ? '직접 추가요금' : '직접 차감'}
+                                                </span>
+                                                <span className="font-medium">{formatSignedAmount(Number(pb.additional_fee_manual || 0))}</span>
+                                            </div>
+                                        )}
+                                        {Number(pb?.discount_amount || 0) > 0 && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-indigo-700">할인요금{Number(pb?.discount_rate || 0) > 0 ? ` (${pb.discount_rate}%)` : ''}</span>
+                                                <span className="font-medium">-{Number(pb.discount_amount || 0).toLocaleString()}동</span>
                                             </div>
                                         )}
                                     </div>
@@ -847,10 +881,10 @@ export default function UserReservationDetailModal({
                 )}
                 {showReservationPricing && (
                     <div className="border-t border-blue-100 pt-2 mt-2 space-y-1 text-xs bg-blue-50/70 rounded p-2">
-                        {manualAdditionalFee > 0 && (
+                        {manualAdditionalFee !== 0 && (
                             <div className="flex justify-between items-center">
-                                <span className="text-rose-700 font-medium">추가요금</span>
-                                <span className="font-bold text-rose-700">{manualAdditionalFee.toLocaleString()}동</span>
+                                <span className="text-rose-700 font-medium">추가/차감 내역</span>
+                                <span className="font-bold text-rose-700">{formatSignedAmount(manualAdditionalFee)}</span>
                             </div>
                         )}
                         {manualAdditionalFeeDetail && (
@@ -862,11 +896,11 @@ export default function UserReservationDetailModal({
                         </div>
                     </div>
                 )}
-                {!showReservationPricing && !isPackageService && !(type === 'sht' && String(service.category || '').toLowerCase().includes('drop')) && (manualAdditionalFee > 0 || manualAdditionalFeeDetail) && (
+                {!showReservationPricing && !isPackageService && !(type === 'sht' && String(service.category || '').toLowerCase().includes('drop')) && (manualAdditionalFee !== 0 || manualAdditionalFeeDetail) && (
                     <div className="border-t border-rose-100 pt-2 mt-2 space-y-1 text-xs bg-rose-50/70 rounded p-2">
                         <div className="flex justify-between items-center">
-                            <span className="text-rose-700 font-medium">추가요금</span>
-                            <span className="font-bold text-rose-700">{manualAdditionalFee.toLocaleString()}동</span>
+                            <span className="text-rose-700 font-medium">추가/차감 내역</span>
+                            <span className="font-bold text-rose-700">{formatSignedAmount(manualAdditionalFee)}</span>
                         </div>
                         {manualAdditionalFeeDetail && (
                             <div className="text-rose-800 whitespace-pre-line">추가내역: {manualAdditionalFeeDetail}</div>
@@ -1074,7 +1108,7 @@ export default function UserReservationDetailModal({
 
                                         // 크루즈는 카드 본문과 동일하게 보정된 price_breakdown 기준으로 집계
                                         if (t === 'cruise') {
-                                            const rawPb = s.priceBreakdown || s.price_breakdown || null;
+                                            const rawPb = s.priceBreakdown || s.price_breakdown || s.reservation_price_breakdown || s.reservation?.price_breakdown || null;
                                             const normalizedPb = normalizeCruisePriceBreakdown(rawPb, Number(s.infant || 0));
                                             const roomTotalPrice = Number(s.room_total_price || 0);
                                             total = roomTotalPrice > 0
@@ -1107,10 +1141,10 @@ export default function UserReservationDetailModal({
                                                 <span className="text-sm font-bold text-gray-900">합계</span>
                                                 <span className="text-lg font-bold text-blue-600">{displayGrandTotal.toLocaleString()}동</span>
                                             </div>
-                                            {additionalFeeTotal > 0 && (
+                                            {additionalFeeTotal !== 0 && (
                                                 <div className="flex justify-between items-center text-xs">
-                                                    <span className="text-rose-700 font-medium">예약 추가요금 합계</span>
-                                                    <span className="font-bold text-rose-700">{additionalFeeTotal.toLocaleString()}동</span>
+                                                    <span className="text-rose-700 font-medium">예약 추가/차감 합계</span>
+                                                    <span className="font-bold text-rose-700">{formatSignedAmount(additionalFeeTotal)}</span>
                                                 </div>
                                             )}
                                         </div>

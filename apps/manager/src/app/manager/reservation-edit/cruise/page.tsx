@@ -597,7 +597,7 @@ function CruiseReservationEditContent() {
     }, [additionalFeeItems]);
 
     const totalAdditionalFee = useMemo(() => {
-        return Math.max(0, templateAdditionalFeeTotal + (Number(manualAdditionalFee) || 0));
+        return templateAdditionalFeeTotal + (Number(manualAdditionalFee) || 0);
     }, [manualAdditionalFee, templateAdditionalFeeTotal]);
 
     const carTotalPrice = useMemo(() => {
@@ -650,7 +650,7 @@ function CruiseReservationEditContent() {
         if (manualDiscountAmount > 0 && manualDiscountOrder !== null) {
             steps.push({ type: 'manual', order: manualDiscountOrder });
         }
-        if (totalAdditionalFee > 0 && additionalFeeOrder !== null) {
+        if (totalAdditionalFee !== 0 && additionalFeeOrder !== null) {
             steps.push({ type: 'additional', order: additionalFeeOrder });
         }
 
@@ -682,11 +682,11 @@ function CruiseReservationEditContent() {
                     runningTotal = Math.max(0, runningTotal - amount);
                 }
             } else if (step.type === 'additional') {
-                if (totalAdditionalFee > 0) {
+                if (totalAdditionalFee !== 0) {
                     rows.push({
                         key: 'additional',
                         type: 'additional',
-                        label: '추가요금',
+                        label: totalAdditionalFee > 0 ? '추가요금' : '추가내역 차감',
                         amount: totalAdditionalFee,
                     });
                     runningTotal = Math.max(0, runningTotal + totalAdditionalFee);
@@ -696,7 +696,7 @@ function CruiseReservationEditContent() {
 
         return {
             rows,
-            total: rows.reduce((sum, row) => sum + row.amount, 0),
+            total: rows.reduce((sum, row) => sum + (row.type === 'additional' ? Math.max(0, -row.amount) : row.amount), 0),
             discountedSubtotal: runningTotal,
         };
     }, [calculatedGrandTotalPrice, discountRate, manualDiscountAmount, discountRateOrder, manualDiscountOrder, totalAdditionalFee, additionalFeeOrder]);
@@ -709,7 +709,7 @@ function CruiseReservationEditContent() {
 
     useEffect(() => {
         setAdditionalFee(totalAdditionalFee);
-        if (totalAdditionalFee > 0) {
+        if (totalAdditionalFee !== 0) {
             setAdditionalFeeOrder((prev) => prev ?? discountOrderRef.current++);
         } else {
             setAdditionalFeeOrder(null);
@@ -1149,9 +1149,9 @@ function CruiseReservationEditContent() {
                     key: String(item?.key || `saved-${index + 1}`),
                     template_id: Number.isFinite(Number(item?.template_id)) ? Number(item.template_id) : null,
                     name: String(item?.name || '').trim(),
-                    amount: Math.max(0, Number(item?.amount) || 0),
+                    amount: Number(item?.amount) || 0,
                 }))
-                .filter((item: AdditionalFeeItem) => item.name && item.amount > 0);
+                .filter((item: AdditionalFeeItem) => item.name && item.amount !== 0);
             const savedTemplateAdditionalFeeTotal = savedAdditionalFeeItems.reduce((sum, item) => sum + item.amount, 0);
 
             const savedAdditionalFeeTotal = Number(resRow.price_breakdown?.additional_fee);
@@ -1164,27 +1164,26 @@ function CruiseReservationEditContent() {
                 ?? fallbackManualAdditionalFee
             );
             const nextManualAdditionalFee = Number.isFinite(savedManualAdditionalFee)
-                ? Math.max(0, savedManualAdditionalFee)
+                ? savedManualAdditionalFee
                 : 0;
+            const savedManualDiscount = Number(resRow.price_breakdown?.discount_manual_amount);
+            const migratedManualAdjustment = nextManualAdditionalFee - (Number.isFinite(savedManualDiscount) ? Math.max(0, savedManualDiscount) : 0);
 
             setAdditionalFeeItems(savedAdditionalFeeItems);
-            setManualAdditionalFee(nextManualAdditionalFee);
-            setStoredAdditionalFee(nextManualAdditionalFee);
+            setManualAdditionalFee(migratedManualAdjustment);
+            setStoredAdditionalFee(migratedManualAdjustment);
             const savedDiscountRate = Number(resRow.price_breakdown?.discount_rate);
             setDiscountRate(Number.isFinite(savedDiscountRate) ? savedDiscountRate : 0);
-            const savedManualDiscount = Number(resRow.price_breakdown?.discount_manual_amount);
-            setManualDiscountAmount(Number.isFinite(savedManualDiscount) ? Math.max(0, savedManualDiscount) : 0);
+            setManualDiscountAmount(0);
             const savedDiscountSequence = Array.isArray(resRow.price_breakdown?.discount_sequence)
                 ? resRow.price_breakdown.discount_sequence
                 : [];
             const rateIndex = savedDiscountSequence.findIndex((item: any) => item?.type === 'rate');
-            const manualIndex = savedDiscountSequence.findIndex((item: any) => item?.type === 'manual');
+            const manualIndex = -1;
             const nextRateOrder = rateIndex >= 0
                 ? rateIndex + 1
                 : (Number.isFinite(savedDiscountRate) && savedDiscountRate > 0 ? 1 : null);
-            const nextManualOrder = manualIndex >= 0
-                ? manualIndex + 1
-                : (Number.isFinite(savedManualDiscount) && savedManualDiscount > 0 ? (nextRateOrder ? nextRateOrder + 1 : 1) : null);
+            const nextManualOrder = null;
             setDiscountRateOrder(nextRateOrder);
             setManualDiscountOrder(nextManualOrder);
             discountOrderRef.current = Math.max(nextRateOrder || 0, nextManualOrder || 0) + 1;
@@ -1352,7 +1351,7 @@ function CruiseReservationEditContent() {
                 room_price_code: room.room_price_code,
                 room_count: isCatherineHorizonCruise ? null : room.room_count,
                 guest_count: room.guest_count,
-                unit_price: room.unit_price_manual ? (room.unit_price || 0) : 0,
+                unit_price: getRoomCategoryPrices(room, getRoomDetail(index)).price_adult || room.unit_price || 0,
                 adult_count: room.adult_count,
                 child_count: (room.child_count || 0) + (room.child_older_count || 0),
                 child_extra_bed_count: room.child_extra_bed_count,
@@ -1464,6 +1463,16 @@ function CruiseReservationEditContent() {
                     cruise: detail?.cruise || null,
                     schedule: detail?.schedule || null,
                     room_type: detail?.room_type || null,
+                    representative_unit_price: prices.price_adult,
+                    category_unit_prices: {
+                        adult: prices.price_adult,
+                        child: prices.price_child,
+                        child_older: prices.price_child_older,
+                        child_extra_bed: prices.price_child_extra_bed,
+                        infant: prices.price_infant,
+                        extra_bed: prices.price_extra_bed,
+                        single: prices.price_single,
+                    },
                     adult: { unit_price: room.unit_price_manual ? (room.unit_price || 0) : prices.price_adult, count: room.adult_count || 0, total: adultTotal },
                     child: { unit_price: prices.price_child, count: room.child_count || 0, total: childTotal },
                     child_older: { unit_price: prices.price_child_older, count: room.child_older_count || 0, total: childOlderTotal },
@@ -1519,6 +1528,9 @@ function CruiseReservationEditContent() {
                 }));
 
             const priceBreakdown: Record<string, any> = {
+                pricing_version: 2,
+                service_type: 'cruise',
+                source: 'manager_reservation_edit',
                 rooms: roomBreakdowns,
                 adult: roomSummary.adultCount > 0 ? { unit_price: null, count: roomSummary.adultCount, total: aggregatedRoomTotals.adult } : null,
                 child: roomSummary.childCount > 0 ? { unit_price: null, count: roomSummary.childCount, total: aggregatedRoomTotals.child } : null,
@@ -1534,8 +1546,9 @@ function CruiseReservationEditContent() {
                 calculated_total: calculatedGrandTotalPrice,
                 discount_rate: discountRate,
                 discount_amount: discountAmount,
-                discount_manual_amount: manualDiscountAmount,
+                discount_manual_amount: 0,
                 discount_sequence: discountSequence,
+                adjustment_total: totalAdditionalFee,
                 additional_fee: totalAdditionalFee,
                 additional_fee_manual: manualAdditionalFee,
                 additional_fee_items: additionalFeeItems,
@@ -2274,30 +2287,6 @@ function CruiseReservationEditContent() {
                                         )}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">수동 할인요금 (VND)</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={manualDiscountAmount}
-                                            onChange={(e) => {
-                                                const nextValue = Math.max(0, parseInt(e.target.value, 10) || 0);
-                                                setManualDiscountAmount(nextValue);
-                                                if (nextValue > 0) {
-                                                    setManualDiscountOrder((prev) => prev ?? discountOrderRef.current++);
-                                                } else {
-                                                    setManualDiscountOrder(null);
-                                                }
-                                            }}
-                                            title="수동 할인요금"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        />
-                                        {manualDiscountAmount > 0 && (
-                                            <p className="text-xs text-indigo-700 mt-2">
-                                                수동 할인 금액: -{manualDiscountAmount.toLocaleString()}동
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">추가내역 선택</label>
                                         <select
                                             title="추가내역 선택"
@@ -2329,18 +2318,18 @@ function CruiseReservationEditContent() {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">직접입력 추가요금 (VND)</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">직접입력 추가/차감 금액 (VND)</label>
                                         <input
                                             type="number"
-                                            min="0"
                                             value={manualAdditionalFee}
                                             onChange={(e) => {
-                                                const nextValue = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                                const nextValue = parseInt(e.target.value, 10) || 0;
                                                 setManualAdditionalFee(nextValue);
                                             }}
-                                            title="추가요금"
+                                            title="직접입력 추가/차감 금액"
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
+                                        <p className="text-xs text-gray-500 mt-1">할인은 음수(-)로 입력하면 추가내역 차감으로 저장됩니다.</p>
                                     </div>
                                     {additionalFeeItems.length > 0 && (
                                         <div>
@@ -2350,7 +2339,9 @@ function CruiseReservationEditContent() {
                                                     <div key={item.key} className="flex items-center justify-between gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2">
                                                         <div>
                                                             <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                                                            <div className="text-xs text-orange-700">+{item.amount.toLocaleString()}동</div>
+                                                            <div className={`text-xs ${item.amount >= 0 ? 'text-orange-700' : 'text-indigo-700'}`}>
+                                                                {item.amount >= 0 ? '+' : ''}{item.amount.toLocaleString()}동
+                                                            </div>
                                                         </div>
                                                         <button
                                                             type="button"
@@ -2423,20 +2414,24 @@ function CruiseReservationEditContent() {
                                                     <span className="font-semibold">{templateAdditionalFeeTotal.toLocaleString()}동</span>
                                                 </div>
                                             )}
-                                            {manualAdditionalFee > 0 && (
+                                            {manualAdditionalFee !== 0 && (
                                                 <div className="flex justify-between text-sm text-gray-700">
-                                                    <span>추가요금(직접)</span>
-                                                    <span className="font-semibold">{manualAdditionalFee.toLocaleString()}동</span>
+                                                    <span>{manualAdditionalFee > 0 ? '추가요금(직접)' : '추가내역 차감(직접)'}</span>
+                                                    <span className="font-semibold">{manualAdditionalFee > 0 ? '+' : ''}{manualAdditionalFee.toLocaleString()}동</span>
                                                 </div>
                                             )}
                                         </div>
                                         {discountBreakdown.rows.length > 0 && <div className="border-t border-gray-200" />}
                                         {discountBreakdown.rows.map((row) => (
                                             <div key={row.key} className={`flex justify-between text-sm ${
-                                                row.type === 'additional' ? 'text-orange-600' : 'text-indigo-600'
+                                                row.type === 'additional' && row.amount > 0 ? 'text-orange-600' : 'text-indigo-600'
                                             }`}>
                                                 <span>{row.label}</span>
-                                                <span className="font-semibold">{row.type === 'additional' ? '+' : '-'}{row.amount.toLocaleString()}동</span>
+                                                <span className="font-semibold">
+                                                    {row.type === 'additional'
+                                                        ? `${row.amount > 0 ? '+' : ''}${row.amount.toLocaleString()}동`
+                                                        : `-${row.amount.toLocaleString()}동`}
+                                                </span>
                                             </div>
                                         ))}
                                         {additionalFeeDetail.trim() && (

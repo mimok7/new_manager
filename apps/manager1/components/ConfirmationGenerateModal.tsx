@@ -538,7 +538,7 @@ export default function ConfirmationGenerateModal({ isOpen, onClose, quoteId, au
             case 'room':
                 table = 'cruise_rate_card';
                 codeField = 'id';
-                selectFields = ['id', 'cruise_name', 'schedule_type', 'room_type', 'room_type_en', 'price_adult', 'price_child', 'price_infant', 'price_extra_bed', 'price_child_extra_bed', 'price_single', 'valid_from', 'valid_to'];
+                selectFields = ['id', 'cruise_name', 'schedule_type', 'room_type', 'room_type_en', 'price_adult', 'price_child', 'price_child_older', 'price_infant', 'price_extra_bed', 'price_child_extra_bed', 'price_single', 'valid_from', 'valid_to'];
                 break;
             case 'car':
             case 'sht':
@@ -1323,10 +1323,10 @@ export default function ConfirmationGenerateModal({ isOpen, onClose, quoteId, au
                                                                         if (isShtDropoff) return null;
                                                                         const fee = Number(reservation.manual_additional_fee || 0);
                                                                         const detail = String(reservation.manual_additional_fee_detail || '').trim();
-                                                                        if (!fee && !detail) return null;
+                                                                        if (fee === 0 && !detail) return null;
                                                                         return (
                                                                             <div className="mt-2 p-2 rounded border border-rose-200 bg-rose-50 text-xs space-y-1">
-                                                                                {fee > 0 && <div><span className="text-rose-700">추가요금:</span> <span className="font-bold text-rose-700">{fee.toLocaleString()}동</span></div>}
+                                                                                {fee !== 0 && <div><span className="text-rose-700">추가/차감:</span> <span className="font-bold text-rose-700">{fee > 0 ? '+' : ''}{fee.toLocaleString()}동</span></div>}
                                                                                 {detail && <div><span className="text-rose-700">추가내역:</span> <span className="text-rose-800 whitespace-pre-line">{detail}</span></div>}
                                                                             </div>
                                                                         );
@@ -1444,27 +1444,36 @@ export default function ConfirmationGenerateModal({ isOpen, onClose, quoteId, au
                                                         switch (r.service_type) {
                                                             case 'cruise': {
                                                                 // 상세 표기: 크루즈명 / 스케줄 / 객실타입
-                                                                const cruiseName = p?.cruise_name || '';
-                                                                const scheduleType = formatScheduleType(p?.schedule_type);
-                                                                const roomType = p?.room_type || '';
+                                                                const storedRooms = Array.isArray(r.price_breakdown?.rooms) ? r.price_breakdown.rooms : [];
+                                                                const storedRoom = storedRooms.find((room: any) =>
+                                                                    (!room.room_price_code || room.room_price_code === d?.room_price_code) &&
+                                                                    (!room.checkin || room.checkin === d?.checkin) &&
+                                                                    Number(room.total || 0) === Number(d?.room_total_price || 0)
+                                                                ) || storedRooms.find((room: any) => room?.room_price_code === d?.room_price_code) || storedRooms[0] || null;
+                                                                const cruiseName = storedRoom?.cruise || p?.cruise_name || '';
+                                                                const scheduleType = formatScheduleType(storedRoom?.schedule || p?.schedule_type);
+                                                                const roomType = storedRoom?.room_type || p?.room_type || '';
                                                                 if (cruiseName) descLines.push(`🚢 ${cruiseName}`);
                                                                 if (scheduleType !== '-' || roomType) descLines.push(`${scheduleType} / ${roomType || '-'}`);
                                                                 // cruise_rate_card: price_adult, price_child, price_infant, price_extra_bed, price_child_extra_bed, price_single
-                                                                const adultPrice = p?.price_adult || 0;
-                                                                const childPrice = p?.price_child || 0;
-                                                                const infantPrice = p?.price_infant || 0;
-                                                                const extraBedPrice = p?.price_extra_bed || 0;
-                                                                const childExtraBedPrice = p?.price_child_extra_bed || 0;
-                                                                const singlePrice = p?.price_single || 0;
-                                                                const adultCount = d?.adult_count || 0;
-                                                                const childCount = d?.child_count || 0;
-                                                                const infantCount = d?.infant_count || 0;
-                                                                const extraBedCount = d?.extra_bed_count || 0;
-                                                                const childExtraBedCount = d?.child_extra_bed_count || 0;
-                                                                const singleCount = d?.single_count || 0;
+                                                                const adultPrice = storedRoom?.adult?.unit_price ?? p?.price_adult ?? 0;
+                                                                const childPrice = storedRoom?.child?.unit_price ?? p?.price_child ?? 0;
+                                                                const childOlderPrice = storedRoom?.child_older?.unit_price ?? p?.price_child_older ?? p?.price_child ?? 0;
+                                                                const infantPrice = storedRoom?.infant?.unit_price ?? p?.price_infant ?? 0;
+                                                                const extraBedPrice = storedRoom?.extra_bed?.unit_price ?? p?.price_extra_bed ?? 0;
+                                                                const childExtraBedPrice = storedRoom?.child_extra_bed?.unit_price ?? p?.price_child_extra_bed ?? 0;
+                                                                const singlePrice = storedRoom?.single?.unit_price ?? p?.price_single ?? 0;
+                                                                const adultCount = storedRoom?.adult?.count ?? d?.adult_count ?? 0;
+                                                                const childCount = storedRoom?.child?.count ?? d?.child_count ?? 0;
+                                                                const childOlderCount = storedRoom?.child_older?.count ?? 0;
+                                                                const infantCount = storedRoom?.infant?.count ?? d?.infant_count ?? 0;
+                                                                const extraBedCount = storedRoom?.extra_bed?.count ?? d?.extra_bed_count ?? 0;
+                                                                const childExtraBedCount = storedRoom?.child_extra_bed?.count ?? d?.child_extra_bed_count ?? 0;
+                                                                const singleCount = storedRoom?.single?.count ?? d?.single_count ?? 0;
                                                                 if (adultCount > 0) calcLines.push(`성인 ${adultCount}명 × ${adultPrice.toLocaleString()}동`);
                                                                 if (extraBedCount > 0) calcLines.push(`엑스트라베드(성인) ${extraBedCount}명 × ${extraBedPrice.toLocaleString()}동`);
                                                                 if (childCount > 0) calcLines.push(`아동 ${childCount}명 × ${childPrice.toLocaleString()}동`);
+                                                                if (childOlderCount > 0) calcLines.push(`아동(8~11세) ${childOlderCount}명 × ${childOlderPrice.toLocaleString()}동`);
                                                                 if (childExtraBedCount > 0) calcLines.push(`아동 엑스트라베드 ${childExtraBedCount}명 × ${childExtraBedPrice.toLocaleString()}동`);
                                                                 if (infantCount > 0) calcLines.push(`유아 ${infantCount}명 × ${infantPrice.toLocaleString()}동`);
                                                                 if (singleCount > 0) calcLines.push(`싱글차지 ${singleCount}명 × ${singlePrice.toLocaleString()}동`);
@@ -1559,8 +1568,8 @@ export default function ConfirmationGenerateModal({ isOpen, onClose, quoteId, au
 
                                                         const manualAdditionalFee = Number(r.manual_additional_fee || 0);
                                                         const manualAdditionalFeeDetail = String(r.manual_additional_fee_detail || '').trim();
-                                                        if (manualAdditionalFee > 0) {
-                                                            calcLines.push(`추가요금 ${manualAdditionalFee.toLocaleString()}동`);
+                                                        if (manualAdditionalFee !== 0) {
+                                                            calcLines.push(`추가/차감 ${manualAdditionalFee > 0 ? '+' : ''}${manualAdditionalFee.toLocaleString()}동`);
                                                         }
                                                         if (manualAdditionalFeeDetail) {
                                                             calcLines.push(`추가내역: ${manualAdditionalFeeDetail}`);

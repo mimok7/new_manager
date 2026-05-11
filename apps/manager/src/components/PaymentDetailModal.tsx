@@ -22,6 +22,8 @@ const ServiceDetailSection = ({ payment }: { payment: any }) => {
     const [allDetails, setAllDetails] = React.useState<Record<string, any[]>>({});
     const [loading, setLoading] = React.useState(false);
 
+    const formatSignedAmount = (amount: number) => `${amount > 0 ? '+' : ''}${amount.toLocaleString()}동`;
+
     React.useEffect(() => {
         const fetchAllServiceDetails = async () => {
             const ids = payment?.allReservationIds || (payment?.reservation_id ? [payment.reservation_id] : []);
@@ -32,7 +34,9 @@ const ServiceDetailSection = ({ payment }: { payment: any }) => {
                 const results: Record<string, any[]> = {};
 
                 // 모든 서비스 테이블 병렬 조회
-                const [airportRes, hotelRes, tourRes, ticketRes, rentcarRes, shtRes] = await Promise.all([
+                const [reservationRes, cruiseRes, airportRes, hotelRes, tourRes, ticketRes, rentcarRes, shtRes] = await Promise.all([
+                    supabase.from('reservation').select('re_id, total_amount, price_breakdown, manual_additional_fee, manual_additional_fee_detail').in('re_id', ids),
+                    supabase.from('reservation_cruise').select('*').in('reservation_id', ids),
                     supabase.from('reservation_airport').select('*').in('reservation_id', ids),
                     supabase.from('reservation_hotel').select('*').in('reservation_id', ids),
                     supabase.from('reservation_tour').select('*').in('reservation_id', ids),
@@ -40,6 +44,19 @@ const ServiceDetailSection = ({ payment }: { payment: any }) => {
                     supabase.from('reservation_rentcar').select('*').in('reservation_id', ids),
                     supabase.from('reservation_car_sht').select('*').in('reservation_id', ids),
                 ]);
+
+                const reservationMap = new Map((reservationRes.data || []).map((item: any) => [item.re_id, item]));
+
+                if (cruiseRes.data?.length) {
+                    results.cruise = await Promise.all(cruiseRes.data.map(async (item) => {
+                        let priceData = null;
+                        if (item.room_price_code) {
+                            const { data } = await supabase.from('cruise_rate_card').select('*').eq('id', item.room_price_code).maybeSingle();
+                            priceData = data;
+                        }
+                        return { ...item, price_info: priceData, reservation: reservationMap.get(item.reservation_id) || null };
+                    }));
+                }
 
                 // 공항 - 가격 정보 enrichment
                 if (airportRes.data?.length) {
@@ -123,6 +140,7 @@ const ServiceDetailSection = ({ payment }: { payment: any }) => {
     const getServiceIcon = (type: string) => {
         switch (type) {
             case 'airport': return <Plane className="w-4 h-4 mr-1" />;
+            case 'cruise': return <Ship className="w-4 h-4 mr-1" />;
             case 'hotel': return <Building className="w-4 h-4 mr-1" />;
             case 'tour': return <MapPin className="w-4 h-4 mr-1" />;
             case 'ticket': return <FileText className="w-4 h-4 mr-1" />;
@@ -135,6 +153,7 @@ const ServiceDetailSection = ({ payment }: { payment: any }) => {
     const getServiceName = (type: string) => {
         const names: Record<string, string> = {
             airport: '공항차량',
+            cruise: '크루즈',
             hotel: '호텔',
             tour: '투어',
             ticket: '티켓',
@@ -147,6 +166,7 @@ const ServiceDetailSection = ({ payment }: { payment: any }) => {
     const getServiceColor = (type: string) => {
         switch (type) {
             case 'airport': return { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800', badge: 'bg-blue-100 text-blue-800', borderItem: 'border-green-100' };
+            case 'cruise': return { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', badge: 'bg-blue-100 text-blue-800', borderItem: 'border-blue-100' };
             case 'hotel': return { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-800', badge: 'bg-purple-100 text-purple-800', borderItem: 'border-purple-100' };
             case 'tour': return { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-800', badge: 'bg-orange-100 text-orange-800', borderItem: 'border-orange-100' };
             case 'ticket': return { bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-800', badge: 'bg-teal-100 text-teal-800', borderItem: 'border-teal-100' };
@@ -162,6 +182,74 @@ const ServiceDetailSection = ({ payment }: { payment: any }) => {
 
     return (
         <>
+            {/* 크루즈 서비스 */}
+            {allDetails.cruise && allDetails.cruise.length > 0 && (() => {
+                const c = getServiceColor('cruise');
+                return (
+                    <div className={`${c.bg} p-6 rounded-lg border ${c.border}`}>
+                        <h3 className={`text-lg font-semibold ${c.text} mb-4 flex items-center`}>
+                            {getServiceIcon('cruise')} {getServiceName('cruise')} 상세 정보
+                        </h3>
+                        <div className="space-y-3">
+                            {allDetails.cruise.map((detail: any, index: number) => {
+                                const priceBreakdown = detail.reservation?.price_breakdown || null;
+                                const rooms = Array.isArray(priceBreakdown?.rooms) ? priceBreakdown.rooms : [];
+                                const storedRoom = rooms.find((room: any) =>
+                                    (!room.room_price_code || room.room_price_code === detail.room_price_code) &&
+                                    (!room.checkin || room.checkin === detail.checkin) &&
+                                    Number(room.total || 0) === Number(detail.room_total_price || 0)
+                                ) || rooms[index] || null;
+                                const categoryRows = [
+                                    ['성인', storedRoom?.adult],
+                                    ['아동', storedRoom?.child],
+                                    ['아동(8~11)', storedRoom?.child_older],
+                                    ['아동 엑스트라', storedRoom?.child_extra_bed],
+                                    ['유아', storedRoom?.infant],
+                                    ['엑스트라', storedRoom?.extra_bed],
+                                    ['싱글', storedRoom?.single],
+                                ].filter(([, row]: any) => Number(row?.count || 0) > 0);
+                                const adjustmentTotal = Number(priceBreakdown?.adjustment_total ?? priceBreakdown?.additional_fee ?? detail.reservation?.manual_additional_fee ?? 0);
+                                return (
+                                    <div key={index} className={`bg-white p-4 rounded border ${c.borderItem}`}>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                            <div><strong>크루즈명:</strong> {detail.price_info?.cruise_name || storedRoom?.cruise || '정보 없음'}</div>
+                                            <div><strong>객실:</strong> {detail.price_info?.room_type || storedRoom?.room_type || '정보 없음'}</div>
+                                            <div><strong>일정:</strong> {detail.price_info?.schedule_type || storedRoom?.schedule || '정보 없음'}</div>
+                                            <div><strong>체크인:</strong> {detail.checkin ? new Date(detail.checkin).toLocaleDateString('ko-KR') : '미정'}</div>
+                                            <div><strong>객실 수:</strong> {detail.room_count || storedRoom?.room_count || 0}실</div>
+                                            <div><strong>인원:</strong> {detail.guest_count || storedRoom?.guest_count || 0}명</div>
+                                            <div><strong>대표 단가:</strong> {(Number(storedRoom?.representative_unit_price ?? detail.unit_price ?? detail.price_info?.price_adult ?? 0)).toLocaleString()}동</div>
+                                            <div><strong>객실 총액:</strong> <span className="text-lg font-bold text-green-600">{Number(detail.room_total_price || storedRoom?.total || 0).toLocaleString()}동</span></div>
+                                            {categoryRows.length > 0 && (
+                                                <div className="md:col-span-2 border-t border-blue-100 pt-3 space-y-1">
+                                                    {categoryRows.map(([label, row]: any) => (
+                                                        <div key={label} className="flex justify-between">
+                                                            <span>{label} {Number(row.unit_price || 0).toLocaleString()}동 × {Number(row.count || 0)}명</span>
+                                                            <span className="font-medium">{Number(row.total || 0).toLocaleString()}동</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {index === 0 && adjustmentTotal !== 0 && (
+                                                <div className="md:col-span-2 border-t border-blue-100 pt-3 flex justify-between">
+                                                    <span className="font-medium">추가/차감 내역</span>
+                                                    <span className="font-bold text-rose-700">{formatSignedAmount(adjustmentTotal)}</span>
+                                                </div>
+                                            )}
+                                            {index === 0 && detail.reservation?.manual_additional_fee_detail && (
+                                                <div className="md:col-span-2 bg-rose-50 text-rose-800 p-3 rounded border border-rose-200 whitespace-pre-line">
+                                                    {detail.reservation.manual_additional_fee_detail}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            })()}
+
             {/* 공항 서비스 */}
             {allDetails.airport && allDetails.airport.length > 0 && (() => {
                 const c = getServiceColor('airport');
@@ -448,8 +536,11 @@ export default function PaymentDetailModal({
         ?? payment.amount
         ?? 0
     );
+    const priceBreakdown = paymentDetails?.reservation?.price_breakdown ?? payment?.reservation?.price_breakdown ?? null;
     const manualAdditionalFee = Number(
-        paymentDetails?.reservation?.manual_additional_fee
+        priceBreakdown?.adjustment_total
+        ?? priceBreakdown?.additional_fee
+        ?? paymentDetails?.reservation?.manual_additional_fee
         ?? payment?.reservation?.manual_additional_fee
         ?? 0
     ) || 0;
@@ -459,6 +550,7 @@ export default function PaymentDetailModal({
         ?? ''
     ).trim();
     const baseAmount = Math.max(0, paymentTotalAmount - manualAdditionalFee);
+    const formatSignedAmount = (amount: number) => `${amount > 0 ? '+' : ''}${amount.toLocaleString()}동`;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -520,7 +612,7 @@ export default function PaymentDetailModal({
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                             <div><strong>기본 금액:</strong> <span className="text-base font-bold text-gray-700">{baseAmount.toLocaleString()}동</span></div>
-                            <div><strong>추가요금:</strong> <span className="text-base font-bold text-rose-700">{manualAdditionalFee.toLocaleString()}동</span></div>
+                            <div><strong>추가/차감:</strong> <span className="text-base font-bold text-rose-700">{formatSignedAmount(manualAdditionalFee)}</span></div>
                             <div><strong>최종 결제 금액:</strong> <span className="text-lg font-bold text-green-600">{paymentTotalAmount.toLocaleString()}동</span></div>
                             <div><strong>결제 상태:</strong> <span className={`px-2 py-1 rounded text-xs ${payment.payment_status === 'completed' ? 'bg-green-100 text-green-800' : payment.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
                                 {payment.payment_status === 'completed' ? '결제 완료' : payment.payment_status === 'pending' ? '결제 대기' : payment.payment_status === 'failed' ? '결제 실패' : payment.payment_status || '상태 없음'}
