@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import { saveAdditionalFeeTemplateFromInput } from '@/lib/additionalFeeTemplate';
+import { calculateReservationPricing } from '@sht/domain/pricing';
 import ManagerLayout from '@/components/ManagerLayout';
 import {
     Save,
@@ -586,12 +587,40 @@ function AirportReservationEditContent() {
 
             const mergedTotalPrice = wayKeys.reduce((sum, way) => sum + (airportForms[way].total_price || 0), 0);
             const mergedPax = wayKeys.reduce((max, way) => Math.max(max, airportForms[way].ra_passenger_count || 0), 0);
+            const pricing = calculateReservationPricing({
+                serviceType: 'airport',
+                baseTotal: mergedTotalPrice,
+                additionalFee,
+                additionalFeeDetail,
+                lineItems: wayKeys
+                    .filter((way) => airportForms[way].total_price > 0 || airportForms[way].unit_price > 0)
+                    .map((way) => ({
+                        label: way === 'pickup' ? '공항 픽업' : '공항 샌딩',
+                        code: airportForms[way].airport_price_code || null,
+                        unit_price: airportForms[way].unit_price || 0,
+                        quantity: airportForms[way].ra_car_count || airportForms[way].ra_passenger_count || 1,
+                        total: airportForms[way].total_price || 0,
+                        metadata: {
+                            way_type: way,
+                            airport_name: airportForms[way].ra_airport_name || null,
+                            route: airportForms[way].route || null,
+                            vehicle_type: airportForms[way].vehicle_type || null,
+                            passenger_count: airportForms[way].ra_passenger_count || 0,
+                            car_count: airportForms[way].ra_car_count || 0,
+                        },
+                    })),
+                metadata: {
+                    fast_track_krw_total: fastTrackKrwTotal,
+                    active_way: activeWay,
+                },
+            });
 
             const { error: reservationError } = await supabase
                 .from('reservation')
                 .update({
-                    total_amount: mergedTotalPrice + additionalFee,
+                    total_amount: pricing.total_amount,
                     pax_count: mergedPax,
+                    price_breakdown: pricing.price_breakdown,
                     manual_additional_fee: additionalFee,
                     manual_additional_fee_detail: additionalFeeDetail || null,
                     re_update_at: new Date().toISOString(),

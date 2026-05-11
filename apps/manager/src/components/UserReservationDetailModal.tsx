@@ -148,11 +148,20 @@ const getReservationTotalAmount = (service: any): number | null => {
     const raw = service?.reservation_total_amount
         ?? service?.reservationTotalAmount
         ?? service?.reservation?.total_amount
+        ?? service?.reservation_price_breakdown?.grand_total
+        ?? service?.reservation?.price_breakdown?.grand_total
         ?? null;
 
     if (raw === null || raw === undefined || raw === '') return null;
     const parsed = Number(raw);
     return Number.isFinite(parsed) ? parsed : null;
+};
+
+const hasReservationPricingOverride = (service: any, manualAdditionalFee: number, manualAdditionalFeeDetail: string): boolean => {
+    return manualAdditionalFee > 0
+        || !!manualAdditionalFeeDetail
+        || !!service?.reservation_price_breakdown
+        || !!service?.reservation?.price_breakdown;
 };
 
 export default function UserReservationDetailModal({
@@ -209,7 +218,7 @@ export default function UserReservationDetailModal({
                     reservationIds.length > 0
                         ? supabase
                             .from('reservation')
-                            .select('re_id, total_amount, manual_additional_fee, manual_additional_fee_detail')
+                            .select('re_id, total_amount, manual_additional_fee, manual_additional_fee_detail, price_breakdown')
                             .in('re_id', reservationIds)
                         : Promise.resolve({ data: [] })
                 ]);
@@ -244,6 +253,7 @@ export default function UserReservationDetailModal({
                             reservation_total_amount: reservationInfo.total_amount,
                             reservation_manual_additional_fee: reservationInfo.manual_additional_fee,
                             reservation_manual_additional_fee_detail: reservationInfo.manual_additional_fee_detail,
+                            reservation_price_breakdown: reservationInfo.price_breakdown,
                             reservation: {
                                 ...(service?.reservation || {}),
                                 ...reservationInfo,
@@ -435,6 +445,11 @@ export default function UserReservationDetailModal({
         const isPackageService = service.isPackageService;
         const manualAdditionalFee = getManualAdditionalFee(service);
         const manualAdditionalFeeDetail = getManualAdditionalFeeDetail(service);
+        const reservationTotalAmount = getReservationTotalAmount(service);
+        const showReservationPricing = !isPackageService
+            && !(type === 'sht' && String(service.category || '').toLowerCase().includes('drop'))
+            && reservationTotalAmount !== null
+            && hasReservationPricingOverride(service, manualAdditionalFee, manualAdditionalFeeDetail);
 
         return (
             <div className="flex flex-col gap-1 text-sm text-gray-700 mt-2">
@@ -830,7 +845,24 @@ export default function UserReservationDetailModal({
                         </div>
                     </>
                 )}
-                {!isPackageService && !(type === 'sht' && String(service.category || '').toLowerCase().includes('drop')) && (manualAdditionalFee > 0 || manualAdditionalFeeDetail) && (
+                {showReservationPricing && (
+                    <div className="border-t border-blue-100 pt-2 mt-2 space-y-1 text-xs bg-blue-50/70 rounded p-2">
+                        {manualAdditionalFee > 0 && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-rose-700 font-medium">추가요금</span>
+                                <span className="font-bold text-rose-700">{manualAdditionalFee.toLocaleString()}동</span>
+                            </div>
+                        )}
+                        {manualAdditionalFeeDetail && (
+                            <div className="text-rose-800 whitespace-pre-line">추가내역: {manualAdditionalFeeDetail}</div>
+                        )}
+                        <div className="flex justify-between items-center border-t border-blue-100 pt-1">
+                            <span className="text-blue-700 font-medium">예약 최종 금액</span>
+                            <span className="font-bold text-blue-700">{reservationTotalAmount.toLocaleString()}동</span>
+                        </div>
+                    </div>
+                )}
+                {!showReservationPricing && !isPackageService && !(type === 'sht' && String(service.category || '').toLowerCase().includes('drop')) && (manualAdditionalFee > 0 || manualAdditionalFeeDetail) && (
                     <div className="border-t border-rose-100 pt-2 mt-2 space-y-1 text-xs bg-rose-50/70 rounded p-2">
                         <div className="flex justify-between items-center">
                             <span className="text-rose-700 font-medium">추가요금</span>

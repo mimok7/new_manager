@@ -8,6 +8,10 @@ export interface UnifiedReservationDetail {
     service_details: any;
     amount: number;
     status: string;
+    reservation_total_amount?: number;
+    manual_additional_fee?: number;
+    manual_additional_fee_detail?: string;
+    price_breakdown?: any;
 }
 
 export interface UnifiedQuoteData {
@@ -68,6 +72,37 @@ export default function UnifiedConfirmation({ data }: UnifiedConfirmationProps) 
         }
         return parts.length ? parts.join(' • ') : '-';
     };
+
+    const toDisplayAmount = (value: any): number | null => {
+        if (value === null || value === undefined || value === '') return null;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    };
+
+    const getReservationAmount = (reservation: UnifiedReservationDetail): number => {
+        const details = reservation.service_details || {};
+        return toDisplayAmount(reservation.reservation_total_amount)
+            ?? toDisplayAmount(reservation.price_breakdown?.grand_total)
+            ?? toDisplayAmount(details.reservation_total_amount)
+            ?? toDisplayAmount(details.price_breakdown?.grand_total)
+            ?? toDisplayAmount(reservation.amount)
+            ?? 0;
+    };
+
+    const getAdditionalFeeDetail = (reservation: UnifiedReservationDetail): string => {
+        const details = reservation.service_details || {};
+        return String(
+            reservation.manual_additional_fee_detail
+            ?? details.manual_additional_fee_detail
+            ?? details.price_breakdown?.additional_fee_detail
+            ?? ''
+        ).trim();
+    };
+
+    const displayedTotal = data.reservations?.length
+        ? data.reservations.reduce((sum, reservation) => sum + getReservationAmount(reservation), 0)
+        : 0;
+    const confirmationTotal = displayedTotal > 0 ? displayedTotal : (data.total_price || 0);
 
     return (
         <div id="confirmation-letter" className="bg-white">
@@ -137,6 +172,8 @@ export default function UnifiedConfirmation({ data }: UnifiedConfirmationProps) 
                             <tbody>
                                 {data.reservations.map((r, idx) => {
                                     const d: any = r.service_details || {};
+                                    const displayAmount = getReservationAmount(r);
+                                    const additionalFeeDetail = getAdditionalFeeDetail(r);
                                     // 주요 정보: 서비스 상세의 모든 키/값을 거의 전부 표시(내부키 제외)
                                     const info = summarize(d, { exclude: ['price_info'] });
                                     // 세부 정보: 가격표에서 가져온 price_info 전체 표시
@@ -153,7 +190,10 @@ export default function UnifiedConfirmation({ data }: UnifiedConfirmationProps) 
                                             <td className="border border-gray-300 px-3 py-3 text-sm text-gray-700">
                                                 <div className="whitespace-pre-wrap break-words">{priceInfo}</div>
                                             </td>
-                                            <td className="border border-gray-300 px-3 py-3 text-center text-sm font-bold text-blue-600">{r.amount > 0 ? `${r.amount.toLocaleString()}동` : '포함'}</td>
+                                            <td className="border border-gray-300 px-3 py-3 text-center text-sm font-bold text-blue-600">
+                                                {displayAmount > 0 ? `${displayAmount.toLocaleString()}동` : '포함'}
+                                                {additionalFeeDetail && <div className="mt-1 text-xs font-normal text-rose-700 whitespace-pre-line">추가: {additionalFeeDetail}</div>}
+                                            </td>
                                             <td className="border border-gray-300 px-3 py-3 text-center">{statusBadge(r.status)}</td>
                                         </tr>
                                     );
@@ -163,7 +203,7 @@ export default function UnifiedConfirmation({ data }: UnifiedConfirmationProps) 
                                 <tr className="bg-blue-50">
                                     <td colSpan={4} className="border border-gray-300 px-3 py-4 text-right font-semibold text-gray-700">총 결제 금액</td>
                                     <td className="border border-gray-300 px-3 py-4 text-center">
-                                        <div className="text-xl font-bold text-blue-600">{(data.total_price || 0).toLocaleString()}동</div>
+                                        <div className="text-xl font-bold text-blue-600">{confirmationTotal.toLocaleString()}동</div>
                                     </td>
                                     <td className="border border-gray-300 px-3 py-4 text-center">
                                         <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">결제완료</span>
@@ -181,7 +221,7 @@ export default function UnifiedConfirmation({ data }: UnifiedConfirmationProps) 
             <div className="mb-8">
                 <div className="bg-blue-50 rounded-lg p-4 flex justify-between items-center border border-blue-100">
                     <div className="text-gray-700 font-medium">총 결제 금액</div>
-                    <div className="text-xl font-bold text-blue-600">{(data.total_price || 0).toLocaleString()}동</div>
+                    <div className="text-xl font-bold text-blue-600">{confirmationTotal.toLocaleString()}동</div>
                 </div>
             </div>
 

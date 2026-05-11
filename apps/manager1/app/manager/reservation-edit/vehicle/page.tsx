@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import { saveAdditionalFeeTemplateFromInput } from '@/lib/additionalFeeTemplate';
+import { calculateReservationPricing } from '@sht/domain/pricing';
 import ManagerLayout from '@/components/ManagerLayout';
 import {
     Save,
@@ -587,16 +588,33 @@ function CruiseCarReservationEditContent() {
 
             if (insertResult.error) throw insertResult.error;
 
-            const reservationPayload: Record<string, any> = {
-                total_amount: finalTotalPrice,
-                pax_count: totalPassengerCount,
-                price_breakdown: {
-                    type: 'cruise_car',
-                    base_total: baseTotalPrice,
-                    additional_fee: additionalFee,
-                    additional_fee_detail: additionalFeeDetail || null,
-                    grand_total: finalTotalPrice,
+            const pricing = calculateReservationPricing({
+                serviceType: 'cruise_car',
+                baseTotal: baseTotalPrice,
+                additionalFee,
+                additionalFeeDetail,
+                lineItems: normalizedForms.map((item, index) => ({
+                    label: `차량 ${index + 1}`,
+                    code: item.rentcar_price_code || null,
+                    unit_price: item.unit_price || 0,
+                    quantity: item.car_count || 1,
+                    total: item.car_total_price || 0,
+                    metadata: {
+                        way_type: item.way_type || null,
+                        route: item.route || null,
+                        vehicle_type: item.vehicle_type || null,
+                        passenger_count: item.passenger_count || 0,
+                    },
+                })),
+                metadata: {
+                    total_passenger_count: totalPassengerCount,
                 },
+            });
+
+            const reservationPayload: Record<string, any> = {
+                total_amount: pricing.total_amount,
+                pax_count: totalPassengerCount,
+                price_breakdown: pricing.price_breakdown,
                 manual_additional_fee: additionalFee,
                 manual_additional_fee_detail: additionalFeeDetail || null,
                 re_update_at: new Date().toISOString(),

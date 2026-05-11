@@ -661,7 +661,7 @@ export default function ReservationDetailModal({
             try {
                 const { data: reservations, error: reservationsError } = await supabase
                     .from('reservation')
-                    .select('re_id, re_type, re_status, re_created_at, re_quote_id, re_user_id')
+                    .select('re_id, re_type, re_status, re_created_at, re_quote_id, re_user_id, total_amount, manual_additional_fee, manual_additional_fee_detail, price_breakdown')
                     .eq('re_user_id', userId)
                     .neq('re_status', 'completed')
                     .order('re_created_at', { ascending: false });
@@ -2236,6 +2236,13 @@ export default function ReservationDetailModal({
                                             <div className="grid grid-cols-1 gap-3 sm:gap-4 text-xs sm:text-sm bg-gray-50 p-3 sm:p-4 rounded-lg">
                                                 <div><strong>예약 ID:</strong> <span className="font-mono text-xxs sm:text-xs bg-white px-2 py-1 rounded break-all">{res.re_id}</span></div>
                                                 <div><strong>견적 ID:</strong> <span className="break-all">{res.re_quote_id || '정보 없음'}</span></div>
+                                                <div><strong>예약 최종 금액:</strong> <span className="font-bold text-green-700">{Number(res.total_amount || res.price_breakdown?.grand_total || 0).toLocaleString()}동</span></div>
+                                                {(Number(res.manual_additional_fee || 0) > 0 || res.manual_additional_fee_detail) && (
+                                                    <div className="rounded border border-rose-200 bg-rose-50 p-2 text-rose-800">
+                                                        <div><strong>추가요금:</strong> {Number(res.manual_additional_fee || 0).toLocaleString()}동</div>
+                                                        {res.manual_additional_fee_detail && <div className="mt-1 whitespace-pre-line"><strong>내역:</strong> {res.manual_additional_fee_detail}</div>}
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* 서비스 상세 정보 렌더링 */}

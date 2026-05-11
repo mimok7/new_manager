@@ -25,6 +25,9 @@ interface Reservation {
   re_type: string;
   re_status: string;
   total_amount: number;
+  price_breakdown?: any;
+  manual_additional_fee?: number;
+  manual_additional_fee_detail?: string;
   paid_amount: number;
   payment_status: 'pending' | 'partial' | 'completed' | 'overdue';
   payment_plan: 'full' | 'split';
@@ -98,6 +101,12 @@ const getPaymentMethodText = (method: string) => {
     other: '기타'
   };
   return methodMap[method] || method || '신용카드';
+};
+
+const getStoredReservationTotal = (reservation: any): number => {
+  const raw = reservation?.total_amount ?? reservation?.price_breakdown?.grand_total ?? 0;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 };
 
 export default function ManagerPaymentsPage() {
@@ -188,6 +197,9 @@ export default function ManagerPaymentsPage() {
           re_type,
           re_status,
           total_amount,
+          price_breakdown,
+          manual_additional_fee,
+          manual_additional_fee_detail,
           paid_amount,
           payment_status,
           re_created_at
@@ -253,7 +265,10 @@ export default function ManagerPaymentsPage() {
           re_quote_id: r.re_quote_id,
           re_type: r.re_type,
           re_status: r.re_status,
-          total_amount: r.total_amount || 0,
+          total_amount: getStoredReservationTotal(r),
+          price_breakdown: r.price_breakdown || null,
+          manual_additional_fee: Number(r.manual_additional_fee || 0),
+          manual_additional_fee_detail: String(r.manual_additional_fee_detail || '').trim(),
           paid_amount: r.paid_amount || 0,
           payment_status: r.payment_status || 'pending',
           customer_name: userInfo?.name || '이름 없음',

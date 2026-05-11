@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import { saveAdditionalFeeTemplateFromInput } from '@/lib/additionalFeeTemplate';
+import { calculateReservationPricing } from '@sht/domain/pricing';
 import ManagerLayout from '@/components/ManagerLayout';
 import {
     Save,
@@ -477,6 +478,30 @@ function RentcarReservationEditContent() {
                 return_via_location: formData.return_via_location || null,
                 return_via_waiting: formData.return_via_waiting || null,
             };
+            const pricing = calculateReservationPricing({
+                serviceType: 'rentcar',
+                baseTotal: formData.total_price,
+                additionalFee,
+                additionalFeeDetail,
+                lineItems: [{
+                    label: '렌터카',
+                    code: reservation.rentcar_price_code || null,
+                    unit_price: formData.unit_price,
+                    quantity: formData.car_count || 1,
+                    total: formData.total_price || 0,
+                    metadata: {
+                        route: formData.route || null,
+                        way_type: formData.way_type || null,
+                        passenger_count: formData.driver_count || 0,
+                        pickup_datetime: formData.pickup_datetime || null,
+                    },
+                }],
+                metadata: {
+                    pickup_location: formData.pickup_location || null,
+                    destination: formData.destination || null,
+                    request_note: formData.request_note || null,
+                },
+            });
 
             // 1. Update 시도
             const { data: updatedData, error: updateError } = await supabase
@@ -491,8 +516,9 @@ function RentcarReservationEditContent() {
             const { error: reservationError } = await supabase
                 .from('reservation')
                 .update({
-                    total_amount: formData.total_price + additionalFee,
+                    total_amount: pricing.total_amount,
                     reservation_date: formData.pickup_datetime ? formData.pickup_datetime.split('T')[0] : null,
+                    price_breakdown: pricing.price_breakdown,
                     manual_additional_fee: additionalFee,
                     manual_additional_fee_detail: additionalFeeDetail || null,
                     re_update_at: new Date().toISOString(),

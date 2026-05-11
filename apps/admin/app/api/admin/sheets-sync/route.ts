@@ -162,6 +162,11 @@ function userLabel(user: any) {
   return user?.name || user?.nickname || user?.email || '';
 }
 
+function reservationDisplayTotal(reservation: any) {
+  const parsed = Number(reservation?.total_amount ?? reservation?.price_breakdown?.grand_total ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 async function safeFetch(table: string, filterFn?: (q: any) => any) {
   try {
     return await fetchAll(table, filterFn);
@@ -187,7 +192,7 @@ function createReservationSummary(reservations: any[], usersById: Map<string, an
       결제상태: reservation.payment_status,
       예약일: reservation.reservation_date,
       생성일: reservation.re_created_at,
-      총금액: reservation.total_amount,
+      총금액: reservationDisplayTotal(reservation),
       결제금액: reservation.paid_amount,
       크루즈체크인: cruise.checkin,
       객실가격코드: cruise.room_price_code,
@@ -237,7 +242,7 @@ function createCruiseReservationRows(
       엑스트라베드: rate.price_extra_bed,
       예약단가: cruise.unit_price,
       객실합계: cruise.room_total_price,
-      총금액: reservation.total_amount,
+      총금액: reservationDisplayTotal(reservation),
       포함차량: rate.includes_vehicle,
       차량종류: rate.vehicle_type,
       객실면적: info.room_area,

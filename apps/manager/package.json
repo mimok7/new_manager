@@ -11,6 +11,7 @@
     "clean": "rimraf .next"
   },
   "dependencies": {
+    "@sht/domain": "workspace:*",
     "@hookform/resolvers": "^3.9.1",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.52.1",

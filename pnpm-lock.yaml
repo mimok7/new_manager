@@ -27,6 +27,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@sht/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@supabase/ssr':
         specifier: ^0.9.0
         version: 0.9.0(@supabase/supabase-js@2.104.1)
@@ -136,6 +139,9 @@ importers:
 
   apps/customer:
     dependencies:
+      '@sht/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@supabase/ssr':
         specifier: ^0.9.0
         version: 0.9.0(@supabase/supabase-js@2.104.1)
@@ -221,6 +227,9 @@ importers:
 
   apps/customer1:
     dependencies:
+      '@sht/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@supabase/supabase-js':
         specifier: ^2.52.1
         version: 2.104.1
@@ -261,6 +270,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.9.1
         version: 3.10.0(react-hook-form@7.73.1(react@19.2.5))
+      '@sht/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@supabase/ssr':
         specifier: ^0.9.0
         version: 0.9.0(@supabase/supabase-js@2.104.1)
@@ -358,6 +370,9 @@ importers:
 
   apps/manager1:
     dependencies:
+      '@sht/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@supabase/supabase-js':
         specifier: ^2.52.1
         version: 2.104.1
@@ -459,6 +474,9 @@ importers:
 
   apps/quote:
     dependencies:
+      '@sht/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@supabase/supabase-js':
         specifier: ^2.52.1
         version: 2.104.1

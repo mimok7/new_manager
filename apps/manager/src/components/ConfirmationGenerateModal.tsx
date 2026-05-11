@@ -15,6 +15,7 @@ interface ReservationDetail {
     reservation_total_amount?: number;
     manual_additional_fee?: number;
     manual_additional_fee_detail?: string;
+    price_breakdown?: any;
 }
 
 interface QuoteData {
@@ -366,15 +367,16 @@ export default function ConfirmationGenerateModal({ isOpen, onClose, quoteId, au
             };
 
             const resStatusMap = new Map<string, string>();
-            const reservationMetaMap = new Map<string, { total_amount: number; manual_additional_fee: number; manual_additional_fee_detail: string }>();
+            const reservationMetaMap = new Map<string, { total_amount: number; manual_additional_fee: number; manual_additional_fee_detail: string; price_breakdown: any }>();
             reservations.forEach((r: any) => {
                 const reservationId = String(r.re_id || '').trim();
                 if (!reservationId) return;
                 resStatusMap.set(reservationId, r.re_status || 'pending');
                 reservationMetaMap.set(reservationId, {
-                    total_amount: Number(r.total_amount || 0),
+                    total_amount: Number(r.total_amount || r.price_breakdown?.grand_total || 0),
                     manual_additional_fee: Number(r.manual_additional_fee || 0),
                     manual_additional_fee_detail: String(r.manual_additional_fee_detail || '').trim(),
+                    price_breakdown: r.price_breakdown || null,
                 });
             });
 
@@ -445,6 +447,7 @@ export default function ConfirmationGenerateModal({ isOpen, onClose, quoteId, au
                         reservation_total_amount: Number(reservationMeta?.total_amount || 0),
                         manual_additional_fee: Number(reservationMeta?.manual_additional_fee || 0),
                         manual_additional_fee_detail: String(reservationMeta?.manual_additional_fee_detail || '').trim(),
+                        price_breakdown: reservationMeta?.price_breakdown || null,
                     });
                 });
             });

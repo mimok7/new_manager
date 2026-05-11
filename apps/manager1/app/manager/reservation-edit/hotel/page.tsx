@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import { saveAdditionalFeeTemplateFromInput } from '@/lib/additionalFeeTemplate';
+import { calculateReservationPricing } from '@sht/domain/pricing';
 import ManagerLayout from '@/components/ManagerLayout';
 import {
     Save,
@@ -227,6 +228,30 @@ function HotelReservationEditContent() {
             const nightsNum = getNightsFromSchedule(formData.schedule);
             const roomCount = Math.max(1, formData.room_count || 1);
             const totalPrice = nightsNum * roomCount * formData.unit_price;
+            const pricing = calculateReservationPricing({
+                serviceType: 'hotel',
+                baseTotal: totalPrice,
+                additionalFee,
+                additionalFeeDetail,
+                lineItems: [{
+                    label: '호텔 객실',
+                    code: formData.checkin_date || reservation.hotel_price_code,
+                    unit_price: formData.unit_price,
+                    quantity: nightsNum * roomCount,
+                    total: totalPrice,
+                    metadata: {
+                        nights: nightsNum,
+                        room_count: roomCount,
+                        guest_count: formData.guest_count || 0,
+                    },
+                }],
+                metadata: {
+                    hotel_price_code: reservation.hotel_price_code,
+                    checkin_date: formData.checkin_date || null,
+                    schedule: formData.schedule || null,
+                    request_note: formData.request_note || null,
+                },
+            });
 
             // 1. 예약 호텔 테이블 업데이트
             const { error: hotelError } = await supabase
@@ -253,9 +278,10 @@ function HotelReservationEditContent() {
             const { error: reservationError } = await supabase
                 .from('reservation')
                 .update({
-                    total_amount: totalPrice + additionalFee,
+                    total_amount: pricing.total_amount,
                     pax_count: formData.guest_count || 0,
                     reservation_date: formData.checkin_date || null,
+                    price_breakdown: pricing.price_breakdown,
                     manual_additional_fee: additionalFee,
                     manual_additional_fee_detail: additionalFeeDetail || null,
                     re_update_at: new Date().toISOString(),
@@ -268,24 +294,6 @@ function HotelReservationEditContent() {
             }
 
             console.log('✅ 2. 예약 테이블 동기화 완료 (총 금액, 인원수, 예약일)');
-
-            // 3. 호텔 가격 테이블 업데이트 (해당 호텔 코드의 가격 업데이트)
-            if (reservation.hotel_price_code) {
-                const { error: priceError } = await supabase
-                    .from('hotel_price')
-                    .update({
-                        base_price: formData.unit_price,
-                    })
-                    .eq('hotel_price_code', reservation.hotel_price_code);
-
-                if (priceError) {
-                    console.error('❌ 호텔 가격 테이블 저장 실패:', priceError);
-                    // 가격 테이블 업데이트 실패해도 계속 진행 (경고만 표시)
-                    console.warn('⚠️ 호텔 가격 테이블 업데이트는 실패했지만 예약 정보는 저장되었습니다.');
-                } else {
-                    console.log('✅ 3. 호텔 가격 테이블 저장 완료');
-                }
-            }
 
             await saveAdditionalFeeTemplateFromInput({
                 serviceType: 'hotel',

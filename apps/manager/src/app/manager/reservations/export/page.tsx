@@ -32,6 +32,9 @@ interface ReservationExportData {
     re_type: string;
     re_status: string;
     re_created_at: string;
+    total_amount: number;
+    manual_additional_fee: number;
+    manual_additional_fee_detail: string;
     customer_name: string;
     customer_email: string;
     customer_phone: string;
@@ -71,6 +74,11 @@ export default function ReservationExportPage() {
         { value: 'rentcar', label: '렌터카' }
     ];
 
+    const getReservationTotal = (reservation: any): number => {
+        const parsed = Number(reservation?.total_amount ?? reservation?.price_breakdown?.grand_total ?? 0);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    };
+
     useEffect(() => {
         // 옵션이 변경되면 미리보기 데이터 로드
         loadPreviewData();
@@ -88,7 +96,7 @@ export default function ReservationExportPage() {
             // 1) 예약 기본 행 조회 (미리보기 10건)
             const { data: rows, error: baseError } = await supabase
                 .from('reservation')
-                .select('re_id, re_type, re_status, re_created_at, re_quote_id, re_user_id')
+                .select('re_id, re_type, re_status, re_created_at, re_quote_id, re_user_id, total_amount, manual_additional_fee, manual_additional_fee_detail, price_breakdown')
                 .gte('re_created_at', options.startDate + 'T00:00:00.000Z')
                 .lte('re_created_at', options.endDate + 'T23:59:59.999Z')
                 .in('re_status', options.status)
@@ -124,6 +132,9 @@ export default function ReservationExportPage() {
                 re_type: r.re_type,
                 re_status: r.re_status,
                 re_created_at: r.re_created_at,
+                total_amount: getReservationTotal(r),
+                manual_additional_fee: Number(r.manual_additional_fee || 0),
+                manual_additional_fee_detail: String(r.manual_additional_fee_detail || '').trim(),
                 customer_name: r.re_user_id ? (usersById[r.re_user_id]?.name || 'N/A') : 'N/A',
                 customer_email: r.re_user_id ? (usersById[r.re_user_id]?.email || 'N/A') : 'N/A',
                 customer_phone: r.re_user_id ? (usersById[r.re_user_id]?.phone_number || 'N/A') : 'N/A',
@@ -179,6 +190,9 @@ export default function ReservationExportPage() {
             '서비스타입',
             '상태',
             '예약일시',
+            '예약 최종금액',
+            '추가요금',
+            '추가요금 내역',
             '고객명',
             '이메일',
             '전화번호',
@@ -191,6 +205,9 @@ export default function ReservationExportPage() {
             getTypeName(item.re_type),
             getStatusText(item.re_status),
             new Date(item.re_created_at).toLocaleString('ko-KR'),
+            item.total_amount.toLocaleString('ko-KR'),
+            item.manual_additional_fee.toLocaleString('ko-KR'),
+            item.manual_additional_fee_detail,
             item.customer_name,
             item.customer_email,
             item.customer_phone,
@@ -225,7 +242,7 @@ export default function ReservationExportPage() {
             // 전체 데이터 조회 (제한 없음)
             const { data: rows, error: baseError } = await supabase
                 .from('reservation')
-                .select('re_id, re_type, re_status, re_created_at, re_quote_id, re_user_id')
+                .select('re_id, re_type, re_status, re_created_at, re_quote_id, re_user_id, total_amount, manual_additional_fee, manual_additional_fee_detail, price_breakdown')
                 .gte('re_created_at', options.startDate + 'T00:00:00.000Z')
                 .lte('re_created_at', options.endDate + 'T23:59:59.999Z')
                 .in('re_status', options.status)
@@ -260,6 +277,9 @@ export default function ReservationExportPage() {
                 re_type: r.re_type,
                 re_status: r.re_status,
                 re_created_at: r.re_created_at,
+                total_amount: getReservationTotal(r),
+                manual_additional_fee: Number(r.manual_additional_fee || 0),
+                manual_additional_fee_detail: String(r.manual_additional_fee_detail || '').trim(),
                 customer_name: r.re_user_id ? (usersById[r.re_user_id]?.name || 'N/A') : 'N/A',
                 customer_email: r.re_user_id ? (usersById[r.re_user_id]?.email || 'N/A') : 'N/A',
                 customer_phone: r.re_user_id ? (usersById[r.re_user_id]?.phone_number || 'N/A') : 'N/A',
@@ -520,6 +540,8 @@ export default function ReservationExportPage() {
                                         <th className="px-4 py-2 text-left font-medium text-gray-700 bg-gray-50">예약 ID</th>
                                         <th className="px-4 py-2 text-left font-medium text-gray-700 bg-gray-50">서비스</th>
                                         <th className="px-4 py-2 text-left font-medium text-gray-700 bg-gray-50">상태</th>
+                                        <th className="px-4 py-2 text-right font-medium text-gray-700 bg-gray-50">최종금액</th>
+                                        <th className="px-4 py-2 text-right font-medium text-gray-700 bg-gray-50">추가요금</th>
                                         <th className="px-4 py-2 text-left font-medium text-gray-700 bg-gray-50">고객</th>
                                         <th className="px-4 py-2 text-left font-medium text-gray-700 bg-gray-50">예약일</th>
                                     </tr>
@@ -537,6 +559,8 @@ export default function ReservationExportPage() {
                                                     {getStatusText(item.re_status)}
                                                 </span>
                                             </td>
+                                            <td className="px-4 py-2 text-right font-semibold text-blue-700">{item.total_amount.toLocaleString()}동</td>
+                                            <td className="px-4 py-2 text-right text-rose-700">{item.manual_additional_fee > 0 ? `${item.manual_additional_fee.toLocaleString()}동` : '-'}</td>
                                             <td className="px-4 py-2">{item.customer_name}</td>
                                             <td className="px-4 py-2">{new Date(item.re_created_at).toLocaleDateString('ko-KR')}</td>
                                         </tr>

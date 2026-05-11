@@ -11,6 +11,10 @@ interface ReservationDetail {
   service_details: any;
   amount: number;
   status: string;
+  reservation_total_amount?: number;
+  manual_additional_fee?: number;
+  manual_additional_fee_detail?: string;
+  price_breakdown?: any;
 }
 
 interface QuoteData {
@@ -172,11 +176,30 @@ export default function ManagerConfirmationGeneratePage() {
         // 예약 기본 정보 조회
         const { data: reservationList } = await supabase
           .from('reservation')
-          .select('re_id, re_type, re_status')
+          .select('re_id, re_type, re_status, total_amount, manual_additional_fee, manual_additional_fee_detail, price_breakdown')
           .eq('re_quote_id', quoteId)
           .neq('re_type', 'car_sht');
 
         const resList = reservationList || [];
+        const reservationMetaMap = new Map((resList || []).map((r: any) => [r.re_id, {
+          total_amount: Number(r.total_amount || r.price_breakdown?.grand_total || 0),
+          manual_additional_fee: Number(r.manual_additional_fee || 0),
+          manual_additional_fee_detail: String(r.manual_additional_fee_detail || '').trim(),
+          price_breakdown: r.price_breakdown || null,
+        }]));
+        const withReservationMeta = (row: ReservationDetail): ReservationDetail => {
+          const baseReservationId = String(row.reservation_id || '')
+            .replace(/_(cruise_car|cruise|airport|hotel|rentcar|tour|sht|car)_?\d*$/, '')
+            .replace(/_car$/, '');
+          const meta: any = reservationMetaMap.get(baseReservationId);
+          return meta ? {
+            ...row,
+            reservation_total_amount: meta.total_amount,
+            manual_additional_fee: meta.manual_additional_fee,
+            manual_additional_fee_detail: meta.manual_additional_fee_detail,
+            price_breakdown: meta.price_breakdown,
+          } : row;
+        };
         console.log('🔍 조회된 예약 목록:', resList);
 
         const idsByType = {
@@ -403,6 +426,8 @@ export default function ManagerConfirmationGeneratePage() {
 
         console.log('✅ 최종 처리된 예약 목록:', processedReservations);
 
+        const displayReservations = processedReservations.map(withReservationMeta);
+
         // 결제 정보에서 총액 합산 시도 (fallback)
         const { data: payments } = reservationIds.length ? await supabase
           .from('reservation_payment')
@@ -411,10 +436,19 @@ export default function ManagerConfirmationGeneratePage() {
         const paymentTotal = (payments || []).reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
         // 총 금액 계산 - 모든 개별 서비스의 금액 합산
-        const rowsTotal = processedReservations.reduce((sum, reservation) => sum + (reservation.amount || 0), 0);
+        const rowsTotal = displayReservations.reduce((sum, reservation) => sum + (reservation.reservation_total_amount || reservation.amount || 0), 0);
+        const reservationTotalMap = new Map<string, number>();
+        displayReservations.forEach((reservation) => {
+          const baseReservationId = String(reservation.reservation_id || '')
+            .replace(/_(cruise_car|cruise|airport|hotel|rentcar|tour|sht|car)_?\d*$/, '')
+            .replace(/_car$/, '');
+          const total = Number(reservation.reservation_total_amount || 0);
+          if (baseReservationId && total > 0) reservationTotalMap.set(baseReservationId, total);
+        });
+        const reservationTotalSum = Array.from(reservationTotalMap.values()).reduce((sum, value) => sum + value, 0);
 
-        // 최종 금액 결정: quote.total_price(DB) -> 아이템 합계 -> 결제액 합계 순
-        let calculatedTotalPrice = Number(quote.total_price) || 0;
+        // 최종 금액 결정: 예약별 저장 총액 -> quote.total_price(DB) -> 아이템 합계 -> 결제액 합계 순
+        let calculatedTotalPrice = reservationTotalSum || Number(quote.total_price) || 0;
         if (calculatedTotalPrice <= 0) {
           calculatedTotalPrice = rowsTotal > 0 ? rowsTotal : paymentTotal;
         }
@@ -433,7 +467,7 @@ export default function ManagerConfirmationGeneratePage() {
           total_price: calculatedTotalPrice,
           payment_status: quote.payment_status || 'pending',
           created_at: quote.created_at,
-          reservations: processedReservations
+          reservations: displayReservations
         };
         setQuoteData(qd);
         setUnified({
@@ -448,6 +482,10 @@ export default function ManagerConfirmationGeneratePage() {
             service_details: r.service_details,
             amount: r.amount,
             status: r.status,
+            reservation_total_amount: r.reservation_total_amount,
+            manual_additional_fee: r.manual_additional_fee,
+            manual_additional_fee_detail: r.manual_additional_fee_detail,
+            price_breakdown: r.price_breakdown,
           })),
           hide_details: isPackage
         });
@@ -519,7 +557,11 @@ export default function ManagerConfirmationGeneratePage() {
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
-      if (payment) {
+      const reservationStoredTotal = Number(reservation.total_amount || reservation.price_breakdown?.grand_total || 0);
+      if (reservationStoredTotal > 0) {
+        paymentStatus = payment?.payment_status || reservation.payment_status || '';
+        totalPrice = reservationStoredTotal;
+      } else if (payment) {
         paymentStatus = payment.payment_status;
         totalPrice = payment.amount;
       } else if (serviceDetail?.total_price) {
@@ -541,6 +583,10 @@ export default function ManagerConfirmationGeneratePage() {
           service_details: serviceDetail,
           amount: totalPrice,
           status: reservation.re_status,
+          reservation_total_amount: reservationStoredTotal,
+          manual_additional_fee: Number(reservation.manual_additional_fee || 0),
+          manual_additional_fee_detail: String(reservation.manual_additional_fee_detail || '').trim(),
+          price_breakdown: reservation.price_breakdown || null,
         }
       ];
 
@@ -552,6 +598,10 @@ export default function ManagerConfirmationGeneratePage() {
           service_details: cruiseCarDetail,
           amount: carTotalPrice,
           status: reservation.re_status,
+          reservation_total_amount: reservationStoredTotal,
+          manual_additional_fee: Number(reservation.manual_additional_fee || 0),
+          manual_additional_fee_detail: String(reservation.manual_additional_fee_detail || '').trim(),
+          price_breakdown: reservation.price_breakdown || null,
         });
       }
 
@@ -561,7 +611,7 @@ export default function ManagerConfirmationGeneratePage() {
         user_name: userInfo2?.name || '',
         user_email: userInfo2?.email || '',
         user_phone: userInfo2?.phone_number || '',
-        total_price: totalPrice + carTotalPrice,
+        total_price: reservationStoredTotal > 0 ? reservationStoredTotal : totalPrice + carTotalPrice,
         payment_status: paymentStatus,
         created_at: reservation.re_created_at,
         reservations: reservationItems
@@ -579,6 +629,10 @@ export default function ManagerConfirmationGeneratePage() {
           service_details: r.service_details,
           amount: r.amount,
           status: r.status,
+          reservation_total_amount: r.reservation_total_amount,
+          manual_additional_fee: r.manual_additional_fee,
+          manual_additional_fee_detail: r.manual_additional_fee_detail,
+          price_breakdown: r.price_breakdown,
         }))
       });
     } catch (error) {

@@ -107,13 +107,13 @@ export default function ManagerPaymentsPage() {
     const hasPaymentAmount = rawPaymentAmount !== null && rawPaymentAmount !== undefined && rawPaymentAmount !== '';
     const serviceAmount = Number(serviceTotal ?? payment?.serviceData?.total ?? 0);
     const paymentAmount = Number(rawPaymentAmount || 0);
-    const rawReservationAmount = payment?.reservation?.total_amount;
+    const rawReservationAmount = payment?.reservation?.total_amount ?? payment?.reservation?.price_breakdown?.grand_total;
     const hasReservationAmount = rawReservationAmount !== null && rawReservationAmount !== undefined && rawReservationAmount !== '';
     const reservationAmount = Number(rawReservationAmount || 0);
 
-    // 매니저가 수동 수정한 결제금액(amount)을 최우선으로 표시
+    // 예약 수정 화면에서 저장한 최종 금액을 모든 결제 처리 화면에서 우선 표시
+    if (hasReservationAmount && Number.isFinite(reservationAmount) && reservationAmount > 0) return reservationAmount;
     if (hasPaymentAmount && Number.isFinite(paymentAmount)) return paymentAmount;
-    if (hasReservationAmount && Number.isFinite(reservationAmount)) return reservationAmount;
     return serviceAmount;
   };
 
@@ -356,7 +356,7 @@ export default function ManagerPaymentsPage() {
       // 1. 예약 조회 (total_amount 포함)
       const { data: reservations } = await supabase
         .from('reservation')
-        .select('re_id, re_user_id, re_quote_id, re_type, total_amount');
+        .select('re_id, re_user_id, re_quote_id, re_type, total_amount, price_breakdown');
 
       if (!reservations || reservations.length === 0) {
         alert('예약이 없습니다.');
@@ -509,7 +509,10 @@ export default function ManagerPaymentsPage() {
             re_status,
             re_type,
             re_quote_id,
-            total_amount
+            total_amount,
+            manual_additional_fee,
+            manual_additional_fee_detail,
+            price_breakdown
           )
         `)
         .order('created_at', { ascending: false });

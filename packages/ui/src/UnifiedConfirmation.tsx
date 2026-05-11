@@ -11,6 +11,10 @@ export interface UnifiedReservationDetail {
   service_details: AnyMap | null;
   amount: number;
   status: string;
+  reservation_total_amount?: number;
+  manual_additional_fee?: number;
+  manual_additional_fee_detail?: string;
+  price_breakdown?: AnyMap | null;
 }
 
 export interface UnifiedQuoteData {
@@ -78,8 +82,39 @@ function StatusBadge({ s }: { s: string }) {
   return <span className={`rounded px-2 py-1 text-xs ${cls}`}>{label}</span>;
 }
 
+function toDisplayAmount(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function getReservationAmount(reservation: UnifiedReservationDetail): number {
+  const details = reservation.service_details || {};
+  return toDisplayAmount(reservation.reservation_total_amount)
+    ?? toDisplayAmount(reservation.price_breakdown?.grand_total)
+    ?? toDisplayAmount(details.reservation_total_amount)
+    ?? toDisplayAmount((details.price_breakdown as AnyMap | undefined)?.grand_total)
+    ?? toDisplayAmount(reservation.amount)
+    ?? 0;
+}
+
+function getAdditionalFeeDetail(reservation: UnifiedReservationDetail): string {
+  const details = reservation.service_details || {};
+  return String(
+    reservation.manual_additional_fee_detail
+    ?? details.manual_additional_fee_detail
+    ?? (details.price_breakdown as AnyMap | undefined)?.additional_fee_detail
+    ?? ''
+  ).trim();
+}
+
 /** 예약 확인서 공용 렌더러. customer/manager 양측에서 동일 마크업으로 출력. */
 export function UnifiedConfirmation({ data }: Props) {
+  const displayedTotal = data.reservations?.length
+    ? data.reservations.reduce((sum, reservation) => sum + getReservationAmount(reservation), 0)
+    : 0;
+  const confirmationTotal = displayedTotal > 0 ? displayedTotal : (data.total_price || 0);
+
   return (
     <div id="confirmation-letter" className="bg-white">
       <div className="mb-8 border-b-4 border-brand-500 pb-6 text-center">
@@ -171,6 +206,8 @@ export function UnifiedConfirmation({ data }: Props) {
                   const d = (r.service_details || {}) as AnyMap;
                   const info = summarize(d, { exclude: ['price_info'] });
                   const priceInfo = d?.price_info ? summarize(d.price_info as AnyMap) : '-';
+                  const displayAmount = getReservationAmount(r);
+                  const additionalFeeDetail = getAdditionalFeeDetail(r);
                   return (
                     <tr key={`${r.reservation_id}_${idx}`} className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-3 py-3 text-center text-gray-700">
@@ -189,7 +226,8 @@ export function UnifiedConfirmation({ data }: Props) {
                         <div className="whitespace-pre-wrap break-words">{priceInfo}</div>
                       </td>
                       <td className="border border-gray-300 px-3 py-3 text-center font-bold text-brand-600">
-                        {r.amount > 0 ? `${r.amount.toLocaleString()}동` : '포함'}
+                        {displayAmount > 0 ? `${displayAmount.toLocaleString()}동` : '포함'}
+                        {additionalFeeDetail && <div className="mt-1 whitespace-pre-line text-xs font-normal text-rose-700">추가: {additionalFeeDetail}</div>}
                       </td>
                       <td className="border border-gray-300 px-3 py-3 text-center">
                         <StatusBadge s={r.status} />
@@ -208,7 +246,7 @@ export function UnifiedConfirmation({ data }: Props) {
                   </td>
                   <td className="border border-gray-300 px-3 py-4 text-center">
                     <div className="text-xl font-bold text-brand-600">
-                      {(data.total_price || 0).toLocaleString()}동
+                      {confirmationTotal.toLocaleString()}동
                     </div>
                   </td>
                   <td className="border border-gray-300 px-3 py-4 text-center">
@@ -231,7 +269,7 @@ export function UnifiedConfirmation({ data }: Props) {
         <div className="flex items-center justify-between rounded-lg border border-brand-200 bg-brand-50 p-4">
           <div className="font-medium text-gray-700">총 결제 금액</div>
           <div className="text-xl font-bold text-brand-600">
-            {(data.total_price || 0).toLocaleString()}동
+            {confirmationTotal.toLocaleString()}동
           </div>
         </div>
       </section>

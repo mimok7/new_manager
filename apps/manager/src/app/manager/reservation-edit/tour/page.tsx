@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import { saveAdditionalFeeTemplateFromInput } from '@/lib/additionalFeeTemplate';
+import { calculateReservationPricing } from '@sht/domain/pricing';
 import ManagerLayout from '@/components/ManagerLayout';
 import {
     Save,
@@ -239,6 +240,27 @@ function TourReservationEditContent() {
                 total_price: formData.total_price,
                 request_note: formData.request_note,
             };
+            const pricing = calculateReservationPricing({
+                serviceType: 'tour',
+                baseTotal: formData.total_price,
+                additionalFee,
+                additionalFeeDetail,
+                lineItems: [{
+                    label: '투어',
+                    code: reservation.tour_price_code || null,
+                    unit_price: formData.unit_price,
+                    quantity: formData.tour_capacity || 1,
+                    total: formData.total_price || 0,
+                    metadata: {
+                        usage_date: formData.tour_date || null,
+                        pickup_location: formData.pickup_location || null,
+                        dropoff_location: formData.dropoff_location || null,
+                    },
+                }],
+                metadata: {
+                    request_note: formData.request_note || null,
+                },
+            });
 
             // 1. Update 시도
             const { data: updatedData, error: updateError } = await supabase
@@ -253,9 +275,10 @@ function TourReservationEditContent() {
             const { error: reservationError } = await supabase
                 .from('reservation')
                 .update({
-                    total_amount: formData.total_price + additionalFee,
+                    total_amount: pricing.total_amount,
                     pax_count: formData.tour_capacity || 0,
                     reservation_date: formData.tour_date || null,
+                    price_breakdown: pricing.price_breakdown,
                     manual_additional_fee: additionalFee,
                     manual_additional_fee_detail: additionalFeeDetail || null,
                     re_update_at: new Date().toISOString(),

@@ -394,6 +394,25 @@ export default function PaymentDetailModal({
         return names[type] || type;
     };
 
+    const paymentTotalAmount = Number(
+        paymentDetails?.reservation?.total_amount
+        ?? payment?.reservation?.total_amount
+        ?? payment.calculatedAmount
+        ?? payment.amount
+        ?? 0
+    );
+    const manualAdditionalFee = Number(
+        paymentDetails?.reservation?.manual_additional_fee
+        ?? payment?.reservation?.manual_additional_fee
+        ?? 0
+    ) || 0;
+    const manualAdditionalFeeDetail = String(
+        paymentDetails?.reservation?.manual_additional_fee_detail
+        ?? payment?.reservation?.manual_additional_fee_detail
+        ?? ''
+    ).trim();
+    const baseAmount = Math.max(0, paymentTotalAmount - manualAdditionalFee);
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -453,7 +472,9 @@ export default function PaymentDetailModal({
                             결제 상세 정보
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <div><strong>결제 금액:</strong> <span className="text-lg font-bold text-green-600">{(payment.calculatedAmount || payment.amount || 0).toLocaleString()}동</span></div>
+                            <div><strong>기본 금액:</strong> <span className="text-base font-bold text-gray-700">{baseAmount.toLocaleString()}동</span></div>
+                            <div><strong>추가요금:</strong> <span className="text-base font-bold text-rose-700">{manualAdditionalFee.toLocaleString()}동</span></div>
+                            <div><strong>최종 결제 금액:</strong> <span className="text-lg font-bold text-green-600">{paymentTotalAmount.toLocaleString()}동</span></div>
                             <div><strong>결제 상태:</strong> <span className={`px-2 py-1 rounded text-xs ${payment.payment_status === 'completed' ? 'bg-green-100 text-green-800' : payment.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
                                 {payment.payment_status === 'completed' ? '결제 완료' : payment.payment_status === 'pending' ? '결제 대기' : payment.payment_status === 'failed' ? '결제 실패' : payment.payment_status || '상태 없음'}
                             </span></div>
@@ -461,6 +482,11 @@ export default function PaymentDetailModal({
                             <div><strong>결제 요청일:</strong> {payment.payment_date ? new Date(payment.payment_date).toLocaleDateString('ko-KR') : '정보 없음'}</div>
                             <div><strong>PG 거래번호:</strong> {payment.pg_transaction_id || '정보 없음'}</div>
                             <div><strong>승인번호:</strong> {payment.approval_number || '정보 없음'}</div>
+                            {manualAdditionalFeeDetail && (
+                                <div className="md:col-span-3"><strong>추가요금 내역:</strong>
+                                    <div className="bg-rose-50 text-rose-800 p-3 rounded mt-2 border border-rose-200 whitespace-pre-line">{manualAdditionalFeeDetail}</div>
+                                </div>
+                            )}
                             {payment.memo && (
                                 <div className="md:col-span-3"><strong>메모:</strong>
                                     <div className="bg-white p-3 rounded mt-2 border">{payment.memo}</div>

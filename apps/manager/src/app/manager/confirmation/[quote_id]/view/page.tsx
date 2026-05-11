@@ -81,11 +81,30 @@ function ManagerConfirmationViewClient() {
 
         const { data: reservationList } = await supabase
           .from('reservation')
-          .select('re_id, re_type, re_status')
+          .select('re_id, re_type, re_status, total_amount, manual_additional_fee, manual_additional_fee_detail, price_breakdown')
           .eq('re_quote_id', quote.id)
           .neq('re_type', 'car_sht');
 
         const resList = reservationList || [];
+        const reservationMetaMap = new Map((resList || []).map((r: any) => [r.re_id, {
+          total_amount: Number(r.total_amount || r.price_breakdown?.grand_total || 0),
+          manual_additional_fee: Number(r.manual_additional_fee || 0),
+          manual_additional_fee_detail: String(r.manual_additional_fee_detail || '').trim(),
+          price_breakdown: r.price_breakdown || null,
+        }]));
+        const withReservationMeta = (row: UnifiedQuoteData['reservations'][number]) => {
+          const baseReservationId = String(row.reservation_id || '')
+            .replace(/_(cruise_car|cruise|airport|hotel|rentcar|tour|sht|car)_?\d*$/, '')
+            .replace(/_car$/, '');
+          const meta: any = reservationMetaMap.get(baseReservationId);
+          return meta ? {
+            ...row,
+            reservation_total_amount: meta.total_amount,
+            manual_additional_fee: meta.manual_additional_fee,
+            manual_additional_fee_detail: meta.manual_additional_fee_detail,
+            price_breakdown: meta.price_breakdown,
+          } : row;
+        };
         const reIds = resList.map(r => r.re_id);
 
         // 결제 정보에서 총액 합산 시도 (fallback용)
@@ -148,9 +167,20 @@ function ManagerConfirmationViewClient() {
           unifiedRows.push({ reservation_id: `${rid}_sht_${i}`, service_type: 'sht', service_details: row, amount, status: (reStatus.get(rid) as string) || 'pending' });
         });
 
-        // 총액 결정 로직 개선: quote.total_price -> sum(amounts) -> sum(payments) 순서
-        const rowsTotal = unifiedRows.reduce((s, r) => s + money(r.amount), 0);
-        let calculatedTotal = money(quote.total_price);
+        const displayRows = unifiedRows.map(withReservationMeta);
+
+        // 총액 결정 로직 개선: 예약별 저장 총액 -> quote.total_price -> sum(amounts) -> sum(payments) 순서
+        const rowsTotal = displayRows.reduce((s, r) => s + money(r.reservation_total_amount || r.amount), 0);
+        const reservationTotalMap = new Map<string, number>();
+        displayRows.forEach((row) => {
+          const baseReservationId = String(row.reservation_id || '')
+            .replace(/_(cruise_car|cruise|airport|hotel|rentcar|tour|sht|car)_?\d*$/, '')
+            .replace(/_car$/, '');
+          const total = Number(row.reservation_total_amount || 0);
+          if (baseReservationId && total > 0) reservationTotalMap.set(baseReservationId, total);
+        });
+        const reservationTotalSum = Array.from(reservationTotalMap.values()).reduce((s, value) => s + value, 0);
+        let calculatedTotal = reservationTotalSum || money(quote.total_price);
 
         if (calculatedTotal <= 0) {
           calculatedTotal = rowsTotal > 0 ? rowsTotal : paymentTotal;
@@ -165,7 +195,7 @@ function ManagerConfirmationViewClient() {
           user_name: user?.name || '',
           user_phone: user?.phone_number || '',
           total_price: calculatedTotal,
-          reservations: unifiedRows,
+          reservations: displayRows,
           hide_details: isPackage
         });
         setLoading(false);
@@ -214,7 +244,8 @@ function ManagerConfirmationViewClient() {
       }
 
       const unit = money(detail?.price_info?.price);
-      const amount = detail?.room_total_price ? money(detail.room_total_price)
+      const reservationStoredTotal = money(reservation.total_amount || reservation.price_breakdown?.grand_total);
+      const amount = reservationStoredTotal > 0 ? reservationStoredTotal : detail?.room_total_price ? money(detail.room_total_price)
         : detail?.car_total_price ? money(detail.car_total_price)
           : type === 'airport' ? unit * (money(detail?.ra_passenger_count) || 1)
             : type === 'hotel' ? unit * ((money(detail?.nights) || 1) * (money(detail?.room_count) || 1))
@@ -229,7 +260,17 @@ function ManagerConfirmationViewClient() {
         user_phone: user?.phone_number || '',
         total_price: amount,
         reservations: [
-          { reservation_id: reservation.re_id, service_type: type, service_details: detail, amount, status: reservation.re_status }
+          {
+            reservation_id: reservation.re_id,
+            service_type: type,
+            service_details: detail,
+            amount,
+            status: reservation.re_status,
+            reservation_total_amount: reservationStoredTotal,
+            manual_additional_fee: Number(reservation.manual_additional_fee || 0),
+            manual_additional_fee_detail: String(reservation.manual_additional_fee_detail || '').trim(),
+            price_breakdown: reservation.price_breakdown || null,
+          }
         ]
       });
       setLoading(false);

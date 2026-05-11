@@ -166,8 +166,8 @@ const ServiceDetailSection = ({ payment }: { payment: any }) => {
             case 'sht': return { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-800', badge: 'bg-indigo-100 text-indigo-800', borderItem: 'border-indigo-100' };
             default: return { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-800', badge: 'bg-gray-100 text-gray-800', borderItem: 'border-gray-100' };
         }
-    };
 
+    };
     const hasAnyDetails = Object.values(allDetails).some(arr => arr && arr.length > 0);
 
     if (!hasAnyDetails && !loading) return null;
@@ -453,7 +453,13 @@ export default function PaymentDetailModal({
         return names[type] || type;
     };
 
-    const paymentTotalAmount = Number(payment.calculatedAmount || payment.amount || 0);
+    const paymentTotalAmount = Number(
+        paymentDetails?.reservation?.total_amount
+        ?? payment?.reservation?.total_amount
+        ?? payment.calculatedAmount
+        ?? payment.amount
+        ?? 0
+    );
     const manualAdditionalFee = Number(
         paymentDetails?.reservation?.manual_additional_fee
         ?? payment?.reservation?.manual_additional_fee

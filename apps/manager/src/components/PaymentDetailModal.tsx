@@ -441,7 +441,13 @@ export default function PaymentDetailModal({
         return names[type] || type;
     };
 
-    const paymentTotalAmount = Number(payment.calculatedAmount || payment.amount || 0);
+    const paymentTotalAmount = Number(
+        paymentDetails?.reservation?.total_amount
+        ?? payment?.reservation?.total_amount
+        ?? payment.calculatedAmount
+        ?? payment.amount
+        ?? 0
+    );
     const manualAdditionalFee = Number(
         paymentDetails?.reservation?.manual_additional_fee
         ?? payment?.reservation?.manual_additional_fee

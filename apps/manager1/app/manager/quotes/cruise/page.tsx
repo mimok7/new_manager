@@ -1808,21 +1808,22 @@ function ManagerCruiseQuoteForm() {
                                 <p className="text-xs text-gray-500 mb-3">원하시는 추가 옵션을 선택하고 수량을 입력하세요.</p>
                                 <div className="space-y-3">
                                     {tourOptions.map((option) => {
-                                        const selected = selectedTourOptions.find(so => so.option_id === option.id);
+                                        const optionKey = String(option.id ?? option.option_id ?? `${option.option_name}:${option.option_price}`);
+                                        const selected = selectedTourOptions.find(so => so.option_id === optionKey);
                                         const isSelected = !!selected;
                                         return (
                                             <div
-                                                key={option.id}
+                                                key={optionKey}
                                                 className={`border rounded-lg p-3 transition-all cursor-pointer ${isSelected
                                                     ? 'border-purple-500 bg-purple-50 ring-1 ring-purple-500'
                                                     : 'border-gray-200 hover:border-purple-300'
                                                     }`}
                                                 onClick={() => {
                                                     if (isSelected) {
-                                                        setSelectedTourOptions(prev => prev.filter(so => so.option_id !== option.id));
+                                                        setSelectedTourOptions(prev => prev.filter(so => so.option_id !== optionKey));
                                                     } else {
                                                         setSelectedTourOptions(prev => [...prev, {
-                                                            option_id: option.id,
+                                                            option_id: optionKey,
                                                             option_name: option.option_name,
                                                             quantity: 1,
                                                             unit_price: option.option_price,
@@ -1866,7 +1867,7 @@ function ManagerCruiseQuoteForm() {
                                                             onChange={(e) => {
                                                                 const qty = parseInt(e.target.value) || 1;
                                                                 setSelectedTourOptions(prev => prev.map(so =>
-                                                                    so.option_id === option.id ? { ...so, quantity: qty } : so
+                                                                    so.option_id === optionKey ? { ...so, quantity: qty } : so
                                                                 ));
                                                             }}
                                                             className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-purple-500"
