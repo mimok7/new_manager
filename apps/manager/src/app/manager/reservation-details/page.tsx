@@ -449,7 +449,8 @@ export default function ManagerReservationDetailsPage() {
         if (!userId) return;
 
         try {
-            openCentralReservationDetailModal({ userInfo: null, allUserServices: [], loading: true });
+            openCentralReservationDetailModal({ userId, mode: 'auto' });
+            return;
 
             // 1. 사용자 정보 조회
             const { data: userData, error: userError } = await supabase

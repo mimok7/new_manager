@@ -1,6 +1,8 @@
 'use client';
 
 export type CentralReservationDetailPayload = {
+  userId?: string | null;
+  mode?: 'auto' | 'package';
   userInfo?: any;
   allUserServices?: any[];
   reservationDetails?: any;

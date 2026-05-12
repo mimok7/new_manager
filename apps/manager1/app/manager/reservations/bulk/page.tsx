@@ -444,7 +444,7 @@ function BulkReservationContent() {
     };
 
     const handleViewDetails = async (reservation: ReservationItem) => {
-        // 패키지 예약이면 PackageDetailModalContainer 사용
+        // 패키지 예약이면 중앙 Provider가 패키지 모달로 분기
         if (reservation.services?.some((s: ServiceReservation) => s.re_type === 'package')) {
             const userId = reservation.users?.id;
             if (userId) {
@@ -453,7 +453,10 @@ function BulkReservationContent() {
             }
         }
         
-        openCentralReservationDetailModal({ userInfo: null, allUserServices: [], loading: true });
+        const userId = reservation.users?.id || null;
+        if (!userId) return;
+        openCentralReservationDetailModal({ userId, mode: 'auto' });
+        return;
 
         // 사용자 정보 설정
         const userInfo = {

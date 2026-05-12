@@ -1624,7 +1624,7 @@ export default function ReservationEditApprovalPage() {
                                             ({dateGroup.users.reduce((s, u) => s + u.rows.length, 0)}건)
                                         </span>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 px-1">
+                                    <div className="grid grid-cols-5 gap-3 px-1">
                                         {dateGroup.users.flatMap(userGroup =>
                                             userGroup.rows.flatMap(row => {
                                                 // ── 1단계: row → row entries (multi-row면 snapshot.requested 행별로) ──
@@ -1786,12 +1786,6 @@ export default function ReservationEditApprovalPage() {
                                                                 <div className="text-[12px] text-gray-400 italic">변경 사항 없음</div>
                                                             )}
 
-                                                            {/* 매니저 메모 */}
-                                                            {row.manager_note && (
-                                                                <div className="text-[11px] text-gray-600 bg-gray-100 rounded p-1.5 border border-gray-200">
-                                                                    📝 {row.manager_note}
-                                                                </div>
-                                                            )}
 
                                                             <div className="pt-2 border-t border-gray-100">
                                                                 <button
@@ -2001,9 +1995,16 @@ export default function ReservationEditApprovalPage() {
                     </div>
                 )}
 
-                {/* ── 상세 비교 패널 ── */}
+                {/* ── 상세 비교 모달 ── */}
                 {selectedRequest && (
-                    <div className="bg-white rounded-lg shadow-sm border border-blue-200 p-4 space-y-4">
+                    <div
+                        className="fixed inset-0 z-50 bg-black/40 px-4 py-6 sm:px-8 flex items-start sm:items-center justify-center"
+                        onClick={() => { setSelectedRequest(null); setBaseData(null); setTempData(null); setReservationSummary(null); setReservationContext(null); }}
+                    >
+                    <div
+                        className="bg-white rounded-lg shadow-xl border border-blue-200 p-4 space-y-4 w-[90vw] max-w-[90vw] max-h-[92vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="flex items-center justify-between border-b border-gray-200 pb-3">
                             <div>
                                 <h3 className="text-sm font-semibold text-gray-800">
@@ -2212,6 +2213,7 @@ export default function ReservationEditApprovalPage() {
                                 )}
                             </>
                         )}
+                    </div>
                     </div>
                 )}
             </div>

@@ -9,7 +9,6 @@ import { RoleContext } from '@/app/components/RoleContext';
 import ManagerSidebar from './ManagerSidebar';
 import { ReservationDetailModalProvider } from '@/contexts/ReservationDetailModalProvider';
 import ReservationDetailModalSwitch from './ReservationDetailModalSwitch';
-import PackageDetailModalContainer from './PackageDetailModalContainer';
 import GoogleSheetsDetailModal from './GoogleSheetsDetailModal';
 import { useReservationDetailModal } from '@/hooks/useReservationDetailModal';
 
@@ -78,9 +77,6 @@ function ManagerLayoutContent({ children, title, activeTab }: ManagerLayoutProps
     loading,
     modalKey,
     closeModal,
-    isPackageOpen,
-    packageModalUserId,
-    closePackageModal,
     googleSheetsDetail,
     closeGoogleSheetsModal,
   } = useReservationDetailModal();
@@ -324,12 +320,6 @@ function ManagerLayoutContent({ children, title, activeTab }: ManagerLayoutProps
             loading={loading}
           />
         )}
-
-        <PackageDetailModalContainer
-          userId={packageModalUserId}
-          isOpen={isPackageOpen}
-          onClose={closePackageModal}
-        />
 
         <GoogleSheetsDetailModal
           key={googleSheetsDetail.modalKey}

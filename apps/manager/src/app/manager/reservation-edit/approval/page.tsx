@@ -2001,9 +2001,16 @@ export default function ReservationEditApprovalPage() {
                     </div>
                 )}
 
-                {/* ── 상세 비교 패널 ── */}
+                {/* ── 상세 비교 모달 ── */}
                 {selectedRequest && (
-                    <div className="bg-white rounded-lg shadow-sm border border-blue-200 p-4 space-y-4">
+                    <div
+                        className="fixed inset-0 z-50 bg-black/40 px-4 py-6 sm:px-8 flex items-start sm:items-center justify-center"
+                        onClick={() => { setSelectedRequest(null); setBaseData(null); setTempData(null); setReservationSummary(null); setReservationContext(null); }}
+                    >
+                    <div
+                        className="bg-white rounded-lg shadow-xl border border-blue-200 p-4 space-y-4 w-[90vw] max-w-[90vw] max-h-[92vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="flex items-center justify-between border-b border-gray-200 pb-3">
                             <div>
                                 <h3 className="text-sm font-semibold text-gray-800">
@@ -2212,6 +2219,7 @@ export default function ReservationEditApprovalPage() {
                                 )}
                             </>
                         )}
+                    </div>
                     </div>
                 )}
             </div>

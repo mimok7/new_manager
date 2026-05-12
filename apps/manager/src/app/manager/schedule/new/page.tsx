@@ -651,7 +651,8 @@ export default function ManagerSchedulePage() {
     if (!userId) return;
 
     try {
-      openCentralReservationDetailModal({ userInfo: null, allUserServices: [], loading: true });
+      openCentralReservationDetailModal({ userId, mode: 'auto' });
+      return;
 
       // 1. 사용자 정보 조회
       const { data: userData, error: userError } = await supabase
@@ -673,7 +674,7 @@ export default function ManagerSchedulePage() {
 
       if (resError) throw resError;
 
-      // 패키지 예약이 있으면 PackageDetailModalContainer로 라우팅
+      // 패키지 예약도 중앙 Provider가 통합 모달로 처리
       if (reservations.some((r: any) => r.re_type === 'package')) {
         closeCentralReservationDetailModal();
         openCentralPackageDetailModal(userId);

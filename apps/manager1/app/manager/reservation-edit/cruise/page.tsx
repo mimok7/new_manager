@@ -154,6 +154,7 @@ function CruiseReservationEditContent() {
     const [selectedOptionIds, setSelectedOptionIds] = useState<number[]>([]);
     const [additionalFee, setAdditionalFee] = useState(0);
     const [manualAdditionalFee, setManualAdditionalFee] = useState(0);
+    const [manualAdditionalFeeInput, setManualAdditionalFeeInput] = useState('');
     const [additionalFeeDetail, setAdditionalFeeDetail] = useState('');
     const [additionalFeeItems, setAdditionalFeeItems] = useState<AdditionalFeeItem[]>([]);
     const [discountRate, setDiscountRate] = useState(0);
@@ -176,6 +177,11 @@ function CruiseReservationEditContent() {
     const [childBirthTargetCount, setChildBirthTargetCount] = useState(0);
     const [infantBirthTargetCount, setInfantBirthTargetCount] = useState(0);
     const discountOrderRef = useRef(1);
+
+    const applyManualAdditionalFee = (nextValue: number) => {
+        setManualAdditionalFee(nextValue);
+        setManualAdditionalFeeInput(nextValue === 0 ? '' : String(nextValue));
+    };
 
     const getRoomGuestCount = (room: CruiseRoomForm) => (
         (room.adult_count || 0) +
@@ -726,7 +732,7 @@ function CruiseReservationEditContent() {
         }
 
         const nextAdditionalFee = storedAdditionalFee ?? Math.max(0, (storedReservationTotal || 0) - calculatedGrandTotalPrice);
-        setManualAdditionalFee(nextAdditionalFee);
+        applyManualAdditionalFee(nextAdditionalFee);
         setIsAdditionalFeeInitialized(true);
     }, [
         additionalFeeItems.length,
@@ -1171,7 +1177,7 @@ function CruiseReservationEditContent() {
             const migratedManualAdjustment = nextManualAdditionalFee - (Number.isFinite(savedManualDiscount) ? Math.max(0, savedManualDiscount) : 0);
 
             setAdditionalFeeItems(savedAdditionalFeeItems);
-            setManualAdditionalFee(migratedManualAdjustment);
+            applyManualAdditionalFee(migratedManualAdjustment);
             setStoredAdditionalFee(migratedManualAdjustment);
             const savedDiscountRate = Number(resRow.price_breakdown?.discount_rate);
             setDiscountRate(Number.isFinite(savedDiscountRate) ? savedDiscountRate : 0);
@@ -2358,7 +2364,7 @@ function CruiseReservationEditContent() {
                                                             key: `tpl-${tpl.id}`,
                                                             template_id: tpl.id,
                                                             name: tpl.name,
-                                                            amount: Math.max(0, Number(tpl.amount) || 0),
+                                                            amount: Number(tpl.amount) || 0,
                                                         },
                                                     ];
                                                 });
@@ -2374,10 +2380,20 @@ function CruiseReservationEditContent() {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">직접입력 추가/차감 금액 (VND)</label>
                                         <input
                                             type="number"
-                                            value={manualAdditionalFee}
+                                            value={manualAdditionalFeeInput}
                                             onChange={(e) => {
-                                                const nextValue = parseInt(e.target.value, 10) || 0;
-                                                setManualAdditionalFee(nextValue);
+                                                const nextValue = e.target.value;
+                                                setManualAdditionalFeeInput(nextValue);
+
+                                                if (nextValue === '' || nextValue === '-') {
+                                                    setManualAdditionalFee(0);
+                                                    return;
+                                                }
+
+                                                const parsedValue = Number(nextValue);
+                                                if (Number.isFinite(parsedValue)) {
+                                                    setManualAdditionalFee(parsedValue);
+                                                }
                                             }}
                                             title="직접입력 추가/차감 금액"
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -2428,7 +2444,7 @@ function CruiseReservationEditContent() {
                                                 setDiscountRateOrder(null);
                                                 setManualDiscountAmount(0);
                                                 setManualDiscountOrder(null);
-                                                setManualAdditionalFee(0);
+                                                applyManualAdditionalFee(0);
                                                 setAdditionalFeeItems([]);
                                                 setAdditionalFeeOrder(null);
                                                 setAdditionalFeeDetail('');
@@ -2461,10 +2477,10 @@ function CruiseReservationEditContent() {
                                                     <span className="font-semibold">{selectedOptionsTotal.toLocaleString()}동</span>
                                                 </div>
                                             )}
-                                            {templateAdditionalFeeTotal > 0 && (
+                                            {templateAdditionalFeeTotal !== 0 && (
                                                 <div className="flex justify-between text-sm text-gray-700">
-                                                    <span>추가요금(선택)</span>
-                                                    <span className="font-semibold">{templateAdditionalFeeTotal.toLocaleString()}동</span>
+                                                    <span>{templateAdditionalFeeTotal > 0 ? '추가요금(선택)' : '추가내역 차감(선택)'}</span>
+                                                    <span className="font-semibold">{templateAdditionalFeeTotal > 0 ? '+' : ''}{templateAdditionalFeeTotal.toLocaleString()}동</span>
                                                 </div>
                                             )}
                                             {manualAdditionalFee !== 0 && (

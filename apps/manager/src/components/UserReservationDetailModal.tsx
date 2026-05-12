@@ -274,9 +274,18 @@ export default function UserReservationDetailModal({
                 const airportCodes = allUserServices
                     .filter(s => s.serviceType === 'airport' && s.airport_price_code)
                     .map(s => s.airport_price_code);
+                const cruiseCodes = allUserServices
+                    .filter(s => s.serviceType === 'cruise' && s.room_price_code)
+                    .map(s => s.room_price_code);
+                const hotelCodes = allUserServices
+                    .filter(s => s.serviceType === 'hotel' && s.hotel_price_code)
+                    .map(s => s.hotel_price_code);
                 const rentCodes = allUserServices
-                    .filter(s => s.serviceType === 'rentcar' && s.rentcar_price_code)
-                    .map(s => String(s.rentcar_price_code || '').trim())
+                    .filter(
+                        s => (s.serviceType === 'rentcar' && s.rentcar_price_code)
+                            || ((s.serviceType === 'vehicle' || s.serviceType === 'car') && (s.rentcar_price_code || s.car_price_code)),
+                    )
+                    .map(s => String(s.rentcar_price_code || s.car_price_code || '').trim())
                     .filter(Boolean);
                 const tourCodes = allUserServices
                     .filter(s => s.serviceType === 'tour' && s.tour_price_code)
@@ -294,9 +303,15 @@ export default function UserReservationDetailModal({
                 ));
 
                 // 2. 가격 테이블 조회
-                const [airportPrices, rentPrices, tourPrices, reservationRows, changeRequests] = await Promise.all([
+                const [cruiseRates, airportPrices, hotelPrices, rentPrices, tourPrices, reservationRows, changeRequests] = await Promise.all([
+                    cruiseCodes.length > 0
+                        ? supabase.from('cruise_rate_card').select('id, cruise_name, room_type').in('id', cruiseCodes)
+                        : Promise.resolve({ data: [] }),
                     airportCodes.length > 0
                         ? supabase.from('airport_price').select('airport_code, service_type, route, vehicle_type').in('airport_code', airportCodes)
+                        : Promise.resolve({ data: [] }),
+                    hotelCodes.length > 0
+                        ? supabase.from('hotel_price').select('hotel_price_code, hotel_name, room_type, room_name').in('hotel_price_code', hotelCodes)
                         : Promise.resolve({ data: [] }),
                     rentCodes.length > 0
                         ? supabase.from('rentcar_price').select('rent_code, vehicle_type, way_type, route, price, capacity').in('rent_code', rentCodes)
@@ -321,7 +336,15 @@ export default function UserReservationDetailModal({
                 ]);
 
                 // 3. Map 생성
+                const roomPriceMap = new Map<string, any>();
+                for (const row of cruiseRates.data || []) {
+                    const id = String(row?.id || '').trim();
+                    const roomType = String(row?.room_type || '').trim();
+                    if (id) roomPriceMap.set(id, row);
+                    if (roomType && !roomPriceMap.has(roomType)) roomPriceMap.set(roomType, row);
+                }
                 const airportPriceMap = new Map((airportPrices.data || []).map((r: any) => [r.airport_code, r]));
+                const hotelPriceMap = new Map((hotelPrices.data || []).map((r: any) => [r.hotel_price_code, r]));
                 const rentPriceMap = new Map<string, any>();
                 for (const row of rentPrices.data || []) {
                     const rawCode = String(row?.rent_code || '').trim();
@@ -424,34 +447,110 @@ export default function UserReservationDetailModal({
                         }
                         : serviceWithReservation;
 
-                    if (mergedWithChange.serviceType === 'airport' && mergedWithChange.airport_price_code) {
-                        const priceInfo: any = airportPriceMap.get(mergedWithChange.airport_price_code);
+                    const baseService = {
+                        ...mergedWithChange,
+                        note: mergedWithChange.note || mergedWithChange.request_note || '',
+                    };
+
+                    if (baseService.serviceType === 'airport' && baseService.airport_price_code) {
+                        const priceInfo: any = airportPriceMap.get(baseService.airport_price_code);
                         return {
-                            ...mergedWithChange,
+                            ...baseService,
                             route: priceInfo?.route || service.route || '-',
-                            carType: priceInfo?.vehicle_type || mergedWithChange.carType || '-',
-                            category: priceInfo?.service_type || mergedWithChange.category || '-'
+                            carType: priceInfo?.vehicle_type || baseService.carType || '-',
+                            category: priceInfo?.service_type || baseService.category || '-',
+                            flightNumber: baseService.flightNumber || baseService.ra_flight_number || '-',
+                            passengerCount: Number(baseService.passengerCount ?? baseService.ra_passenger_count ?? 0),
+                            carCount: Number(baseService.carCount ?? baseService.ra_car_count ?? 0),
+                            stopover: baseService.stopover || baseService.ra_stopover_location || '-',
                         };
                     }
-                    if (mergedWithChange.serviceType === 'rentcar' && mergedWithChange.rentcar_price_code) {
-                        const rentCode = String(mergedWithChange.rentcar_price_code || '').trim();
+                    if (baseService.serviceType === 'cruise' && baseService.room_price_code) {
+                        const roomInfo: any = roomPriceMap.get(String(baseService.room_price_code || '').trim());
+                        return {
+                            ...baseService,
+                            cruiseName: roomInfo?.cruise_name || baseService.cruiseName || baseService.cruise || '-',
+                            cruise: roomInfo?.cruise_name || baseService.cruise || '-',
+                            roomType: roomInfo?.room_type || baseService.roomType || baseService.room_price_code || '-',
+                            paymentMethod: baseService.paymentMethod || baseService.payment_method || baseService.reservation?.payment_method || '-',
+                        };
+                    }
+                    if (baseService.serviceType === 'vehicle' || baseService.serviceType === 'car') {
+                        const vehicleCode = String(baseService.rentcar_price_code || baseService.car_price_code || '').trim();
+                        const vehiclePriceInfo: any = vehicleCode
+                            ? (rentPriceMap.get(vehicleCode) || rentPriceMap.get(vehicleCode.toUpperCase()))
+                            : null;
+                        return {
+                            ...baseService,
+                            carCategory: baseService.carCategory || baseService.way_type || baseService.category || vehiclePriceInfo?.way_type || '-',
+                            carType: baseService.carType || baseService.vehicle_type || vehiclePriceInfo?.vehicle_type || '-',
+                            route: baseService.route || vehiclePriceInfo?.route || '-',
+                            passengerCount: Number(baseService.passengerCount ?? baseService.passenger_count ?? 0),
+                            pickupDatetime: baseService.pickupDatetime || baseService.pickup_datetime || '-',
+                            pickupLocation: baseService.pickupLocation || baseService.pickup_location || '-',
+                            dropoffLocation: baseService.dropoffLocation || baseService.dropoff_location || '-',
+                            totalPrice: Number(baseService.totalPrice ?? baseService.car_total_price ?? 0),
+                        };
+                    }
+                    if (baseService.serviceType === 'rentcar' && baseService.rentcar_price_code) {
+                        const rentCode = String(baseService.rentcar_price_code || '').trim();
                         const priceInfo: any = rentPriceMap.get(rentCode) || rentPriceMap.get(rentCode.toUpperCase());
                         return {
-                            ...mergedWithChange,
-                            route: priceInfo?.route || mergedWithChange.route || '-',
-                            carType: priceInfo?.vehicle_type || mergedWithChange.vehicle_type || mergedWithChange.carType || '-',
-                            category: priceInfo?.way_type || mergedWithChange.category || '-'
+                            ...baseService,
+                            route: priceInfo?.route || baseService.route || '-',
+                            carType: priceInfo?.vehicle_type || baseService.vehicle_type || baseService.carType || '-',
+                            category: priceInfo?.way_type || baseService.category || '-',
+                            carCount: Number(baseService.carCount ?? baseService.car_count ?? 0),
+                            passengerCount: Number(baseService.passengerCount ?? baseService.passenger_count ?? 0),
+                            luggageCount: Number(baseService.luggageCount ?? baseService.luggage_count ?? 0),
+                            pickupDatetime: baseService.pickupDatetime || baseService.pickup_datetime || null,
+                            pickupLocation: baseService.pickupLocation || baseService.pickup_location || '-',
+                            dropoffLocation: baseService.dropoffLocation || baseService.dropoff_location || baseService.destination || '-',
                         };
                     }
-                    if (mergedWithChange.serviceType === 'tour' && mergedWithChange.tour_price_code) {
-                        const priceInfo: any = tourPriceMap.get(mergedWithChange.tour_price_code);
+                    if (baseService.serviceType === 'hotel') {
+                        const priceInfo: any = hotelPriceMap.get(baseService.hotel_price_code);
                         return {
-                            ...mergedWithChange,
-                            carType: priceInfo?.vehicle_type || mergedWithChange.carType || '-',
-                            tourName: priceInfo?.tour?.tour_name || mergedWithChange.tourName || '-'
+                            ...baseService,
+                            hotelName: priceInfo?.hotel_name || baseService.hotelName || baseService.hotel_name || baseService.hotel_category || '-',
+                            roomType: priceInfo?.room_name || priceInfo?.room_type || baseService.roomType || baseService.room_type || '-',
+                            checkinDate: baseService.checkinDate || baseService.checkin_date || '-',
+                            guestCount: Number(baseService.guestCount ?? baseService.guest_count ?? 0),
+                            roomCount: Number(baseService.roomCount ?? baseService.room_count ?? 0),
+                            adultCount: Number(baseService.adultCount ?? baseService.adult_count ?? 0),
+                            childCount: Number(baseService.childCount ?? baseService.child_count ?? 0),
+                            infantCount: Number(baseService.infantCount ?? baseService.infant_count ?? 0),
+                            totalPrice: Number(baseService.totalPrice ?? baseService.total_price ?? 0),
                         };
                     }
-                    return mergedWithChange;
+                    if (baseService.serviceType === 'tour') {
+                        const priceInfo: any = tourPriceMap.get(baseService.tour_price_code);
+                        return {
+                            ...baseService,
+                            carType: priceInfo?.vehicle_type || baseService.carType || baseService.vehicle_type || '-',
+                            tourName: priceInfo?.tour?.tour_name || baseService.tourName || baseService.tour_name || '-',
+                            tourDate: baseService.tourDate || baseService.usage_date || baseService.usageDate || '-',
+                            tourCapacity: Number(baseService.tourCapacity ?? baseService.tour_capacity ?? 0),
+                            pickupLocation: baseService.pickupLocation || baseService.pickup_location || '-',
+                            dropoffLocation: baseService.dropoffLocation || baseService.dropoff_location || '-',
+                            totalPrice: Number(baseService.totalPrice ?? baseService.total_price ?? 0),
+                            unitPrice: Number(baseService.unitPrice ?? baseService.unit_price ?? priceInfo?.price_per_person ?? 0),
+                        };
+                    }
+                    if (baseService.serviceType === 'sht') {
+                        return {
+                            ...baseService,
+                            usageDate: baseService.usageDate || baseService.usage_date || null,
+                            category: baseService.category || baseService.sht_category || '-',
+                            vehicleNumber: baseService.vehicleNumber || baseService.vehicle_number || baseService.dispatch_code || '-',
+                            seatNumber: baseService.seatNumber || baseService.seat_number || '-',
+                            pickupLocation: baseService.pickupLocation || baseService.pickup_location || '-',
+                            dropoffLocation: baseService.dropoffLocation || baseService.dropoff_location || '-',
+                            totalPrice: Number(baseService.totalPrice ?? baseService.car_total_price ?? 0),
+                            unitPrice: Number(baseService.unitPrice ?? baseService.unit_price ?? 0),
+                        };
+                    }
+                    return baseService;
                 });
 
                 setEnrichedServices(enriched);
@@ -517,6 +616,28 @@ export default function UserReservationDetailModal({
         return dateStr;
     };
 
+    const getAirportSortOrder = (service: any) => {
+        const value = String(service?.category || service?.way_type || '').toLowerCase();
+        if (value.includes('pickup') || value.includes('픽업')) return 0;
+        if (value.includes('sending') || value.includes('샌딩')) return 1;
+        return 9;
+    };
+
+    const compareServices = (a: any, b: any) => {
+        const dateA = getDateStr(a) || '9999-99-99';
+        const dateB = getDateStr(b) || '9999-99-99';
+        const dateCompare = dateA.localeCompare(dateB);
+        if (dateCompare !== 0) return dateCompare;
+
+        const isAirportA = a?.serviceType === 'airport';
+        const isAirportB = b?.serviceType === 'airport';
+        if (isAirportA && isAirportB) {
+            return getAirportSortOrder(a) - getAirportSortOrder(b);
+        }
+
+        return 0;
+    };
+
     const getSortedGroups = () => {
         // 중복 제거 제거: 모든 서비스를 표시 (공항 픽업/샌딩, 렌터카 픽업/드롭 등)
         const allServices = enrichedServices || [];
@@ -540,7 +661,7 @@ export default function UserReservationDetailModal({
             return sortedKeys.map(key => ({
                 title: key === '기타' ? '날짜 미정' : new Date(key).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }),
                 originalKey: key,
-                items: groups[key]
+                items: groups[key].sort(compareServices)
             }));
         } else {
             // 종류별 정렬
@@ -564,11 +685,7 @@ export default function UserReservationDetailModal({
             return sortedTypes.map(type => ({
                 title: getServiceLabel(type),
                 originalKey: type,
-                items: groups[type].sort((a, b) => {
-                    const dateA = getDateStr(a) || '9999-99-99';
-                    const dateB = getDateStr(b) || '9999-99-99';
-                    return dateA.localeCompare(dateB);
-                })
+                items: groups[type].sort(compareServices)
             }));
         }
     };
