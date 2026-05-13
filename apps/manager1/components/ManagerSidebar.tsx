@@ -44,6 +44,7 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
     if (!pathname) return null;
     if (pathname.startsWith('/manager/schedule/new')) return 'schedule-new';
     if (pathname.startsWith('/manager/schedule/sheet-edit')) return 'schedule-sheet-edit';
+    if (pathname.startsWith('/manager/reservations/requests')) return 'reservation-requests';
     if (pathname.startsWith('/manager/reservations/bulk')) return 'reservations-bulk';
     if (pathname.startsWith('/manager/reservation-edit/approval')) return 'reservation-edit-approval';
     if (pathname.startsWith('/manager/reservation-edit')) return 'reservation-edit';
@@ -153,6 +154,13 @@ export default function ManagerSidebar({ activeTab, userEmail, onLogout, userRol
               path="https://partner.stayhalong.com/partner/admin/reservations"
               isActive={isActiveTab('partner-reservations')}
               onClick={() => window.open('https://partner.stayhalong.com/partner/admin/reservations', '_blank')}
+            />
+            <NavItem
+              icon="📝"
+              label="요청사항"
+              path="/manager/reservations/requests"
+              isActive={isActiveTab('reservation-requests')}
+              onClick={() => handleNavigation('/manager/reservations/requests')}
             />
             </div>
           </div>

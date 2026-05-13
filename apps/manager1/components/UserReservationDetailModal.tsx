@@ -51,6 +51,24 @@ function formatDatetimeOffset(value: any): string {
     });
 }
 
+function formatDateOnlyKst(value: any): string {
+    if (!value) return '-';
+    const raw = String(value).trim();
+    if (!raw) return '-';
+
+    const hasTimezone = /[zZ]$|[+-]\d{2}:?\d{2}$/.test(raw);
+    if (!hasTimezone) {
+        const normalized = raw.replace(' ', 'T');
+        const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) return `${match[1]}. ${match[2]}. ${match[3]}.`;
+        return raw;
+    }
+
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return raw;
+    return d.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
+}
+
 const isInfantSurchargeText = (text: string): boolean => {
     return /유아|infant|2세\s*미만|3번째|2인째/i.test(text || '');
 };
@@ -259,6 +277,13 @@ export default function UserReservationDetailModal({
     const [isEnriching, setIsEnriching] = useState(false);
     const [isShtSeatModalOpen, setIsShtSeatModalOpen] = useState(false);
     const [selectedShtService, setSelectedShtService] = useState<any>(null);
+    const reservationDateSource =
+        userInfo?.re_created_at
+        || userInfo?.created_at
+        || allUserServices?.[0]?.reservation?.re_created_at
+        || allUserServices?.[0]?.re_created_at
+        || null;
+    const reservationDateText = formatDateOnlyKst(reservationDateSource);
 
     // 서비스 데이터 보강 (가격 테이블 정보 추가)
     useEffect(() => {
@@ -1232,6 +1257,8 @@ export default function UserReservationDetailModal({
                                         )}
                                         <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
                                         <span>{userInfo.email}</span>
+                                        <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                        <span>예약일: {reservationDateText}</span>
                                         <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
                                         <span>{userInfo.phone}</span>
                                         {allUserServices?.length > 0 && allUserServices[0]?.paymentMethod && (
