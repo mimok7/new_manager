@@ -118,8 +118,18 @@ function ReservationEditContent() {
     useEffect(() => {
         const type = searchParams.get('type');
         const status = searchParams.get('status');
+        const userId = searchParams.get('user_id');
         setTypeFilter(normalizeTypeFilter(type));
         setStatusFilter(status || 'all');
+
+        if (userId) {
+            setSearchInput(userId);
+            setSearchTerm(userId);
+            setHasSearched(true);
+            saveSearchCache(userId, userId, status || 'all', normalizeTypeFilter(type), true);
+            void loadReservations(userId);
+            return;
+        }
 
         const quoteId = searchParams.get('quote_id');
         if (quoteId) {
@@ -165,12 +175,17 @@ function ReservationEditContent() {
 
             // URL 파라미터에서 필터 추출
             const quoteId = searchParams.get('quote_id');
+            const userId = searchParams.get('user_id');
             const keyword = keywordRaw.trim();
 
             const escapeIlike = (value: string) => value.replace(/[%_]/g, (m) => `\\${m}`);
             let searchOrConditions: string[] = [];
 
-            if (!quoteId && keyword) {
+            if (userId) {
+                searchOrConditions.push(`re_user_id.eq.${userId}`);
+            }
+
+            if (!quoteId && !userId && keyword) {
                 const searchPattern = `%${escapeIlike(keyword)}%`;
                 const [usersRes, quoteRes] = await Promise.all([
                     supabase
@@ -198,6 +213,7 @@ function ReservationEditContent() {
                 if (isUuid) {
                     searchOrConditions.push(`re_id.eq.${keyword}`);
                     searchOrConditions.push(`re_quote_id.eq.${keyword}`);
+                    searchOrConditions.push(`re_user_id.eq.${keyword}`);
                 }
 
                 if (searchOrConditions.length === 0) {
@@ -206,7 +222,7 @@ function ReservationEditContent() {
                 }
             }
 
-            if (!quoteId && !keyword) {
+            if (!quoteId && !userId && !keyword) {
                 setReservations([]);
                 return;
             }

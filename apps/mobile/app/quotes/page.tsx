@@ -258,21 +258,13 @@ export default function MobileQuotesPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20">
       {/* 상단 헤더 */}
       <header className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200">
-        <div className="flex items-center justify-between px-2 py-2">
+        <div className="flex items-center justify-between px-3 py-2.5">
           <Link href="/" className="flex items-center gap-1 text-slate-600 active:text-slate-900">
             <ArrowLeft className="w-5 h-5" />
-            <span className="text-sm">홈</span>
+            <span className="text-sm">이전</span>
           </Link>
-          <h1 className="text-base font-bold text-slate-800">견적 목록</h1>
-          <button
-            type="button"
-            onClick={() => { loadQuotes(); loadStats(); }}
-            disabled={loading || statsLoading}
-            className="text-slate-600 active:text-slate-900 disabled:opacity-50"
-            aria-label="새로 고침"
-          >
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          <h1 className="text-sm font-semibold text-slate-800">견적 목록</h1>
+          <Link href="/" className="text-sm text-blue-600 active:text-blue-800 font-medium">홈</Link>
         </div>
       </header>
 

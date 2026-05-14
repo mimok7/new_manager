@@ -162,11 +162,13 @@ function ServiceDetails({ item, type, meta }: { item: any; type: string; meta: S
 export default function ReservationDetailModal({
   isOpen,
   onClose,
+  onEdit,
   item,
   items,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  onEdit?: (item: any) => void;
   item: any;
   items?: any[];
 }) {
@@ -245,6 +247,16 @@ export default function ReservationDetailModal({
             })}
           </div>
 
+        </div>
+        <div className="px-4 pb-4">
+          <button
+            type="button"
+            onClick={() => onEdit?.(item)}
+            disabled={!onEdit}
+            className="w-full h-11 rounded-lg bg-blue-600 text-white font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+          >
+            수정
+          </button>
         </div>
       </div>
     </div>

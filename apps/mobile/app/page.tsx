@@ -9,8 +9,8 @@ import {
   FilePenLine,
   FileText,
   ListChecks,
-  CreditCard,
   Bus,
+  Users,
   Handshake,
   MessageSquare,
   type LucideIcon,
@@ -35,10 +35,10 @@ const FAVORITES: MenuItem[] = [
   { href: '/quotes/cruise',         label: '견적 입력',  desc: '크루즈 견적 신규 입력',         icon: FilePenLine,   iconColor: 'text-purple-600', bg: 'bg-purple-100' },
   { href: '/quotes',                label: '견적 목록',  desc: '견적 조회 / 수정',              icon: FileText,      iconColor: 'text-indigo-600', bg: 'bg-indigo-100' },
   { href: '/reservation-edit',      label: '예약 수정',  desc: '서비스별 상태 수정',            icon: ListChecks,    iconColor: 'text-amber-600',  bg: 'bg-amber-100' },
-  { href: '/payment-processing',    label: '결제 처리',  desc: '결제 등록 / 확인',              icon: CreditCard,    iconColor: 'text-rose-600',   bg: 'bg-rose-100',   comingSoon: true },
-  { href: '/sht-car',               label: '스하 차량',  desc: '스하 차량 배정 관리',           icon: Bus,           iconColor: 'text-teal-600',   bg: 'bg-teal-100',   comingSoon: true },
+  { href: '/customers',             label: '고객관리',   desc: '고객 조회 / 수정 / 초기화',     icon: Users,         iconColor: 'text-cyan-600',   bg: 'bg-cyan-100' },
+  { href: '/sht-car',               label: '스하 차량',  desc: '스하 차량 배정 관리',           icon: Bus,           iconColor: 'text-teal-600',   bg: 'bg-teal-100' },
+  { href: '/cafe-guide',            label: '카페 안내',  desc: '카페 공지/안내문 생성',          icon: MessageSquare, iconColor: 'text-emerald-600', bg: 'bg-emerald-100' },
   { href: 'https://partner.stayhalong.com/partner/admin/reservations', label: '제휴업체', desc: '제휴업체 예약 관리', icon: Handshake, iconColor: 'text-orange-600', bg: 'bg-orange-100', external: true },
-  { href: '/reservations/requests', label: '요청사항',   desc: '예약 요청사항 모음',            icon: MessageSquare, iconColor: 'text-slate-600',  bg: 'bg-slate-100',  comingSoon: true },
 ];
 
 export default function HomePage() {

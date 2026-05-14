@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import {
   Calendar, Clock, Ship, Plane, Building, MapPin, Car,
@@ -164,6 +165,7 @@ const serviceConfig: Record<string, { icon: any; name: string; color: string }> 
 
 /* ── 메인 컴포넌트 ─────────────────────────────── */
 export default function SchedulePage() {
+  const router = useRouter();
   const [allData, setAllData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -194,6 +196,22 @@ export default function SchedulePage() {
     setSelectedItem(item);
     setSelectedItems(related.length > 0 ? related : [item]);
     setModalOpen(true);
+  };
+
+  const moveToReservationEdit = (target: any) => {
+    if (!target) return;
+    const quoteId = target?.quoteId || target?.re_quote_id || target?.quote_id;
+    const userId = target?.re_user_id || target?.userId || target?.user_id;
+
+    if (quoteId) {
+      router.push(`/reservation-edit?quote_id=${quoteId}`);
+      return;
+    }
+    if (userId) {
+      router.push(`/reservation-edit?user_id=${userId}`);
+      return;
+    }
+    router.push('/reservation-edit');
   };
 
   /* ── 데이터 로드: sh_* + reservation_* 통합 로드 ─── */
@@ -374,6 +392,7 @@ export default function SchedulePage() {
         const base = {
           source: 'new',
           reservationId: r.re_id,
+          re_user_id: r.re_user_id,
           re_quote_id: r.re_quote_id,
           quoteId: r.re_quote_id,
           customerName: user?.name || '',
@@ -828,7 +847,13 @@ export default function SchedulePage() {
           </div>
         )}
       </div>
-      <ReservationDetailModal isOpen={modalOpen} onClose={() => setModalOpen(false)} item={selectedItem} items={selectedItems} />
+      <ReservationDetailModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onEdit={selectedItem ? moveToReservationEdit : undefined}
+        item={selectedItem}
+        items={selectedItems}
+      />
     </div>
   );
 }

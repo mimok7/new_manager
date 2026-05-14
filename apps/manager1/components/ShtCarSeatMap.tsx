@@ -541,58 +541,57 @@ export default function ShtCarSeatMap({
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-[96vw] w-full mx-4 max-h-[92vh] overflow-y-auto">
-                <div className="flex items-center justify-between p-6 border-b">
-                    <h2 className="text-xl font-semibold">🚗 스테이하롱 셔틀 리무진 좌석 선택</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-2xl">✕</button>
-                </div>
-
-                <div className="p-4 bg-gray-50 border-b flex flex-col md:flex-row md:items-end gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">날짜</label>
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => changeDate(-1)}
-                                className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
-                                aria-label="이전일"
-                            >
-                                ◀
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const today = new Date();
-                                    const iso = today.toISOString().split('T')[0];
-                                    setCurrentDate(iso);
-                                    setSelectedSeats([]);
-                                    setSelectedReservedInfo(null);
-                                }}
-                                className="px-3 py-1 rounded bg-white border border-gray-200 hover:bg-gray-50 text-sm"
-                                aria-label="오늘"
-                            >
-                                오늘
-                            </button>
-                            <input
-                                type="date"
-                                value={currentDate}
-                                onChange={(e) => {
-                                    setCurrentDate(e.target.value);
-                                    setSelectedSeats([]);
-                                }}
-                                className="w-full md:w-56 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => changeDate(1)}
-                                className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
-                                aria-label="다음일"
-                            >
-                                ▶
-                            </button>
-                        </div>
+                <div className="p-3 border-b bg-gray-50 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                        <h2 className="text-sm font-semibold whitespace-nowrap">🚗 셔틀 리무진 좌석 선택</h2>
+                        <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-full text-xl leading-none">✕</button>
                     </div>
+
+                    <div className="flex items-center gap-2 whitespace-nowrap overflow-x-auto">
+                        <span className="text-sm font-medium text-gray-700 shrink-0">날짜:</span>
+                        <button
+                            type="button"
+                            onClick={() => changeDate(-1)}
+                            className="shrink-0 px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
+                            aria-label="이전일"
+                        >
+                            ◀
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const today = new Date();
+                                const iso = today.toISOString().split('T')[0];
+                                setCurrentDate(iso);
+                                setSelectedSeats([]);
+                                setSelectedReservedInfo(null);
+                            }}
+                            className="shrink-0 px-3 py-1 rounded bg-white border border-gray-200 hover:bg-gray-50 text-sm whitespace-nowrap min-w-[56px]"
+                            aria-label="오늘"
+                        >
+                            오늘
+                        </button>
+                        <input
+                            type="date"
+                            value={currentDate}
+                            onChange={(e) => {
+                                setCurrentDate(e.target.value);
+                                setSelectedSeats([]);
+                            }}
+                            className="shrink-0 w-[128px] md:w-56 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => changeDate(1)}
+                            className="shrink-0 px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
+                            aria-label="다음일"
+                        >
+                            ▶
+                        </button>
+                    </div>
+
                     {!readOnly && (
-                        <div className="text-sm text-gray-700">
+                        <div className="text-sm text-gray-700 whitespace-nowrap overflow-x-auto">
                             선택 대상: <strong>{activeSelection.vehicle}</strong> / <strong>{activeSelection.category === 'pickup' ? '픽업' : '드롭오프'}</strong>
                             <span className="ml-2 text-gray-500">(필요 좌석: {requiredSeats}석)</span>
                         </div>

@@ -28,13 +28,13 @@ function MobileQuoteLayout({ title, children }: { title: string; children: React
     return (
         <div className="min-h-screen bg-slate-50 pb-20 overflow-x-hidden text-xs">
             <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
-                <div className="max-w-screen-md mx-auto flex items-center justify-between px-2 py-2">
-                    <Link href="/" className="flex items-center gap-1 text-slate-600 active:text-slate-900">
+                <div className="max-w-screen-md mx-auto flex items-center justify-between px-3 py-2.5">
+                    <Link href="/quotes" className="flex items-center gap-1 text-slate-600 active:text-slate-900">
                         <ArrowLeft className="w-5 h-5" />
-                        <span className="text-xs">홈</span>
+                        <span className="text-sm">목록</span>
                     </Link>
-                    <h1 className="text-xs font-semibold text-slate-800">{title}</h1>
-                    <Link href="/quotes" className="text-xs text-blue-600 active:text-blue-800">목록</Link>
+                    <h1 className="text-sm font-semibold text-slate-800 truncate max-w-[60%] text-center">{title}</h1>
+                    <Link href="/" className="text-sm text-blue-600 active:text-blue-800 font-medium">홈</Link>
                 </div>
             </header>
             <div className="max-w-screen-md mx-auto w-full min-w-0 px-2 py-2 overflow-x-hidden">

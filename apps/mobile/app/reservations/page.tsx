@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import {
   CheckSquare, Square, ArrowLeft, RefreshCw, CheckCircle,
@@ -52,6 +53,7 @@ type SortType = 'date' | 'name';
 
 /* ── 메인 컴포넌트 ──────────────────────────── */
 export default function ReservationsPage() {
+  const router = useRouter();
   const [reservations, setReservations] = useState<ReservationItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -676,6 +678,19 @@ export default function ReservationsPage() {
     return { count, label: '확정 처리' };
   }, [detailItem]);
 
+  const moveToReservationEdit = () => {
+    if (!detailItem) return;
+    if (detailItem.re_quote_id) {
+      router.push(`/reservation-edit?quote_id=${detailItem.re_quote_id}`);
+      return;
+    }
+    if (detailItem.users?.id) {
+      router.push(`/reservation-edit?user_id=${detailItem.users.id}`);
+      return;
+    }
+    router.push('/reservation-edit');
+  };
+
   /* ── UI ──────────────────────────────────── */
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -859,6 +874,12 @@ export default function ReservationsPage() {
             <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
               <h2 className="font-bold text-gray-800">예약 상세</h2>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={moveToReservationEdit}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap bg-blue-500 text-white"
+                >
+                  수정
+                </button>
                 <button
                   onClick={handleDetailProcess}
                   disabled={detailLoading || detailProcessing || detailProcessInfo.count === 0}
