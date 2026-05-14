@@ -33,6 +33,11 @@
         "SUPABASE_SERVICE_ROLE_KEY"
       ]
     },
+    "mobile": {
+      "required": [
+        "SUPABASE_SERVICE_ROLE_KEY"
+      ]
+    },
     "partner": {
       "required": []
     },

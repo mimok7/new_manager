@@ -14,6 +14,7 @@
 | `apps/manager1` | @sht/manager1 | 3005 | `quick.manager.staycruise.kr` | 즐겨찾기 빠른패널 (2섹션 고정) |
 | `apps/admin` | @sht/admin | 3004 | `admin.staycruise.kr` | 관리자 대시보드 |
 | `apps/partner` | @sht/partner | 3003 | `partner.staycruise.kr` | 제휴업체 예약 시스템 |
+| `apps/mobile` | @sht/mobile | 3007 | (예정) `m.staycruise.kr` | manager1 mirror — 모바일 전용 경량 앱 |
 
 ---
 
@@ -61,6 +62,16 @@ git push origin main
 - 사이드바 섹션: **"⭐ 즐겨찾기"** + **"📂 관리 기타"** 2개만 존재
 - `apps/manager`의 6그룹 사이드바 구조를 manager1에 복사/미러링 절대 금지
 - 새 페이지를 추가할 때도 사이드바를 **명시적 요청 없이 임의 수정 금지**
+
+---
+
+## 📱 mobile ↔ manager1 동기화 원칙 (필수)
+- **`apps/mobile`은 `apps/manager1`의 모바일 전용 경량 mirror**
+- manager1의 기능 페이지를 변경하면 `apps/mobile/app/<feature>/page.tsx`도 함께 업데이트 검토
+- 단, 모바일은 **단순화·경량화**가 원칙 — 데스크톱 사이드바/PDF/넓은 테이블 등은 제외하고 핵심 흐름만 차용
+- UI는 모바일 최적화: 세로 보기, `max-w-md`, 카드 리스트, 큰 터치 영역
+- 자세한 규칙: `.github/instructions/mobile-mirror-manager1.instructions.md`
+- 단독 폴더 `c:\SHT-DATA\mobile`(아카이브)은 더 이상 수정 금지 — 항상 `apps/mobile`에서 작업
 
 ---
 
@@ -113,6 +124,7 @@ pnpm --filter @sht/quote dev              # 견적 전용 앱 (포트 3002)
 pnpm --filter @sht/customer1 dev          # 구고객 (포트 3006)
 pnpm --filter @sht/admin dev              # 관리자 (포트 3004)
 pnpm --filter @sht/partner dev            # 파트너 (포트 3003)
+pnpm --filter @sht/mobile dev             # 모바일 (포트 3007, manager1 mirror)
 
 # 특정 앱 빌드
 pnpm --filter @sht/<앱명> build

@@ -1,0 +1,33 @@
+{
+  "name": "스테이하롱 모바일",
+  "short_name": "스테이하롱",
+  "description": "스테이하롱 예약 관리 모바일",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#3b82f6",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/logo-160.png",
+      "sizes": "160x160",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-160.png",
+      "sizes": "160x160",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity"],
+  "screenshots": [
+    {
+      "src": "/logo-160.png",
+      "sizes": "160x160",
+      "type": "image/png"
+    }
+  ]
+}

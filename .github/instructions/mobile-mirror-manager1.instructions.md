@@ -1,0 +1,99 @@
+---
+description: 모바일(@sht/mobile) ↔ manager1(@sht/manager1) 기능 동기화 규칙. manager1이 변경되면 모바일은 단순화된 형태로 동일 기능을 따라가야 함.
+applyTo: "apps/mobile/**, apps/manager1/**"
+---
+
+# 📱 Mobile (apps/mobile) — manager1 Mirror & Mobile-Optimized 규칙
+
+## 🎯 프로젝트 정체성
+- **위치**: `apps/mobile` (모노레포 내부)
+- **이름**: `@sht/mobile`
+- **포트**: `3007` (`pnpm --filter @sht/mobile dev`)
+- **목표**: `apps/manager1`(즐겨찾기 빠른패널)의 기능을 **모바일 전용**으로 제공
+- **원본 위치(아카이브)**: `c:\SHT-DATA\mobile` — 더 이상 단독 수정하지 않음. 모든 작업은 `apps/mobile`에서 수행
+
+## ⚖️ manager1 ↔ mobile 동기화 원칙 (필수)
+1. **manager1 변경 시 mobile 동반 수정 검토 필수**
+   - `apps/manager1/app/manager/<feature>/page.tsx`가 변경되면
+   - `apps/mobile/app/<feature>/page.tsx`에도 동일 기능을 반영해야 함
+2. **사이드바는 미러링 대상이 아님**
+   - manager1: 좌측 고정 사이드바 (`ManagerSidebar.tsx` — 즐겨찾기 + 관리 기타 2섹션)
+   - mobile: 사이드바 없음. 홈(`app/page.tsx`)의 즐겨찾기 카드 그리드가 진입점
+   - 홈 카드의 **순서·라벨·아이콘 색**은 manager1 즐겨찾기와 동일하게 유지
+3. **신규 기능 우선순위**: 필요할 때만 추가 (`AGENTS.md` "필요 시에만 반영" 원칙)
+   - 미구현 항목은 홈에서 `comingSoon: true`로 표시 (alert로 안내)
+
+## 🪶 모바일 단순화 규칙 (코드 가볍게)
+manager1을 그대로 복사하지 말고, 다음을 **제거/단순화**:
+- ❌ 데스크톱 전용 컴포넌트(`ManagerSidebar`, `ManagerLayout`, 데스크톱 모달)
+- ❌ PDF/엑셀 출력(`html2pdf.js`, 시트 동기화 등 — 모바일에서 잘 안 씀)
+- ❌ 다단 그리드/넓은 테이블 — `flex-col` + 카드 리스트로 대체
+- ❌ hover 전용 인터랙션 — `active:scale-[0.98]` 등 터치 친화로 교체
+- ❌ 무거운 차트/리포트 — 핵심 수치만 큰 글씨로
+- ✅ 핵심 데이터 흐름(supabase 쿼리·필터·저장 로직)은 그대로 차용
+
+## 📐 모바일 UI 표준
+- **세로 우선(portrait)**, 가로폭 100% 사용
+- 콘텐츠 컨테이너: `max-w-md mx-auto p-4` 정도. 큰 데스크톱 너비 금지
+- 주요 액션: 최소 `h-12` (44px+) 터치 영역
+- 헤더: 페이지 상단에 `← 뒤로` + 타이틀(고정 또는 sticky)
+- 리스트: 카드형(`bg-white rounded-2xl shadow-sm p-4`) — 테이블 금지
+- 폼: 한 줄 한 필드(`grid-cols-1`) + 큰 입력(`py-3 text-base`)
+- 색상은 manager1과 동일 톤(슬레이트/블루 계열) 유지
+
+### 🎯 화면 공간 최대 활용 (필수)
+**모바일은 화면이 작으므로 불필요한 공간을 제거하고 화면을 100% 활용해야 함:**
+- ✅ **모달/팝업**: `items-end` (모바일 기본) + `sm:items-start` (데스크톱 상단)
+- ✅ **높이**: 모달 `max-h-[95vh]` (모바일) / `max-h-[90vh]` (sm: 이상)
+- ✅ **시작점**: 모달은 위쪽부터(`pt-0 sm:pt-2`)
+- ✅ **리스트 카드**: 한 줄에 필요한 정보만. 여유 margin 최소화
+- ✅ **헤더/푸터**: `py-2` 이하로 최소화 (데스크톱처럼 큰 패딩 금지)
+- ❌ **기준선 정렬**: 텍스트 센터링·자간 확보 등 데스크톱 스타일 금지
+- ❌ **empty space**: 위/아래 불필요한 여백. 콘텐츠가 뷰포트를 가득 채우도록
+
+## 🛠 기술 스택 (현재 lock-in)
+- **Next.js 16** (App Router) + **React 19** + **Tailwind v4** + **TypeScript 5**
+- Supabase 클라이언트: `lib/supabase.ts` 단일 인스턴스
+- 인증: `lib/auth.ts` + `app/_components/AuthGate.tsx` — 자체 인증 로직 신규 작성 금지
+- 아이콘: `lucide-react`만 사용
+
+> ⚠️ 플랫폼의 다른 앱들(Next 15)과 버전이 다름. `apps/mobile/package.json`의 의존성 변경 시 반드시 명시적 합의 후 진행.
+
+## 🔐 인증·세션 패턴
+- 신규 페이지에서 `supabase.auth.getUser/getSession` 직접 호출 금지
+- `AuthGate`가 라우트 가드를 담당하므로, 페이지에서는 `supabase.auth.getSession()` 결과만 신뢰
+- `canAccessManagerApp()`는 `lib/auth.ts`만 사용 (중복 구현 금지)
+
+## 📁 디렉토리 규약
+```
+apps/mobile/
+├── app/
+│   ├── layout.tsx              # 전역 레이아웃 (AuthGate 포함)
+│   ├── page.tsx                # 홈 = manager1 즐겨찾기 카드 그리드
+│   ├── _components/            # mobile 전용 공유 컴포넌트
+│   ├── login/                  # 로그인 (manager 권한만)
+│   ├── schedule/               # 신/구 구분
+│   ├── reservations/           # 예약 처리
+│   ├── reservation-edit/       # 예약 수정 (cruise/airport/vehicle ...)
+│   ├── quotes/                 # 견적 입력/목록 (예정)
+│   ├── payment-processing/     # 결제 처리 (예정)
+│   ├── sht-car/                # 스하 차량 (예정)
+│   └── reservations/requests/  # 요청사항 (예정)
+├── lib/                        # supabase, auth 등 공유 유틸
+├── public/
+└── package.json                # @sht/mobile, port 3007
+```
+
+## ✅ 새 페이지 추가 체크리스트
+- [ ] manager1의 동일 기능 페이지를 먼저 읽고 데이터 흐름 파악
+- [ ] 모바일 단순화 규칙으로 불필요 부분 제외
+- [ ] `app/page.tsx`의 `FAVORITES` 배열에서 `comingSoon: true` 제거
+- [ ] 카드 그리드(2열)에 어울리는 짧은 라벨 유지
+- [ ] 페이지 상단에 뒤로 버튼(`<Link href="/">`) 제공
+- [ ] 컨테이너 폭 `max-w-md` 준수
+
+## 🚫 금지 사항
+- `c:\SHT-DATA\mobile`(아카이브 폴더) 직접 수정 — 항상 `apps/mobile`에서만
+- manager1의 데스크톱 사이드바·모달을 그대로 복사
+- 자체 Supabase 클라이언트 인스턴스 생성
+- 페이지마다 자체 인증 useEffect 작성

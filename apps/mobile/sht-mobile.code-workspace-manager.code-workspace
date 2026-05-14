@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../sht-manager"
+		},
+		{
+			"path": "../sht-customer"
+		}
+	],
+	"settings": {}
+}
